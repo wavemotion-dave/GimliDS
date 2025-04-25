@@ -1,0 +1,870 @@
+// =====================================================================================
+// GimliDS Copyright (c) 2025 Dave Bernazzani (wavemotion-dave)
+//
+// As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
+// any copying or distribution of this emulator, its source code and associated
+// readme files, with or without modification, are permitted per the original 
+// Frodo emulator license shown below.  Hugest thanks to Christian Bauer for his
+// efforts to provide a clean open-source emulation base for the C64.
+//
+// Numerous hacks and 'unsafe' optimizations have been performed on the original 
+// Frodo emulator codebase to get it running on the small handheld system. You 
+// are strongly encouraged to seek out the official Frodo sources if you're at
+// all interested in this emulator code.
+//
+// The GimliDS emulator is offered as-is, without any warranty. Please see readme.md
+// =====================================================================================
+
+/*
+ *  Display.cpp - C64 graphics display, emulator window handling
+ *
+ *  Frodo Copyright (C) Christian Bauer
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include "sysdeps.h"
+
+#include "Display.h"
+#include "main.h"
+#include "IEC.h"
+#include "C64.h"
+#include "Prefs.h"
+#include "mainmenu.h"
+#include <maxmod9.h>
+#include "soundbank.h"
+
+
+u8 floppy_sound_counter = 0;
+
+// "Colodore" palette
+uint8_t palette_red[16] = {
+    0x00, 0xff, 0x81, 0x75, 0x8e, 0x56, 0x2e, 0xed, 0x8e, 0x55, 0xc4, 0x4a, 0x7b, 0xa9, 0x70, 0xb2
+};
+
+uint8_t palette_green[16] = {
+    0x00, 0xff, 0x33, 0xce, 0x3c, 0xac, 0x2c, 0xf1, 0x50, 0x38, 0x6c, 0x4a, 0x7b, 0xff, 0x6d, 0xb2
+};
+
+uint8_t palette_blue[16] = {
+    0x00, 0xff, 0x38, 0xc8, 0x97, 0x4d, 0x9b, 0x71, 0x29, 0x00, 0x71, 0x4a, 0x7b, 0x9f, 0xeb, 0xb2
+};
+
+
+void floppy_soundfx(void)
+{
+    if (myConfig.diskSFX)
+    {
+        if (floppy_sound_counter == 0) floppy_sound_counter = 250;
+    }
+}
+
+
+/*
+ *  Update drive LED display (deferred until Update())
+ */
+u16 LastFloppySound = 0;
+u8 last_led_states = 0x00;
+void C64Display::UpdateLEDs(int l0, int l1)
+{
+    led_state[0] = l0;
+    led_state[1] = l1;
+
+    last_led_states = l0;
+
+    if (led_state[0] == DRVLED_ERROR)
+    {
+        DSPrint(24, 21, 2, (char*)"CDE");   // Red Error Label
+    }
+    else
+    {
+        if (led_state[0] || led_state[1])
+        {
+            DSPrint(24, 21, 2, (char*)"@AB"); // Green Activity Label
+        }
+        else
+        {
+            DSPrint(24, 21, 2, (char*)" !\""); // White Idle Drive Label
+            last_led_states = 0;
+        }
+    }
+}
+
+/*
+ *  Display_NDS.i by Troy Davis(GPF), adapted from:
+ *  Display_GP32.i by Mike Dawson - C64 graphics display, emulator window handling,
+ *
+ *  Frodo (C) 1994-1997,2002 Christian Bauer
+ *  X11 stuff by Bernd Schmidt/Lutz Vieweg
+ */
+
+#include "C64.h"
+#include "VIC.h"
+
+#include <nds.h>
+#include <fat.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <sys/dir.h>
+#include <unistd.h>
+#include "diskmenu.h"
+#include "keyboard.h"
+#include "soundbank.h"
+#include <maxmod9.h>
+
+#define MOVE_MAX 16
+
+#define ABS(a) (((a) < 0) ? -(a) : (a))
+#define ROUND(f) ((u32) ((f) < 0.0 ? (f) - 0.5 : (f) + 0.5))
+
+#define KB_NORMAL 0
+#define KB_CAPS   1
+#define KB_SHIFT  2
+
+#define F_1 0x1
+#define F_2 0x2
+#define F_3 0x3
+#define F_4 0x4
+#define F_5 0x5
+#define F_6 0x6
+#define F_7 0x7
+#define F_8 0x18
+
+#define MOUNT_DISK 0xFE
+#define MAIN_MENU  0xFF
+
+#define LFA 0x095 //Left arrow
+#define CLR 0x147
+#define PND 0x92
+
+#define RST 0x13 // Restore
+#define RET '\n' // Enter
+#define BSP 0x08 // Backspace
+#define CTR 0x21 // Ctrl
+#define SPC 0x20// Space
+#define ATT 0x22 // At@
+#define UPA 0x23 //uparrow symbol
+#define RUN 0x00 // RunStop
+#define SLK 0x25 // Shift Lock
+#define CMD 0x26 // Commodore key
+#define SHF 0x27 // Shift Key
+
+#define CUP 0x14 // Cursor up
+#define CDL 0x15 // Cursor left
+
+static int m_Mode=KB_SHIFT;
+
+extern u8 col, row; // console cursor position
+
+extern uint16 *screen;
+uint16 * map;
+uint8 *bufmem;
+#define BUFMEM_SIZE ((512*(DISPLAY_Y-1))+DISPLAY_X)
+
+uint8 *emu_screen;
+uint8 *emu_buffers[2];
+int emu_buf=0;
+
+static int keystate[256];
+
+extern u8 MainMenu(C64 *the_c64);
+
+
+char str[300];
+int menufirsttime =0;
+int choosingfile = 1;
+int bg0b, bg1b;
+
+void ShowKeyboard(void)
+{
+    videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE);
+
+    videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE); // BG0 = debug console; BG1 = keyboard
+    bg0b = bgInitSub(0, BgType_Text8bpp, BgSize_T_256x256, 31,0);
+    bg1b = bgInitSub(1, BgType_Text8bpp, BgSize_T_256x256, 29,0);
+    bgSetPriority(bg0b,1); bgSetPriority(bg1b,0);
+
+    decompress(keyboardTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+    decompress(keyboardMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+    dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+    dmaCopy((void*) keyboardPal,(void*) BG_PALETTE_SUB,256*2);
+    unsigned  short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
+    dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
+}
+
+void WaitForVblank();
+
+/*
+  C64 keyboard matrix:
+
+    Bit 7   6   5   4   3   2   1   0
+  0    CUD  F5  F3  F1  F7 CLR RET DEL
+  1    SHL  E   S   Z   4   A   W   3
+  2     X   T   F   C   6   D   R   5
+  3     V   U   H   B   8   G   Y   7
+  4     N   O   K   M   0   J   I   9
+  5     ,   @   :   .   -   L   P   +
+  6     /   ^   =  SHR HOM  ;   *   �
+  7    R/S  Q   C= SPC  2  CTL  <-  1
+*/
+
+#define MATRIX(a,b) (((a) << 3) | (b))
+
+
+/*
+ *  Display constructor: Draw Speedometer/LEDs in window
+ */
+
+C64Display::C64Display(C64 *the_c64) : TheC64(the_c64)
+{
+
+}
+
+
+/*
+ *  Display destructor
+ */
+
+C64Display::~C64Display()
+{
+}
+
+
+/*
+ *  Prefs may have changed
+ */
+
+void C64Display::NewPrefs(Prefs *prefs)
+{
+    floppy_sound_counter = 50; // One seconds of no floppy sound...
+}
+
+uint8* frontBuffer;
+
+u8 JITTER[] = {0, 64, 128};
+s16 temp_offset = 0;
+u16 slide_dampen=0;
+void vblankIntr(void)
+{
+    int cxBG = (myConfig.offsetX << 8);
+    int cyBG = (myConfig.offsetY+temp_offset) << 8;
+    int xdxBG = ((320 / myConfig.scaleX) << 8) | (320 % myConfig.scaleX) ;
+    int ydyBG = ((200 / myConfig.scaleY) << 8) | (200 % myConfig.scaleY);
+
+    REG_BG2X = cxBG;
+    REG_BG2Y = cyBG;
+    REG_BG3X = cxBG+JITTER[myConfig.jitter];
+    REG_BG3Y = cyBG;
+
+    REG_BG2PA = xdxBG;
+    REG_BG2PD = ydyBG;
+    REG_BG3PA = xdxBG;
+    REG_BG3PD = ydyBG;
+
+    if (temp_offset)
+    {
+        if (slide_dampen == 0)
+        {
+            if (temp_offset > 0) temp_offset--;
+            else temp_offset++;
+        }
+        else
+        {
+            slide_dampen--;
+        }
+    }
+
+    if (floppy_sound_counter)
+    {
+        if (floppy_sound_counter == 250)
+        {
+            if (myConfig.diskSFX) mmEffect(SFX_FLOPPY);
+        }
+        floppy_sound_counter--;
+    }
+}
+
+extern void InterruptHandler(void);
+int init_graphics(void)
+{
+    //set the mode for 2 text layers and two extended background layers
+    powerOn(POWER_ALL_2D);
+
+    videoSetMode(MODE_5_2D | DISPLAY_BG2_ACTIVE | DISPLAY_BG3_ACTIVE);
+
+    bgInit(3, BgType_Bmp8, BgSize_B8_512x512, 0,0);
+    bgInit(2, BgType_Bmp8, BgSize_B8_512x512, 0,0);
+
+    REG_BLDCNT = BLEND_ALPHA | BLEND_SRC_BG2 | BLEND_DST_BG3;
+    REG_BLDALPHA = (8 << 8) | 8; // 50% / 50%
+
+
+    //set the first two banks as background memory and the third as sub background memory
+    //D is not used..if you need a bigger background then you will need to map
+    //more vram banks consecutivly (VRAM A-D are all 0x20000 bytes in size)
+    vramSetPrimaryBanks(VRAM_A_MAIN_BG_0x06000000, VRAM_B_MAIN_BG_0x06020000, VRAM_C_SUB_BG , VRAM_D_LCD);
+
+    videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE); //sub bg 0 will be used to print text
+    REG_BG0CNT_SUB = BG_MAP_BASE(31);
+    BG_PALETTE_SUB[255] = RGB15(31,31,31);
+    //consoleInit(NULL, 0, BgType_Text4bpp, BgSize_T_256x256, 31, 0, false, true);
+
+    frontBuffer = (uint8*)(0x06000000);
+
+    bufmem = (uint8*)malloc(BUFMEM_SIZE);
+
+    if (!fatInitDefault())
+    {
+        iprintf("Unable to initialize media device!");
+        return -1;
+    }
+
+    chdir("/roms");
+    chdir("c64");
+
+    ShowKeyboard();
+
+    REG_BG3CNT = BG_BMP8_512x512;
+#if 0
+    REG_BG3PA = DISPLAY_X-54; //((DISPLAY_X / 256) << 8) | (DISPLAY_X % 256) ;//
+    REG_BG3PB = 0;
+    REG_BG3PC = 0;
+    REG_BG3PD = DISPLAY_X-106;//((DISPLAY_Y / 192) << 8) | ((DISPLAY_Y % 192) + (DISPLAY_Y % 192) / 3) ;//
+    REG_BG3X = 28<<8;//1<<8;//
+    REG_BG3Y = 32<<8;//1<<8;//
+#else
+    int cxBG = (myConfig.offsetX << 8);
+    int cyBG = (myConfig.offsetY) << 8;
+    int xdxBG = ((320 / myConfig.scaleX) << 8) | (320 % myConfig.scaleX) ;
+    int ydyBG = ((200 / myConfig.scaleY) << 8) | (200 % myConfig.scaleY);
+
+    REG_BG2X = cxBG;
+    REG_BG2Y = cyBG;
+    REG_BG3X = cxBG;
+    REG_BG3Y = cyBG;
+    REG_BG3PA = xdxBG;
+    REG_BG3PD = ydyBG;
+
+    SetYtrigger(190); //trigger 2 lines before vsync
+    irqSet(IRQ_VBLANK, vblankIntr);
+    irqEnable(IRQ_VBLANK);
+
+#endif
+  return TRUE;
+
+}
+int counta,firsttime;
+void WaitForVblank()
+{
+    swiWaitForVBlank();
+}
+
+/*
+ *  Redraw bitmap
+ */
+void C64Display::Update(void)
+{
+    dmaCopyWordsAsynch(3, bufmem+(512*14), frontBuffer+(512*14), BUFMEM_SIZE-(18*1024));
+}
+
+
+/*
+ *  Draw speedometer
+ */
+
+//*****************************************************************************
+// Displays a message on the screen
+//*****************************************************************************
+void DSPrint(int iX,int iY,int iScr,char *szMessage)
+{
+  u16 *pusScreen,*pusMap;
+  u16 usCharac;
+  char *pTrTxt=szMessage;
+
+  pusScreen=(u16*) bgGetMapPtr(bg1b) + iX + (iY<<5);
+  pusMap=(u16*) (iScr == 6 ? bgGetMapPtr(bg0b)+24*32 : (iScr == 0 ? bgGetMapPtr(bg0b)+24*32 : bgGetMapPtr(bg0b)+26*32 ));
+
+  while((*pTrTxt)!='\0' )
+  {
+    char ch = *pTrTxt++;
+    if (ch >= 'a' && ch <= 'z') ch -= 32;   // Faster than strcpy/strtoupper
+
+    if (((ch)<' ') || ((ch)>'_'))
+      usCharac=*(pusMap);                   // Will render as a vertical bar
+    else if((ch)<'@')
+      usCharac=*(pusMap+(ch)-' ');          // Number from 0-9 or punctuation
+    else
+      usCharac=*(pusMap+32+(ch)-'@');       // Character from A-Z
+    *pusScreen++=usCharac;
+  }
+}
+
+void show_joysticks(void)
+{
+    if (current_joystick)
+    {
+        DSPrint(1, 3, 2, (char*)"()");
+        DSPrint(1, 4, 2, (char*)"HI");
+        DSPrint(3, 3, 2, (char*)"*+");
+        DSPrint(3, 4, 2, (char*)"JK");
+    }
+    else
+    {
+        DSPrint(3, 3, 2, (char*)"()");
+        DSPrint(3, 4, 2, (char*)"HI");
+        DSPrint(1, 3, 2, (char*)"*+");
+        DSPrint(1, 4, 2, (char*)"JK");
+    }
+}
+
+void show_shift_key(void)
+{
+    if (m_Mode == KB_SHIFT)
+    {
+        DSPrint(1, 17, 2, (char*)",-");
+        DSPrint(1, 18, 2, (char*)"LM");
+    }
+    else
+    {
+        DSPrint(1, 17, 2, (char*)"./");
+        DSPrint(1, 18, 2, (char*)"NO");
+    }
+}
+
+int i = 0;
+int debug[8]={0,0,0,0,0,0,0,0};
+void C64Display::Speedometer(int speed)
+{
+#if 1
+    char tmp[34];
+
+    sprintf(tmp, "%-8d", speed);
+    DSPrint(19, 1, 6, tmp);
+
+    sprintf(tmp, "%-8d %-8d %-6d %-6d", debug[0],debug[1],debug[2],debug[3]);
+    DSPrint(0, 0, 6, tmp);
+#endif
+
+    show_joysticks();
+    show_shift_key();
+}
+
+
+/*
+ *  Return pointer to bitmap data
+ */
+
+uint8 *C64Display::BitmapBase(void)
+{
+    return (uint8 *)bufmem;
+}
+
+
+
+
+
+/*
+ *  Return number of bytes per row
+ */
+
+int C64Display::BitmapXMod(void)
+{
+    return 512;
+}
+
+void C64Display::KeyPress(int key, uint8 *key_matrix, uint8 *rev_matrix) {
+    int c64_byte, c64_bit, shifted;
+    if(!keystate[key]) {
+        keystate[key]=1;
+        c64_byte=key>>3;
+        c64_bit=key&7;
+        shifted=key&128;
+        c64_byte&=7;
+        if(shifted) {
+            key_matrix[6] &= 0xef;
+            rev_matrix[4] &= 0xbf;
+        }
+        key_matrix[c64_byte]&=~(1<<c64_bit);
+        rev_matrix[c64_bit]&=~(1<<c64_byte);
+    }
+}
+
+void C64Display::KeyRelease(int key, uint8 *key_matrix, uint8 *rev_matrix) {
+    int c64_byte, c64_bit, shifted;
+    if(keystate[key]) {
+        keystate[key]=0;
+        c64_byte=key>>3;
+        c64_bit=key&7;
+        shifted=key&128;
+        c64_byte&=7;
+        if(shifted) {
+            key_matrix[6] |= 0x10;
+            rev_matrix[4] |= 0x40;
+        }
+        key_matrix[c64_byte]|=(1<<c64_bit);
+        rev_matrix[c64_bit]|=(1<<c64_byte);
+    }
+}
+
+/*
+ *  Poll the keyboard
+ */
+int c64_key=-1;
+int lastc64key=-1;
+bool m_tpActive=false;
+touchPosition m_tp;
+
+void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joystick)
+{
+        scanKeys();
+
+        if ((lastc64key >-1) && ((keysCurrent() & KEY_TOUCH) == 0))
+        {
+            KeyRelease(lastc64key, key_matrix, rev_matrix);
+        }
+
+        if ((keysCurrent() & KEY_TOUCH) == 0)   // No touch screen... reset the flag
+        {
+            m_tpActive = false;
+        }
+        else
+        if ((m_tpActive == false) && (keysCurrent() & KEY_TOUCH))
+        {
+            touchRead(&m_tp);
+            m_tpActive = true;
+
+            unsigned short c = 0;
+            int tilex, tiley;
+
+            tilex = m_tp.px;
+            tiley = m_tp.py;
+
+            if (tiley > 20) // We're in the keyboard area...
+            {
+                if (tiley < 44) // Big Key Row
+                {
+                     if (tilex < 42)
+                     {
+                        current_joystick ^= 1;
+                        extern void show_joysticks();
+                        show_joysticks();
+                     }
+                    else if (tilex < 80)   c = CTR;
+                    else if (tilex < 118)  c = BSP;
+                    else if (tilex < 156)  c = RST;
+                    else if (tilex < 194)  c = CMD;
+                    else if (tilex < 255)  c = RUN;
+                }
+                else if (tiley < 74) // Number Row
+                {
+                         if (tilex < 23)  c = '1';
+                    else if (tilex < 42)  c = '2';
+                    else if (tilex < 61)  c = '3';
+                    else if (tilex < 80)  c = '4';
+                    else if (tilex < 99)  c = '5';
+                    else if (tilex < 118) c = '6';
+                    else if (tilex < 137) c = '7';
+                    else if (tilex < 156) c = '8';
+                    else if (tilex < 175) c = '9';
+                    else if (tilex < 194) c = '0';
+                    else if (tilex < 213) c = '+';
+                    else if (tilex < 233) c = '-';
+                    else if (tilex < 256) c = UPA;
+                }
+                else if (tiley < 104) // QWERTY Row
+                {
+                         if (tilex < 23)  c = CUP;
+                    else if (tilex < 42)  c = 'Q';
+                    else if (tilex < 61)  c = 'W';
+                    else if (tilex < 80)  c = 'E';
+                    else if (tilex < 99)  c = 'R';
+                    else if (tilex < 118) c = 'T';
+                    else if (tilex < 137) c = 'Y';
+                    else if (tilex < 156) c = 'U';
+                    else if (tilex < 175) c = 'I';
+                    else if (tilex < 194) c = 'O';
+                    else if (tilex < 213) c = 'P';
+                    else if (tilex < 233) c = '@';
+                    else if (tilex < 256) c = '*';
+                }
+                else if (tiley < 134) // ASDF Row
+                {
+                         if (tilex < 23)  c = CDL;
+                    else if (tilex < 42)  c = 'A';
+                    else if (tilex < 61)  c = 'S';
+                    else if (tilex < 80)  c = 'D';
+                    else if (tilex < 99)  c = 'F';
+                    else if (tilex < 118) c = 'G';
+                    else if (tilex < 137) c = 'H';
+                    else if (tilex < 156) c = 'J';
+                    else if (tilex < 175) c = 'K';
+                    else if (tilex < 194) c = 'L';
+                    else if (tilex < 213) c = ':';
+                    else if (tilex < 233) c = ';';
+                    else if (tilex < 256) c = '=';
+                }
+                else if (tiley < 164) // ZXCV Row
+                {
+                         if (tilex < 23)  c = SHF;
+                    else if (tilex < 42)  c = 'Z';
+                    else if (tilex < 61)  c = 'X';
+                    else if (tilex < 80)  c = 'C';
+                    else if (tilex < 99)  c = 'V';
+                    else if (tilex < 118) c = 'B';
+                    else if (tilex < 137) c = 'N';
+                    else if (tilex < 156) c = 'M';
+                    else if (tilex < 175) c = ',';
+                    else if (tilex < 194) c = '.';
+                    else if (tilex < 213) c = '/';
+                    else if (tilex < 256) c = RET;
+                }
+                else if (tiley < 192) // Bottom Row
+                {
+                         if (tilex < 23)  c = F_1;
+                    else if (tilex < 42)  c = F_3;
+                    else if (tilex < 61)  c = F_5;
+                    else if (tilex < 80)  c = F_7;
+                    else if (tilex < 190) c = ' ';
+                    else if (tilex < 222) c = MOUNT_DISK;
+                    else if (tilex < 256) c = MAIN_MENU;
+                }
+
+                if (c==MAIN_MENU)
+                {
+                    TheC64->Pause();
+                    MainMenu(TheC64);
+                    ShowKeyboard();
+                    TheC64->Resume();
+                }
+                else if (c==MOUNT_DISK)
+                {
+                    TheC64->Pause();
+                    u8 reload = mount_disk(TheC64);
+                    ShowKeyboard();
+
+                    if (reload & 0x7F)
+                    {
+                        kbd_buf_reset();
+
+                        // Insert the new disk into the drive...
+                        Prefs *prefs = new Prefs(ThePrefs);
+                        strcpy(prefs->DrivePath[0], Drive8File);
+                        strcpy(prefs->DrivePath[1], Drive9File);
+                        prefs->TrueDrive = myConfig.trueDrive;
+                        TheC64->NewPrefs(prefs);
+                        ThePrefs = *prefs;
+                        delete prefs;
+
+                        // See if we should issue a system-wide RESET
+                        if (reload == 2)
+                        {
+                            TheC64->PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
+                            TheC64->Reset();
+                        }
+                    }
+                    TheC64->Resume();
+
+                    if (reload & 0x80)
+                    {
+                        extern void kbd_buf_feed(const char *s);
+                        kbd_buf_feed("\rLOAD\"*\",8,1\rRUN\r");
+                    }
+                }
+                else if (c != 0)
+                {
+                   mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+                }
+
+                if(c==RET) // Return
+                {
+                    //consolePrintChar('\n');
+                    //strcpy(text, "");
+                    c64_key = MATRIX(0,1);
+                    KeyPress(c64_key, key_matrix, rev_matrix);
+                    lastc64key=c64_key;
+                } else
+                if(c==BSP) // Backspace
+                {
+                    c64_key = MATRIX(0,0);
+                    KeyPress(c64_key, key_matrix, rev_matrix);
+                    lastc64key=c64_key;
+
+                } else
+                if(c==RUN)
+                {
+                    mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+                    c64_key = MATRIX(7,7);
+                    KeyPress(c64_key, key_matrix, rev_matrix);
+                    lastc64key=c64_key;
+
+                } else
+                if(c==SLK || c==SHF)
+                {
+                    if(m_Mode==KB_NORMAL) {
+                        m_Mode = KB_SHIFT;
+                    } else {
+                        m_Mode = KB_NORMAL;
+                    }
+                    show_shift_key();
+                }
+                else
+                {
+                    if(c!=0x0)
+                    {
+                        switch (c)
+                        {
+                            case 'A': c64_key = MATRIX(1,2); break;
+                            case 'B': c64_key = MATRIX(3,4); break;
+                            case 'C': c64_key = MATRIX(2,4); break;
+                            case 'D': c64_key = MATRIX(2,2); break;
+                            case 'E': c64_key = MATRIX(1,6); break;
+                            case 'F': c64_key = MATRIX(2,5); break;
+                            case 'G': c64_key = MATRIX(3,2); break;
+                            case 'H': c64_key = MATRIX(3,5); break;
+                            case 'I': c64_key = MATRIX(4,1); break;
+                            case 'J': c64_key = MATRIX(4,2); break;
+                            case 'K': c64_key = MATRIX(4,5); break;
+                            case 'L': c64_key = MATRIX(5,2); break;
+                            case 'M': c64_key = MATRIX(4,4); break;
+                            case 'N': c64_key = MATRIX(4,7); break;
+                            case 'O': c64_key = MATRIX(4,6); break;
+                            case 'P': c64_key = MATRIX(5,1); break;
+                            case 'Q': c64_key = MATRIX(7,6); break;
+                            case 'R': c64_key = MATRIX(2,1); break;
+                            case 'S': c64_key = MATRIX(1,5); break;
+                            case 'T': c64_key = MATRIX(2,6); break;
+                            case 'U': c64_key = MATRIX(3,6); break;
+                            case 'V': c64_key = MATRIX(3,7); break;
+                            case 'W': c64_key = MATRIX(1,1); break;
+                            case 'X': c64_key = MATRIX(2,7); break;
+                            case 'Y': c64_key = MATRIX(3,1); break;
+                            case 'Z': c64_key = MATRIX(1,4); break;
+
+                            case ' ': c64_key = MATRIX(7,4); break;
+
+                            case '0': c64_key = MATRIX(4,3); break;
+                            case '1': c64_key = MATRIX(7,0); break;
+                            case '2': c64_key = MATRIX(7,3); break;
+                            case '3': c64_key = MATRIX(1,0); break;
+                            case '4': c64_key = MATRIX(1,3); break;
+                            case '5': c64_key = MATRIX(2,0); break;
+                            case '6': c64_key = MATRIX(2,3); break;
+                            case '7': c64_key = MATRIX(3,0); break;
+                            case '8': c64_key = MATRIX(3,3); break;
+                            case '9': c64_key = MATRIX(4,0); break;
+                            case '*': c64_key = MATRIX(6,1); break;
+                            case ':': c64_key = MATRIX(5,5); break;
+                            case ';': c64_key = MATRIX(6,2); break;
+                            case '=': c64_key = MATRIX(6,5); break;
+                            case '/': c64_key = MATRIX(6,7); break;
+
+                            case ATT: c64_key = MATRIX(5,6); break;
+
+                            case ',': c64_key = MATRIX(5,7); break;
+                            case '.': c64_key = MATRIX(5,4); break;
+                            case '+': c64_key = MATRIX(5,0); break;
+                            case '-': c64_key = MATRIX(5,3); break;
+
+                            case RST: c64_key = MATRIX(7,7); break;
+                            case CLR: c64_key = MATRIX(6,3); break;
+                            case LFA: c64_key = MATRIX(7,1); break;
+                            case UPA: c64_key = MATRIX(6,6); break;
+                            case PND: c64_key = MATRIX(6,0); break;
+
+                            case CUP: c64_key = MATRIX(0,7); break;
+                            case CDL: c64_key = MATRIX(0,2); break;
+
+                            case F_1: c64_key = MATRIX(0,4); break;
+                            case F_3: c64_key = MATRIX(0,5); break;
+                            case F_5: c64_key = MATRIX(0,6); break;
+                            case F_7: c64_key = MATRIX(0,3); break;
+
+
+                            default :  c64_key = -1; break;
+
+                        }
+                        if (c64_key < 0)
+                            return;
+                        if(m_Mode==KB_NORMAL)
+                        {
+                            c64_key= c64_key| 0x80;
+                        }
+                        KeyPress(c64_key, key_matrix, rev_matrix);
+                        lastc64key=c64_key;
+                    }
+                }
+            }
+        }
+
+}
+
+
+/*
+ *  Check if NumLock is down (for switching the joystick keyboard emulation)
+ */
+
+bool C64Display::NumLock(void)
+{
+    return false;
+}
+
+
+/*
+ *  Allocate C64 colors
+ */
+
+
+typedef struct {
+    int r;
+    int g;
+    int b;
+} plt;
+
+static plt palette[256];
+
+void C64Display::InitColors(uint8 *colors)
+{
+    int i;
+
+    for (i = 0; i < 16; i++)
+    {
+        palette[i].r = palette_red[i]>>3;
+        palette[i].g = palette_green[i]>>3;
+        palette[i].b = palette_blue[i]>>3;
+        BG_PALETTE[i]=RGB15(palette_red[i]>>3,palette_green[i]>>3,palette_blue[i]>>3);
+    }
+
+    // frodo internal 8 bit palette
+    for(i=0; i<256; i++) {
+        colors[i] = i & 0x0f;
+    }
+}
+
+
+/*
+ *  Show a requester (error message)
+ */
+
+char tmp[256];
+long int ShowRequester(const char *a, const char *b, const char *)
+{
+    sprintf(tmp, "%s: %s\n", a, b);
+    DSPrint(0, 0, 6, tmp);
+    return 1;
+}
+
+
+
