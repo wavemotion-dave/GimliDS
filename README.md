@@ -21,10 +21,10 @@ The GimliDS emulator is offered as-is, without any warranty. Please see readme.m
 You must have original Commodore BIOS files to run this emulator. Place them in /roms/bios or /roms/c64
 and be sure they are named exactly as follows:
 ```
-  * KERNAL.ROM   8K  with CRC32=dbe3e7c7
-  * BASIC.ROM    8K  with CRC32=f833d117
-  * CHAR.ROM     4K  with CRC32=ec4272ee
-  * 1541.ROM    16K  with CRC32=899fa3c5
+  * KERNAL.ROM   8K  with CRC32=dbe3e7c7 (901227-03)
+  * BASIC.ROM    8K  with CRC32=f833d117 (901226-01)
+  * CHAR.ROM     4K  with CRC32=ec4272ee (901225-01)
+  * 1541.ROM    16K  with CRC32=899fa3c5 (251968-03)
 ```
 
 ## Controls
