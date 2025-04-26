@@ -787,7 +787,7 @@ void C64::Run(void)
     current_joystick = 0;
 
     quit_thyself = false;
-    thread_func();
+    main_loop();
 }
 
 char kbd_feedbuf[256];
@@ -1130,7 +1130,7 @@ uint8 C64::poll_joystick(int port)
  * The emulation's main loop
  */
 
-void C64::thread_func(void)
+void C64::main_loop(void)
 {
     int linecnt = 0;
 

@@ -59,7 +59,6 @@ public:
     void KeyPress(int key, uint8 *key_matrix, uint8 *rev_matrix);
     void KeyRelease(int key, uint8 *key_matrix, uint8 *rev_matrix);
     void PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joystick);
-    bool NumLock(void);
     void InitColors(uint8 *colors);
     void NewPrefs(Prefs *prefs);
     C64 *TheC64;

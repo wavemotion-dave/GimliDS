@@ -93,13 +93,12 @@ private:
     void c64_ctor2(void);
     void c64_dtor(void);
     uint8 poll_joystick(int port);
-    void thread_func(void);
+    void main_loop(void);
 
     bool thread_running;    // Emulation thread is running
     bool quit_thyself;      // Emulation thread shall quit
     bool have_a_break;      // Emulation thread shall pause
 
-    int joy_minx[2], joy_maxx[2], joy_miny[2], joy_maxy[2]; // For dynamic joystick calibration
     uint8 joykey;           // Joystick keyboard emulation mask value
 
     uint8 orig_kernal_1d84, // Original contents of kernal locations $1d84 and $1d85

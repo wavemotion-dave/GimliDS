@@ -125,8 +125,6 @@ void C64Display::UpdateLEDs(int l0, int l1)
 #include "soundbank.h"
 #include <maxmod9.h>
 
-#define MOVE_MAX 16
-
 #define ABS(a) (((a) < 0) ? -(a) : (a))
 #define ROUND(f) ((u32) ((f) < 0.0 ? (f) - 0.5 : (f) + 0.5))
 
@@ -323,6 +321,14 @@ int init_graphics(void)
     //D is not used..if you need a bigger background then you will need to map
     //more vram banks consecutivly (VRAM A-D are all 0x20000 bytes in size)
     vramSetPrimaryBanks(VRAM_A_MAIN_BG_0x06000000, VRAM_B_MAIN_BG_0x06020000, VRAM_C_SUB_BG , VRAM_D_LCD);
+    
+    vramSetBankD(VRAM_D_LCD);        // Not using this for video but 128K of faster RAM always useful!  Mapped at 0x06860000 -   256K Used for tape patch look-up
+    vramSetBankE(VRAM_E_LCD);        // Not using this for video but 64K of faster RAM always useful!   Mapped at 0x06880000 -   ..
+    vramSetBankF(VRAM_F_LCD);        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06890000 -   ..
+    vramSetBankG(VRAM_G_LCD);        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06894000 -   ..
+    vramSetBankH(VRAM_H_LCD);        // Not using this for video but 32K of faster RAM always useful!   Mapped at 0x06898000 -   ..
+    vramSetBankI(VRAM_I_LCD);        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x068A0000 -   Unused - reserved for future use
+    
 
     videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE); //sub bg 0 will be used to print text
     REG_BG0CNT_SUB = BG_MAP_BASE(31);
@@ -470,8 +476,6 @@ uint8 *C64Display::BitmapBase(void)
 {
     return (uint8 *)bufmem;
 }
-
-
 
 
 
@@ -689,8 +693,6 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
 
                 if(c==RET) // Return
                 {
-                    //consolePrintChar('\n');
-                    //strcpy(text, "");
                     c64_key = MATRIX(0,1);
                     KeyPress(c64_key, key_matrix, rev_matrix);
                     lastc64key=c64_key;
@@ -812,20 +814,9 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
 
 
 /*
- *  Check if NumLock is down (for switching the joystick keyboard emulation)
- */
-
-bool C64Display::NumLock(void)
-{
-    return false;
-}
-
-
-/*
  *  Allocate C64 colors
  */
-
-
+ 
 typedef struct {
     int r;
     int g;

@@ -41,10 +41,6 @@
 #include <stdlib.h>
 
 
-// Define this if you want an emulation of an 8580
-// (affects combined waveforms)
-#undef EMUL_MOS8580
-
 #define SID_CYCLES_PER_LINE 63
 
 extern uint8 regs[32];
@@ -77,9 +73,9 @@ private:
 
     C64 *the_c64;               // Pointer to C64 object
     SIDRenderer *the_renderer;  // Pointer to current renderer
-    uint32_t fake_v3_count;		// Fake voice 3 phase accumulator for oscillator read-back
-    int32_t fake_v3_eg_level;	// Fake voice 3 EG level (8.16 fixed) for EG read-back
-    int16   fake_v3_eg_state;	// Fake voice 3 EG state
+    uint32_t fake_v3_count;     // Fake voice 3 phase accumulator for oscillator read-back
+    int32_t fake_v3_eg_level;   // Fake voice 3 EG level (8.16 fixed) for EG read-back
+    int16   fake_v3_eg_state;   // Fake voice 3 EG state
 
     uint8_t read_osc3() const;
     uint8_t read_env3() const;
@@ -87,9 +83,9 @@ private:
 
 // EG states
  enum {
- 	EG_ATTACK,
- 	EG_DECAY_SUSTAIN,
- 	EG_RELEASE
+    EG_ATTACK,
+    EG_DECAY_SUSTAIN,
+    EG_RELEASE
  };
 
 
@@ -155,50 +151,49 @@ struct MOS6581State {
 
 inline void MOS6581::EmulateLine(void)
 {
-	// Simulate voice 3 phase accumulator
- 	uint8_t v3_ctrl = regs[0x12];	// Voice 3 control register
- 	if (v3_ctrl & 0x08)  			// Test bit
+    // Simulate voice 3 phase accumulator
+    if (regs[0x12] & 0x08)  // Voice 3 control register
     {
- 		fake_v3_count = 0;
- 	} 
+        fake_v3_count = 0;
+    } 
     else 
     {
- 		uint32_t add = (regs[0x0f] << 8) | regs[0x0e];
- 		fake_v3_count = (fake_v3_count + add * 63) & 0xffffff;
- 	}
+        uint32_t add = (regs[0x0f] << 8) | regs[0x0e];
+        fake_v3_count = (fake_v3_count + add * 63) & 0xffffff;
+    }
 
     // Simulate voice 3 envelope generator
- 	switch (fake_v3_eg_state) 
+    switch (fake_v3_eg_state) 
     {
- 		case EG_ATTACK:
- 			fake_v3_eg_level +=  (SID_CYCLES_PER_LINE << 16) / EGDivTable[regs[0x13] >> 4];
- 			if (fake_v3_eg_level > 0xffffff)
+        case EG_ATTACK:
+            fake_v3_eg_level +=  (SID_CYCLES_PER_LINE << 16) / EGDivTable[regs[0x13] >> 4];
+            if (fake_v3_eg_level > 0xffffff)
             {
- 				fake_v3_eg_level = 0xffffff;
- 				fake_v3_eg_state = EG_DECAY_SUSTAIN;
- 			}
- 			break;
- 		case EG_DECAY_SUSTAIN: 
+                fake_v3_eg_level = 0xffffff;
+                fake_v3_eg_state = EG_DECAY_SUSTAIN;
+            }
+            break;
+        case EG_DECAY_SUSTAIN: 
         {
- 			int32_t s_level = (regs[0x14] >> 4) * 0x111111;
- 			fake_v3_eg_level -= ((SID_CYCLES_PER_LINE << 16) / EGDivTable[regs[0x13] & 0x0f]) >> EGDRShift[fake_v3_eg_level >> 16];
- 			if (fake_v3_eg_level < s_level) 
+            int32_t s_level = (regs[0x14] >> 4) * 0x111111;
+            fake_v3_eg_level -= ((SID_CYCLES_PER_LINE << 16) / EGDivTable[regs[0x13] & 0x0f]) >> EGDRShift[fake_v3_eg_level >> 16];
+            if (fake_v3_eg_level < s_level) 
             {
- 				fake_v3_eg_level = s_level;
- 			}
- 			break;
- 		}
- 		case EG_RELEASE:
- 			if (fake_v3_eg_level != 0) 
+                fake_v3_eg_level = s_level;
+            }
+            break;
+        }
+        case EG_RELEASE:
+            if (fake_v3_eg_level != 0) 
             {
- 				fake_v3_eg_level -= ((SID_CYCLES_PER_LINE << 16) / EGDivTable[regs[0x14] & 0x0f]) >> EGDRShift[fake_v3_eg_level >> 16];
- 				if (fake_v3_eg_level < 0) 
+                fake_v3_eg_level -= ((SID_CYCLES_PER_LINE << 16) / EGDivTable[regs[0x14] & 0x0f]) >> EGDRShift[fake_v3_eg_level >> 16];
+                if (fake_v3_eg_level < 0) 
                 {
- 					fake_v3_eg_level = 0;
- 				}
- 			}
- 			break;
- 	}
+                    fake_v3_eg_level = 0;
+                }
+            }
+            break;
+    }
     
     if (the_renderer != NULL)
     {
@@ -242,17 +237,17 @@ inline uint8 MOS6581::ReadRegister(uint16 adr)
 
 inline void MOS6581::WriteRegister(uint16 adr, uint8 byte)
 {
-	// Handle fake voice 3 EG state
- 	if (adr == 0x12) {	// Voice 3 control register
- 		uint8_t gate = byte & 0x01;
- 		if ((regs[0x12] & 0x01) != gate) {
- 			if (gate) {		// Gate turned on
- 				fake_v3_eg_state = EG_ATTACK;
- 			} else {		// Gate turned off
- 				fake_v3_eg_state = EG_RELEASE;
- 			}
- 		}
- 	}    
+    // Handle fake voice 3 EG state
+    if (adr == 0x12) {  // Voice 3 control register
+        uint8_t gate = byte & 0x01;
+        if ((regs[0x12] & 0x01) != gate) {
+            if (gate) {     // Gate turned on
+                fake_v3_eg_state = EG_ATTACK;
+            } else {        // Gate turned off
+                fake_v3_eg_state = EG_RELEASE;
+            }
+        }
+    }    
     
     // Keep a local copy of the register values
     last_sid_byte = regs[adr] = byte;
