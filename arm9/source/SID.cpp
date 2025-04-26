@@ -75,9 +75,7 @@ uint32_t sid_random_seed      __attribute__((section(".dtcm")));  // Random seed
  */
 
 #define CALC_RESONANCE_LP(f) (227.755 - 1.7635 * f - 0.0176385 * f * f + 0.00333484 * f * f * f)
-
 #define CALC_RESONANCE_HP(f) (366.374 - 14.0052 * f + 0.603212 * f * f - 0.000880196 * f * f * f)
-
 
 /*
  *  Random number generator for noise waveform
@@ -362,6 +360,7 @@ private:
 
     uint8 f_type;                   // Filter type
     uint8 f_freq;                   // SID filter frequency (upper 8 bits)
+    uint8 f_freq_low;               // SID filter frequency (lower 4 bits)
     uint8 f_res;                    // Filter resonance (0..15)
 #ifdef USE_FIXPOINT_MATHS
     FixPoint f_ampl;
@@ -369,16 +368,16 @@ private:
     int32 xn1, xn2, yn1, yn2;       // can become very large
     FixPoint sidquot;
 #ifdef PRECOMPUTE_RESONANCE
-    FixPoint resonanceLP[256];
-    FixPoint resonanceHP[256];
+    FixPoint resonanceLP[257];
+    FixPoint resonanceHP[257];
 #endif
 #else
     float f_ampl;                   // IIR filter input attenuation
     float d1, d2, g1, g2;           // IIR filter coefficients
     float xn1, xn2, yn1, yn2;       // IIR filter previous input/output signal
 #ifdef PRECOMPUTE_RESONANCE
-    float resonanceLP[256];         // shortcut for calc_filter
-    float resonanceHP[256];
+    float resonanceLP[257];         // shortcut for calc_filter
+    float resonanceHP[257];
 #endif
 #endif
     int16 *sound_buffer;
@@ -733,7 +732,7 @@ DigitalRenderer::DigitalRenderer()
 #ifdef PRECOMPUTE_RESONANCE
 #ifdef USE_FIXPOINT_MATHS
     // slow floating point doesn't matter much on startup!
-    for (int i=0; i<256; i++) {
+    for (int i=0; i<257; i++) {
       resonanceLP[i] = FixNo(CALC_RESONANCE_LP(i));
       resonanceHP[i] = FixNo(CALC_RESONANCE_HP(i));
     }
@@ -742,7 +741,7 @@ DigitalRenderer::DigitalRenderer()
     // compute lookup table for sin and cos
     InitFixSinTab();
 #else
-    for (int i=0; i<256; i++) {
+    for (int i=0; i<257; i++) {
       resonanceLP[i] = CALC_RESONANCE_LP(i);
       resonanceHP[i] = CALC_RESONANCE_HP(i);
     }
@@ -778,6 +777,7 @@ void DigitalRenderer::Reset(void)
 
     f_type = FILT_NONE;
     f_freq = f_res = 0;
+    f_freq_low = 0;
 #ifdef USE_FIXPOINT_MATHS
     f_ampl = FixNo(1);
     d1 = d2 = g1 = g2 = 0;
@@ -873,11 +873,14 @@ void DigitalRenderer::WriteRegister(uint16 adr, uint8 byte)
             voice[v].r_sub = EGTable[byte & 0xf];
             break;
 
-        case 22:
-            if (byte != f_freq) {
-                f_freq = byte;
-                calc_filter();
-            }
+        case 21: // Filter Frequency - lower 3 bits
+            f_freq_low = ((byte & 0x7) > 3) ? 1:0;
+            calc_filter();
+            break;
+            
+        case 22: // Filter Frequency - upper 8 bits
+            f_freq = byte;
+            calc_filter();
             break;
 
         case 23:
@@ -954,13 +957,13 @@ void DigitalRenderer::calc_filter(void)
     // Calculate resonance frequency
     if (f_type == FILT_LP || f_type == FILT_LPBP)
 #ifdef PRECOMPUTE_RESONANCE
-        fr = resonanceLP[f_freq];
+        fr = resonanceLP[f_freq + f_freq_low];
 #else
         fr = CALC_RESONANCE_LP(f_freq);
 #endif
     else
 #ifdef PRECOMPUTE_RESONANCE
-        fr = resonanceHP[f_freq];
+        fr = resonanceHP[f_freq+f_freq_low];
 #else
         fr = CALC_RESONANCE_HP(f_freq);
 #endif

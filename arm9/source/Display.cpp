@@ -447,7 +447,7 @@ int i = 0;
 int debug[8]={0,0,0,0,0,0,0,0};
 void C64Display::Speedometer(int speed)
 {
-#if 1
+#if 0
     char tmp[34];
 
     sprintf(tmp, "%-8d", speed);
