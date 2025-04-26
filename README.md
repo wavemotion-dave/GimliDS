@@ -20,7 +20,7 @@ The GimliDS emulator is offered as-is, without any warranty. Please see readme.m
 
   * Left Trigger - Load Frodo Memory Snapshot or mount .D64 c64 disk image
   * Right Trigger - automatically type `LOAD"*",8,1` and then `RUN`.
-  * START - reset
+  * START - Issue the infamous *LOAD "*",8,1*
   * SELECT - switch between port1 and port2 that the joystick is in
   * B - space key
   * A - fire
@@ -31,8 +31,8 @@ The GimliDS emulator is offered as-is, without any warranty. Please see readme.m
   * The opening jingle was done by DeNL and comes courtesy of the roalty free jingles at pixabay
   * The dwarf icon on the title screen was submitted online by 'anonymous' to an artwork site.  If this is yours and you would like to be credited, please contact me.
   * Christian Bauer - Original Frodo author - without whom none of this exists
-  * Troy Davis(GPF) http://gpf.dcemu.co.uk - FrodoDS initial porter
-  * maintainers of devkitpro and libnds
+  * Troy Davis(GPF) http://gpf.dcemu.co.uk - FrodoDS initial porter and others who have contributed over the years
+  * Wintermute and the contributes for devkitpro and libnds
 
 
 
