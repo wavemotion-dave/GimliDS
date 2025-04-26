@@ -38,7 +38,28 @@ and be sure they are named exactly as follows:
   * B is normally SPACE but can be remapped in Configuration
   * Y is normally mapped to RETURN but can be remapped in Configuration
   * X is normally mapped to Joy Up to help with games in which you jump but can be remapped
-  
+
+## Emulator Use
+
+To use GimliDS you launch GimliDS.NDS on your DS/DSi/XL/LL. Please note that if you are running from an R4 card (or similar), you 
+will be running in 'Compatibility' mode that keeps the CPU at the slower 67MHz. While GimliDS will run, it must use some heavy 
+frameskip to get anywhere near full speed. If you're running from the SD card on a DSi/XL/LL with something like Twilight Menu++
+or Unlaunch - you will be happy to know that you are running at 134MHz and there will be no frameskip and the audio will be 
+much improved.
+
+When you first launch the emulator (provided you have the BIOS files in the right place), you will be greeted by the CBM BASIC 
+and the famous READY prompt:
+
+![image](./pngs/startup.png)
+
+From here, use the DISK ICON to load up a new game from a .d64 file. Once mounted, get back to the main emulation (exit the menu)
+and press the START button to automatically type in the disk load command:  LOAD "*",8,1 and RUN the game.
+
+The *C=* key (lower right) will let you set the configuration for the game, save/load game states, etc.
+
+And be sure to understand the SELECT key on the DS... that swaps Joystick Ports and you will be using that a LOT as every game seems to
+use a different port... and sometimes the game loaders/crackers use one port when the game uses the other port. You'll get used to it.
+
 ## Acknowledgements
 
   * The opening jingle was done by DeNL and comes courtesy of the roalty free jingles at pixabay
@@ -47,9 +68,4 @@ and be sure they are named exactly as follows:
   * Troy Davis(GPF) http://gpf.dcemu.co.uk - FrodoDS initial porter and others who have contributed over the years
   * Wintermute and the contributes for devkitpro and libnds
 
-
-
-
-![image](./pngs/startup.png)
-
-Coming soon!
+More to come...
