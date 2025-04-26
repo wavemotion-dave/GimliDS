@@ -496,7 +496,7 @@ DiskMenu_t disk_menu =
         {(char *)"  EJECT   DISKS     ",      MENU_ACTION_EJECT},
         {(char *)"  TOGGLE  TRUEDRIVE ",      MENU_ACTION_TRUE_DRIVE},
         {(char *)"  CONFIG  GAME      ",      MENU_ACTION_CONFIG},
-        {(char *)"  REBOOT  C64U      ",      MENU_ACTION_REBOOT_C64},
+        {(char *)"  REBOOT  C64       ",      MENU_ACTION_REBOOT_C64},
         {(char *)"  EXIT    MENU      ",      MENU_ACTION_EXIT},
         {(char *)"  NULL              ",      MENU_ACTION_END},
     },

@@ -841,7 +841,6 @@ void load_prg(C64 *TheC64, uint8 *prg, int prg_size) {
 
 ITCM_CODE void C64::VBlank(bool draw_frame)
 {
-    static int speed_index=0;
     static int frames=0;
 
     scanKeys();
@@ -861,24 +860,23 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
         {
             if (ThePrefs.TrueDrive && TheDisplay->led_state[0]) break; // If reading the drive in 'true drive' mode, just plow along...
             asm("nop");
-            break;
+            break;  // Uncomment this for full speed...
         }
 
         frames_per_sec++;
 
-        if (GetTicks() >= ((TICKS_PER_SEC/50) * 50))
+        extern u16 vBlanks;
+        if (vBlanks >= 60)
         {
-            if (!speed_index) speed_index = frames_per_sec;
+            vBlanks = 0;
+            TheDisplay->Speedometer((int)frames_per_sec);
+            frames_per_sec = 0;
         }
 
         if (frames == 50)
         {
             frames = 0;
-            speed_index = TICKS_PER_SEC - GetTicks(); // How much left-over time? Positive is good... Negative bad.
             StartTimers();
-            TheDisplay->Speedometer((int)speed_index);
-            speed_index=0;
-            frames_per_sec = 0;
         }
     }
 }

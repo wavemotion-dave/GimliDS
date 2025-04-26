@@ -3,12 +3,12 @@
 //
 // As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 // any copying or distribution of this emulator, its source code and associated
-// readme files, with or without modification, are permitted per the original 
+// readme files, with or without modification, are permitted per the original
 // Frodo emulator license shown below.  Hugest thanks to Christian Bauer for his
 // efforts to provide a clean open-source emulation base for the C64.
 //
-// Numerous hacks and 'unsafe' optimizations have been performed on the original 
-// Frodo emulator codebase to get it running on the small handheld system. You 
+// Numerous hacks and 'unsafe' optimizations have been performed on the original
+// Frodo emulator codebase to get it running on the small handheld system. You
 // are strongly encouraged to seek out the official Frodo sources if you're at
 // all interested in this emulator code.
 //
@@ -65,33 +65,27 @@
 #endif
 
 
+uint8 regs[32]                __attribute__((section(".dtcm")));  // Copies of the 32 write-only SID registers
+uint8 last_sid_byte           __attribute__((section(".dtcm")));  // Last value written to SID
+uint32_t sid_random_seed      __attribute__((section(".dtcm")));  // Random seed - global so it's deterministic
+
 
 /*
  *  Resonance frequency polynomials
  */
 
-#define CALC_RESONANCE_LP(f) (227.755\
-                - 1.7635 * f\
-                - 0.0176385 * f * f\
-                + 0.00333484 * f * f * f\
-                - 9.05683E-6 * f * f * f * f)
+#define CALC_RESONANCE_LP(f) (227.755 - 1.7635 * f - 0.0176385 * f * f + 0.00333484 * f * f * f)
 
-#define CALC_RESONANCE_HP(f) (366.374\
-                - 14.0052 * f\
-                + 0.603212 * f * f\
-                - 0.000880196 * f * f * f)
+#define CALC_RESONANCE_HP(f) (366.374 - 14.0052 * f + 0.603212 * f * f - 0.000880196 * f * f * f)
 
 
 /*
  *  Random number generator for noise waveform
  */
-
-static uint8 sid_random(void);
 static uint8 sid_random(void)
 {
-    static uint32 seed = 1;
-    seed = seed * 1103515245 + 12345;
-    return seed >> 16;
+    sid_random_seed = sid_random_seed * 1103515245 + 12345;
+    return sid_random_seed >> 16;
 }
 
 
@@ -130,6 +124,8 @@ void MOS6581::Reset(void)
     for (int i=0; i<32; i++)
         regs[i] = 0;
     last_sid_byte = 0;
+    fake_v3_count = 0x555555;
+    sid_random_seed = 1;
 
     // Reset the renderer
     if (the_renderer != NULL)
@@ -210,6 +206,11 @@ void MOS6581::GetState(MOS6581State *ss)
     ss->pot_y = 0xff;
     ss->osc_3 = 0;
     ss->env_3 = 0;
+
+    ss->v3_count    = fake_v3_count;
+    ss->v3_eg_level = fake_v3_eg_level;
+    ss->v3_eg_state = fake_v3_eg_state;
+    ss->sid_seed    = sid_random_seed;
 }
 
 
@@ -248,6 +249,11 @@ void MOS6581::SetState(MOS6581State *ss)
     regs[23] = ss->res_filt;
     regs[24] = ss->mode_vol;
 
+    fake_v3_count = ss->v3_count;
+    fake_v3_eg_level = ss->v3_eg_level;
+    fake_v3_eg_state = ss->v3_eg_state;
+    sid_random_seed = ss->sid_seed;
+
     // Stuff the new register values into the renderer
     if (the_renderer != NULL)
         for (int i=0; i<25; i++)
@@ -261,7 +267,6 @@ void MOS6581::SetState(MOS6581State *ss)
 
 const uint32 SAMPLE_FREQ    = 22050;        // NDS Sample Rate - reasonable quality and speed
 const uint32 SID_FREQ       = 985248;       // SID frequency in Hz
-const uint32 CALC_FREQ      = 50;           // Frequency at which calc_buffer is called in Hz (should be 50Hz)
 const uint32 SID_CYCLES_FIX = ((SID_FREQ << 11)/SAMPLE_FREQ)<<5;    // # of SID clocks per sample frame * 65536
 const uint32 SID_CYCLES = SID_CYCLES_FIX << 16; // # of SID clocks per sample frame
 const int SAMPLE_BUF_SIZE = 0x138*2;// Size of buffer for sampled voice (double buffered)
@@ -282,13 +287,6 @@ enum {
     WAVE_NOISE
 };
 
-// EG states
-enum {
-    EG_IDLE,
-    EG_ATTACK,
-    EG_DECAY,
-    EG_RELEASE
-};
 
 // Filter types
 enum {
@@ -306,20 +304,20 @@ enum {
 struct DRVoice {
     int wave;       // Selected waveform
     int eg_state;   // Current state of EG
-    DRVoice *mod_by;    // Voice that modulates this one
-    DRVoice *mod_to;    // Voice that is modulated by this one
+    DRVoice *mod_by; // Voice that modulates this one
+    DRVoice *mod_to; // Voice that is modulated by this one
 
     uint32 count;   // Counter for waveform generator, 8.16 fixed
     uint32 add;     // Added to counter in every frame
 
-    uint16 freq;        // SID frequency value
+    uint16 freq;    // SID frequency value
     uint16 pw;      // SID pulse-width value
 
-    uint32 a_add;   // EG parameters
-    uint32 d_sub;
-    uint32 s_level;
-    uint32 r_sub;
-    uint32 eg_level;    // Current EG level, 8.16 fixed
+    int32 a_add;    // EG parameters
+    int32 d_sub;
+    int32 s_level;
+    int32 r_sub;
+    int32 eg_level;    // Current EG level, 8.16 fixed
 
     uint32 noise;   // Last noise generator output value
 
@@ -333,6 +331,8 @@ struct DRVoice {
     bool sync;      // Sync modulation bit
     bool mute;      // Voice muted (voice 3 only)
 };
+
+DRVoice voice[3] __attribute__((section(".dtcm"))); // Data for 3 voices
 
 // Renderer class
 class DigitalRenderer : public SIDRenderer {
@@ -354,16 +354,11 @@ private:
     void calc_filter(void);
     uint8 volume;                   // Master volume
 
-    static uint16 TriTable[0x1000*2];   // Tables for certain waveforms
     static const uint16 TriSawTable[0x100];
     static const uint16 TriRectTable[0x100];
     static const uint16 SawRectTable[0x100];
     static const uint16 TriSawRectTable[0x100];
-    static const uint32 EGTable[16];    // Increment/decrement values for all A/D/R settings
-    static const uint8 EGDRShift[256]; // For exponential approximation of D/R
-    static const int16 SampleTab[16]; // Table for sampled voice
-
-    DRVoice voice[3];               // Data for 3 voices
+    static const int32_t EGTable[16];   // Increment/decrement values for all A/D/R settings
 
     uint8 f_type;                   // Filter type
     uint8 f_freq;                   // SID filter frequency (upper 8 bits)
@@ -389,8 +384,6 @@ private:
     int16 *sound_buffer;
 };
 
-// Static data members
-uint16 DigitalRenderer::TriTable[0x1000*2];
 
 #ifndef EMUL_MOS8580
 // Sampled from a 6581R4
@@ -676,7 +669,18 @@ const uint16 DigitalRenderer::TriSawRectTable[0x100] = {
 };
 #endif
 
-const uint32 DigitalRenderer::EGTable[16] = {
+int16_t EGDivTable[16] __attribute__((section(".dtcm"))) = {
+    9, 32,
+    63, 95,
+    149, 220,
+    267, 313,
+    392, 977,
+    1954, 3126,
+    3906, 11720,
+    19531, 31251
+};
+
+ const int32_t DigitalRenderer::EGTable[16] = {
     SID_CYCLES_FIX / 9, SID_CYCLES_FIX / 32,
     SID_CYCLES_FIX / 63, SID_CYCLES_FIX / 95,
     SID_CYCLES_FIX / 149, SID_CYCLES_FIX / 220,
@@ -687,7 +691,7 @@ const uint32 DigitalRenderer::EGTable[16] = {
     SID_CYCLES_FIX / 19531, SID_CYCLES_FIX / 31251
 };
 
-const uint8 DigitalRenderer::EGDRShift[256] = {
+uint8_t EGDRShift[256] __attribute__((section(".dtcm"))) = {
     5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,
     3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,
     2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
@@ -706,7 +710,7 @@ const uint8 DigitalRenderer::EGDRShift[256] = {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-const int16 DigitalRenderer::SampleTab[16] = {
+int16 SampleTab[16] __attribute__((section(".dtcm"))) = {
     0x8000, 0x9111, 0xa222, 0xb333, 0xc444, 0xd555, 0xe666, 0xf777,
     0x0888, 0x1999, 0x2aaa, 0x3bbb, 0x4ccc, 0x5ddd, 0x6eee, 0x7fff,
 };
@@ -725,12 +729,6 @@ DigitalRenderer::DigitalRenderer()
     voice[0].mod_to = &voice[1];
     voice[1].mod_to = &voice[2];
     voice[2].mod_to = &voice[0];
-
-    // Calculate triangle table
-    for (int i=0; i<0x1000; i++) {
-        TriTable[i] = (i << 4) | (i >> 8);
-        TriTable[0x1fff-i] = (i << 4) | (i >> 8);
-    }
 
 #ifdef PRECOMPUTE_RESONANCE
 #ifdef USE_FIXPOINT_MATHS
@@ -768,7 +766,7 @@ void DigitalRenderer::Reset(void)
 
     for (int v=0; v<3; v++) {
         voice[v].wave = WAVE_NONE;
-        voice[v].eg_state = EG_IDLE;
+        voice[v].eg_state = EG_RELEASE;
         voice[v].count = 0x555555;
         voice[v].add = 0;
         voice[v].freq = voice[v].pw = 0;
@@ -851,8 +849,7 @@ void DigitalRenderer::WriteRegister(uint16 adr, uint8 byte)
                     voice[v].eg_state = EG_ATTACK;
                 else            // Gate turned off
                 {
-                    if (voice[v].eg_state != EG_IDLE)
-                        voice[v].eg_state = EG_RELEASE;
+                    voice[v].eg_state = EG_RELEASE;
                 }
             }
             voice[v].gate = byte & 1;
@@ -879,8 +876,7 @@ void DigitalRenderer::WriteRegister(uint16 adr, uint8 byte)
         case 22:
             if (byte != f_freq) {
                 f_freq = byte;
-                if (ThePrefs.SIDFilters)
-                    calc_filter();
+                calc_filter();
             }
             break;
 
@@ -890,8 +886,7 @@ void DigitalRenderer::WriteRegister(uint16 adr, uint8 byte)
             voice[2].filter = byte & 4;
             if ((byte >> 4) != f_res) {
                 f_res = byte >> 4;
-                if (ThePrefs.SIDFilters)
-                    calc_filter();
+                calc_filter();
             }
             break;
 
@@ -905,8 +900,7 @@ void DigitalRenderer::WriteRegister(uint16 adr, uint8 byte)
 #else
                 xn1 = xn2 = yn1 = yn2 = 0.0;
 #endif
-                if (ThePrefs.SIDFilters)
-                    calc_filter();
+                calc_filter();
             }
             break;
     }
@@ -1090,7 +1084,6 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
 
     while (count--)
     {
-
         // Get current master volume from sample buffer,
         // calculate sampled voice
         uint8 master_volume = sample_buf[(sample_count >> 16) % SAMPLE_BUF_SIZE];
@@ -1111,30 +1104,23 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
                     v->eg_level += v->a_add;
                     if (v->eg_level > 0xffffff) {
                         v->eg_level = 0xffffff;
-                        v->eg_state = EG_DECAY;
+                        v->eg_state = EG_DECAY_SUSTAIN;
                     }
                     break;
-                case EG_DECAY:
-                    if (v->eg_level <= v->s_level || v->eg_level > 0xffffff)
+                case EG_DECAY_SUSTAIN:
+                    v->eg_level -= v->d_sub >> EGDRShift[v->eg_level >> 16];
+                    if (v->eg_level < v->s_level) {
                         v->eg_level = v->s_level;
-                    else {
-                        v->eg_level -= v->d_sub >> EGDRShift[v->eg_level >> 16];
-                        if (v->eg_level <= v->s_level || v->eg_level > 0xffffff)
-                            v->eg_level = v->s_level;
                     }
                     break;
                 case EG_RELEASE:
                     v->eg_level -= v->r_sub >> EGDRShift[v->eg_level >> 16];
-                    if (v->eg_level > 0xffffff) {
+                    if (v->eg_level < 0) {
                         v->eg_level = 0;
-                        v->eg_state = EG_IDLE;
                     }
                     break;
-                case EG_IDLE:
-                    v->eg_level = 0;
-                    break;
             }
-            envelope = (v->eg_level * master_volume) >> 20;
+            envelope = ((v->eg_level >> 16) * master_volume) >> 4;
 
             // Waveform generator
             if (v->mute)
@@ -1149,12 +1135,19 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
 
             v->count &= 0xffffff;
 
-            switch (v->wave) {
-                case WAVE_TRI:
-                    if (v->ring)
-                        output = TriTable[(v->count ^ (v->mod_by->count & 0x800000)) >> 11];
-                    else
-                        output = TriTable[v->count >> 11];
+            switch (v->wave) 
+            {
+                case WAVE_TRI: {
+                        uint32_t ctrl = v->count;
+                        if (v->ring) {
+                            ctrl ^= v->mod_by->count;
+                        }
+                        if (ctrl & 0x800000) {
+                            output = (v->count >> 7) ^ 0xffff;
+                        } else {
+                            output = v->count >> 7;
+                        }
+                    }
                     break;
                 case WAVE_SAW:
                     output = v->count >> 8;
@@ -1204,22 +1197,20 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
         }
 
         // Filter
-        if (ThePrefs.SIDFilters) {
 #ifdef USE_FIXPOINT_MATHS
-            int32 xn = cf_ampl.imul(sum_output_filter);
-            int32 yn = xn+cd1.imul(xn1)+cd2.imul(xn2)-cg1.imul(yn1)-cg2.imul(yn2);
-            yn2 = yn1; yn1 = yn; xn2 = xn1; xn1 = xn;
-            sum_output_filter = yn;
+        int32 xn = cf_ampl.imul(sum_output_filter);
+        int32 yn = xn+cd1.imul(xn1)+cd2.imul(xn2)-cg1.imul(yn1)-cg2.imul(yn2);
+        yn2 = yn1; yn1 = yn; xn2 = xn1; xn1 = xn;
+        sum_output_filter = yn;
 #else
-            float xn = (float)sum_output_filter * cf_ampl;
-            float yn = xn + cd1 * xn1 + cd2 * xn2 - cg1 * yn1 - cg2 * yn2;
-            yn2 = yn1; yn1 = yn; xn2 = xn1; xn1 = xn;
-            sum_output_filter = (int32)yn;
+        float xn = (float)sum_output_filter * cf_ampl;
+        float yn = xn + cd1 * xn1 + cd2 * xn2 - cg1 * yn1 - cg2 * yn2;
+        yn2 = yn1; yn1 = yn; xn2 = xn1; xn1 = xn;
+        sum_output_filter = (int32)yn;
 #endif
-        }
 
         // Write to buffer
-        *buf++ = ((sum_output + sum_output_filter) >> 10 );
+        *buf++ = ((sum_output - sum_output_filter) >> 10 );
     }
     buf--; return *buf;
 }
@@ -1247,7 +1238,8 @@ ITCM_CODE mm_word SoundMixCallback(mm_word len, mm_addr stream, mm_stream_format
            *p++ = last_sample;      // To prevent pops and clicks... just keep outputting the last sample
            *p++ = last_sample;      // To prevent pops and clicks... just keep outputting the last sample
         }
-    } else
+    }
+    else
     {
         last_sample = p->calc_buffer((int16*)stream, len*2);
     }
@@ -1298,15 +1290,12 @@ void DigitalRenderer::EmulateLine(void)
 void DigitalRenderer::Pause(void)
 {
     paused = true;
-    //mmPause();
 }
 
 void DigitalRenderer::Resume(void)
 {
-    //mmResume();
     paused = false;
 }
-
 
 
 /*
@@ -1329,3 +1318,44 @@ void MOS6581::open_close_renderer(int old_type, int new_type)
         for (int i=0; i<25; i++)
             the_renderer->WriteRegister(i, regs[i]);
 }
+
+/*
+ *  Simulate oscillator 3 read-back
+ */
+uint8_t MOS6581::read_osc3() const
+ {
+    uint8_t v3_ctrl = regs[0x12];   // Voice 3 control register
+    if (v3_ctrl & 0x10) {           // Triangle wave
+        // TODO: ring modulation from voice 2
+        if (fake_v3_count & 0x800000) {
+            return (fake_v3_count >> 15) ^ 0xff;
+        } else {
+            return fake_v3_count >> 15;
+        }
+    } else if (v3_ctrl & 0x20) {    // Sawtooth wave
+        return fake_v3_count >> 16;
+    } else if (v3_ctrl & 0x40) {    // Rectangle wave
+        uint32_t pw = ((regs[0x11] & 0x0f) << 8) | regs[0x10];
+        if (fake_v3_count > (pw << 12)) {
+            return 0xff;
+        } else {
+            return 0x00;
+        }
+    } else if (v3_ctrl & 0x80) {    // Noise wave
+        return sid_random();
+    } else {
+        // TODO: combined waveforms
+        return 0;
+    }
+ }
+
+
+/*
+ *  Simulate EG 3 read-back
+ */
+
+uint8_t MOS6581::read_env3() const
+{
+    return (uint8_t)(fake_v3_eg_level >> 16);
+}
+

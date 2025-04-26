@@ -181,6 +181,8 @@ int emu_buf=0;
 static int keystate[256];
 
 extern u8 MainMenu(C64 *the_c64);
+void show_joysticks(void);
+void show_shift_key(void);
 
 
 char str[300];
@@ -203,6 +205,9 @@ void ShowKeyboard(void)
     dmaCopy((void*) keyboardPal,(void*) BG_PALETTE_SUB,256*2);
     unsigned  short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
     dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
+    
+    show_joysticks();
+    show_shift_key();
 }
 
 void WaitForVblank();
@@ -257,8 +262,10 @@ uint8* frontBuffer;
 u8 JITTER[] = {0, 64, 128};
 s16 temp_offset = 0;
 u16 slide_dampen=0;
+u16 vBlanks;
 void vblankIntr(void)
 {
+    vBlanks++;
     int cxBG = (myConfig.offsetX << 8);
     int cyBG = (myConfig.offsetY+temp_offset) << 8;
     int xdxBG = ((320 / myConfig.scaleX) << 8) | (320 % myConfig.scaleX) ;
@@ -338,14 +345,7 @@ int init_graphics(void)
     ShowKeyboard();
 
     REG_BG3CNT = BG_BMP8_512x512;
-#if 0
-    REG_BG3PA = DISPLAY_X-54; //((DISPLAY_X / 256) << 8) | (DISPLAY_X % 256) ;//
-    REG_BG3PB = 0;
-    REG_BG3PC = 0;
-    REG_BG3PD = DISPLAY_X-106;//((DISPLAY_Y / 192) << 8) | ((DISPLAY_Y % 192) + (DISPLAY_Y % 192) / 3) ;//
-    REG_BG3X = 28<<8;//1<<8;//
-    REG_BG3Y = 32<<8;//1<<8;//
-#else
+
     int cxBG = (myConfig.offsetX << 8);
     int cyBG = (myConfig.offsetY) << 8;
     int xdxBG = ((320 / myConfig.scaleX) << 8) | (320 % myConfig.scaleX) ;
@@ -362,7 +362,6 @@ int init_graphics(void)
     irqSet(IRQ_VBLANK, vblankIntr);
     irqEnable(IRQ_VBLANK);
 
-#endif
   return TRUE;
 
 }

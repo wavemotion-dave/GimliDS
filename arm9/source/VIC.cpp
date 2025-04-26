@@ -257,7 +257,7 @@ static int skip_counter                 __attribute__((section(".dtcm")));     /
 static uint32 mc[8]                     __attribute__((section(".dtcm")));     // Sprite data counters
 static uint8 sprite_on                  __attribute__((section(".dtcm")));     // 8 Flags: Sprite display/DMA active
 
-static uint8 spr_coll_buf[DISPLAY_X+48] __attribute__((section(".dtcm")));     // Buffer for sprite-sprite collisions and priorities
+static uint8 spr_coll_buf[DISPLAY_X]    __attribute__((section(".dtcm")));     // Buffer for sprite-sprite collisions and priorities
 static uint8 fore_mask_buf[DISPLAY_X/8] __attribute__((section(".dtcm")));     // Foreground mask for sprite-graphics collisions and priorities
 
 static bool display_state               __attribute__((section(".dtcm")));     // true: Display state, false: Idle state
@@ -1030,7 +1030,7 @@ inline void MOS6569::el_ecm_text(uint8 *p, uint8 *q, uint8 *r)
 
 
 #ifdef GLOBAL_VARS
-void el_std_idle(uint8 *p, uint8 *r)
+ITCM_CODE void el_std_idle(uint8 *p, uint8 *r)
 #else
 inline void MOS6569::el_std_idle(uint8 *p, uint8 *r)
 #endif
@@ -1317,18 +1317,16 @@ inline int MOS6569::el_update_mc(int raster)
     uint8 spron = sprite_on;
     uint8 spren = me;
     uint8 sprye = mye;
-    uint16 raster8bit = raster & 0xff;
-    //uint16 *mcp = mc;
-    uint8 *myp = my;
+    uint8 raster8bit = raster & 0xff;
 
     // Increment sprite data counters
-    for (i=0, j=1; i<8; i++, j<<=1, myp++) 
+    for (i=0, j=1; i<8; i++, j<<=1) 
     {
         // Sprite enabled?
         if (spren & j)
         {
             // Yes, activate if Y position matches raster counter
-            if (*myp == raster8bit) 
+            if (my[i] == raster8bit) 
             {
                 mc[i] = 0;
                 spron |= j;
@@ -1342,7 +1340,7 @@ spr_off:
             {
                 if (sprye & j)     // Y expansion
                 {
-                    if (!((*myp ^ raster8bit) & 1)) 
+                    if (!((my[i] ^ raster8bit) & 1)) 
                     {
                         cycles_used++;
                         if (++mc[i] == 21) spron &= ~j;

@@ -49,7 +49,6 @@ public:
     bool FastReset;         // Skip RAM test on reset
     bool CIAIRQHack;        // Write to CIA ICR clears IRQ
     bool TrueDrive;         // Enable processor-level 1541 emulation
-    bool SIDFilters;        // Emulate SID filters
 };
 
 // These are the active preferences

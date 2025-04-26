@@ -48,6 +48,5 @@ Prefs::Prefs()
     FastReset = true;
     CIAIRQHack = false;
     TrueDrive = false; // True Drive Emulation when TRUE (slower emulation)
-    SIDFilters = true;
 }
 

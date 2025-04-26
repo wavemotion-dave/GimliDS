@@ -23,85 +23,7 @@
 #include <stdio.h>
 
 extern int debug[];
-//
-//#ifdef EMU
-//#include <kos/kosstdio.h>
-//#else
-//#include "gba_nds_fat/gba_nds_fat.h"
-//#endif
-//#include <nds/jtypes.h>
-//#include <stdio.h>
-//
-//#undef FILE
-//#undef DIR
-//#undef size_t
-//#undef fopen
-//#undef fread
-//#undef fwrite
-//#undef fclose
-//#undef ftell
-//#undef rewind
-//#undef fseek
-//#undef chdir
-//#undef ftell
-//#undef getc
-//#undef tmpfile
-//#undef rewind
-//#undef putc
-//#undef fputc
-//#undef fscanf
-//#undef feof
-//#undef stdin
-//#undef stdout
-//#undef fflush
-//
-//#ifdef EMU
-//#define FILE KOS_FILE
-//#define fopen KOS_fopen
-//#define fwrite KOS_fwrite
-//#define fread KOS_fread
-//#define fclose KOS_fclose
-//#define fseek KOS_fseek
-//#define fputs KOS_fputs
-//#define fgets KOS_fgets
-//#define fputc KOS_fputc
-//#define getc KOS_getc
-//#define putc KOS_putc
-//#define fgetc KOS_fgetc
-//#define fprintf KOS_fprintf
-//#define vfprintf KOS_fprintf
-//#define ftell KOS_ftell
-//#define tmpfile KOS_tmpfile
-//#define rewind KOS_rewind
-//#define feof KOS_feof
-//#define stdin KOS_stdin
-//#define stdout KOS_stdout
-//#define fscanf KOS_fscanf
-//#define fflush KOS_fflush
-//#else
-//#define FILE FAT_FILE
-//#define fopen FAT_fopen
-//#define fwrite FAT_fwrite
-//#define fread FAT_fread
-//#define fclose FAT_fclose
-//#define fseek FAT_fseek
-//#define fputs FAT_fputs
-//#define fgets FAT_fgets
-//#define fputc FAT_fputc
-//#define getc FAT_getc
-//#define putc FAT_putc
-//#define fgetc FAT_fgetc
-//#define fprintf FAT_fprintf
-//#define vfprintf FAT_fprintf
-//#define ftell FAT_ftell
-//#define tmpfile FAT_tmpfile
-//#define rewind FAT_rewind
-//#define feof FAT_feof
-//#define stdin FAT_stdin
-//#define stdout FAT_stdout
-//#define fscanf FAT_fscanf
-//#define fflush FAT_fflush
-//#endif
+
 #include <stdlib.h>
 #include <assert.h>
 #include <ctype.h>
@@ -193,8 +115,4 @@ using std::vector;
 
 #include <nds.h>
 #include <assert.h>
-
-#if EEXIST == ENOTEMPTY
-#define BROKEN_OS_PROBABLY_AIX
-#endif
 
