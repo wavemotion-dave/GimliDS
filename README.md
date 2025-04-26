@@ -60,6 +60,14 @@ The *C=* key (lower right) will let you set the configuration for the game, save
 And be sure to understand the SELECT key on the DS... that swaps Joystick Ports and you will be using that a LOT as every game seems to
 use a different port... and sometimes the game loaders/crackers use one port when the game uses the other port. You'll get used to it.
 
+Also understand that the DS screen resolution of 256x192 is not ideal for the Commodore screen output resolution of 320x200 plus the borders.
+To that end, you will be using the L/R shoulder buttons with the D-Pad to scale and offset the screen to get it to look as good as you can.
+When you save your configuration for that game, it will remember the scale/offset values you last used. Also, experiement with remapping one
+of the DS keys to 'PAN UP' or 'PAN DOWN' which can be used to temporarlily shift the screen by 16 pixels up/down and then the system will
+smooth scroll that back into place. That works really well for games that have a high score or status indicator at the very top or bottom
+of the screen... you can enjoy nearly full resolution output and just occasionally hit a PAN UP/DN button to see your score. Experiment and
+have fun - just like we did in 1982!
+
 ## Acknowledgements
 
   * The opening jingle was done by DeNL and comes courtesy of the roalty free jingles at pixabay
