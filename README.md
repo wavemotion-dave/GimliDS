@@ -76,4 +76,11 @@ have fun - just like we did in 1982!
   * Troy Davis(GPF) http://gpf.dcemu.co.uk - FrodoDS initial porter and others who have contributed over the years
   * Wintermute and the contributes for devkitpro and libnds
 
+## Why GimliDS?
+
+Well - this is not enitrely the Frodo emulator. Frodo has taken many great steps forward in recent years to be more accurate and generally is a couple of full notches
+above where this port sits. My emulator is largely taken from older ports that used Frodo 4.2 as a codebase and numerous tweaks and hacks were done to get it running
+on the venerable DS hardwarwe. As such, GimliDS is a clear nod to the original emulator but also distinguishes it as a bit rough around the edges... it means well but
+can sometimes be a little short.
+
 More to come...
