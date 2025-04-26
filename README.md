@@ -18,14 +18,16 @@ The GimliDS emulator is offered as-is, without any warranty. Please see readme.m
 
 ## Controls
 
-  * Left Trigger - Load Frodo Memory Snapshot or mount .D64 c64 disk image
-  * Right Trigger - automatically type `LOAD"*",8,1` and then `RUN`.
-  * START - Issue the infamous *LOAD "*",8,1*
+  * Left Trigger + DPAD - Scale the screen in the X and Y directions
+  * Right Trigger + DPAD - Offset the screen in the X and Y directions
+  * START - Issue the infamous LOAD "*",8,1 (be sure the emulator is at the READY prompt)
   * SELECT - switch between port1 and port2 that the joystick is in
-  * B - space key
-  * A - fire
   * D-Pad - Joystick directions
-
+  * A is normally FIRE but can be remapped in Configuration
+  * B is normally SPACE but can be remapped in Configuration
+  * Y is normally mapped to RETURN but can be remapped in Configuration
+  * X is normally mapped to Joy Up to help with games in which you jump but can be remapped
+  
 ## Acknowledgements
 
   * The opening jingle was done by DeNL and comes courtesy of the roalty free jingles at pixabay
