@@ -67,7 +67,7 @@ public:
     void ResumeSound(void);
     void GetState(MOS6581State *ss);
     void SetState(MOS6581State *ss);
-    void EmulateLine(void);
+    void EmulateLine(int);
 private:
     void open_close_renderer(int old_type, int new_type);
 
@@ -149,7 +149,7 @@ struct MOS6581State {
  * Fill buffer (for Unix sound routines), sample volume (for sampled voice)
  */
 
-inline void MOS6581::EmulateLine(void)
+inline void MOS6581::EmulateLine(int cycles)
 {
     // Simulate voice 3 phase accumulator
     if (regs[0x12] & 0x08)  // Voice 3 control register
@@ -166,7 +166,7 @@ inline void MOS6581::EmulateLine(void)
     switch (fake_v3_eg_state) 
     {
         case EG_ATTACK:
-            fake_v3_eg_level +=  (SID_CYCLES_PER_LINE << 16) / EGDivTable[regs[0x13] >> 4];
+            fake_v3_eg_level +=  (cycles << 16) / EGDivTable[regs[0x13] >> 4];
             if (fake_v3_eg_level > 0xffffff)
             {
                 fake_v3_eg_level = 0xffffff;
@@ -176,7 +176,7 @@ inline void MOS6581::EmulateLine(void)
         case EG_DECAY_SUSTAIN: 
         {
             int32_t s_level = (regs[0x14] >> 4) * 0x111111;
-            fake_v3_eg_level -= ((SID_CYCLES_PER_LINE << 16) / EGDivTable[regs[0x13] & 0x0f]) >> EGDRShift[fake_v3_eg_level >> 16];
+            fake_v3_eg_level -= ((cycles << 16) / EGDivTable[regs[0x13] & 0x0f]) >> EGDRShift[fake_v3_eg_level >> 16];
             if (fake_v3_eg_level < s_level) 
             {
                 fake_v3_eg_level = s_level;
@@ -186,7 +186,7 @@ inline void MOS6581::EmulateLine(void)
         case EG_RELEASE:
             if (fake_v3_eg_level != 0) 
             {
-                fake_v3_eg_level -= ((SID_CYCLES_PER_LINE << 16) / EGDivTable[regs[0x14] & 0x0f]) >> EGDRShift[fake_v3_eg_level >> 16];
+                fake_v3_eg_level -= ((cycles << 16) / EGDivTable[regs[0x14] & 0x0f]) >> EGDRShift[fake_v3_eg_level >> 16];
                 if (fake_v3_eg_level < 0) 
                 {
                     fake_v3_eg_level = 0;

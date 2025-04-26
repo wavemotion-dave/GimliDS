@@ -38,7 +38,7 @@
 #ifndef _DISPLAY_H
 #define _DISPLAY_H
 
-const int DISPLAY_X = 0x170;
+const int DISPLAY_X = 0x180;
 const int DISPLAY_Y = 0x11f;
 
 class C64Window;
@@ -51,7 +51,7 @@ class C64Display {
 public:
     C64Display(C64 *the_c64);
     ~C64Display();
-    void Update(void);
+    void Update(int raster, u8 *src);
     void UpdateLEDs(int l0, int l1);
     void Speedometer(int speed);
     uint8 *BitmapBase(void);

@@ -829,11 +829,8 @@ void DigitalRenderer::calc_filter(void)
 
 #ifdef USE_FIXPOINT_MATHS
     // explanations see below.
-#ifdef __NDS__
     arg = fr / (int)(SAMPLE_FREQ >> 1);
-#else
-    arg = fr / (SAMPLE_FREQ >> 1);
-#endif
+
     if (arg > FixNo(0.99)) {arg = FixNo(0.99);}
     if (arg < FixNo(0.01)) {arg = FixNo(0.01);}
 
@@ -858,7 +855,11 @@ void DigitalRenderer::calc_filter(void)
         d1 = FixNo(-2); d2 = FixNo(1); f_ampl = FixNo(0.25) * (1 - g1 + g2); break;
       case FILT_BP:
         d1 = 0; d2 = FixNo(-1);
-        f_ampl = FixNo(0.25) * (1 + g1 + g2) * (1 + fixcos(arg)) / fixsin(arg);
+        {
+        FixPoint c = fixsqrt(g2*g2 + FixNo(2.0)*g2 - g1*g1 + FixNo(1.0));
+        f_ampl = FixNo(0.25) * (FixNo(-2.0)*g2*g2 - (FixNo(4.0)+FixNo(2.0)*c)*g2 - FixNo(2.0)*c + (c+FixNo(2.0))*g1*g1 - FixNo(2.0)) / (-g2*g2 - (c+FixNo(2.0))*g2 - c + g1*g1 - FixNo(1.0));
+        }
+        
         break;
       case FILT_NOTCH:
         d1 = FixNo(-2) * fixcos(arg); d2 = FixNo(1);
@@ -1077,18 +1078,9 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
     buf--; return *buf;
 }
 
-/*
- * SID_NDS.i
- *
- * RISC OS specific parts of the sound emulation
- * Frodo (C) 1994-1997,2002 Christian Bauer
- * Acorn port by Andreas Dehmel, 1997
- *
- */
-
 DigitalRenderer* p   __attribute__((section(".dtcm")));
 bool paused          __attribute__((section(".dtcm"))) = false;
-int16 last_sample = 0x8000;
+int16 last_sample    __attribute__((section(".dtcm"))) = 0x8000;
 
 ITCM_CODE mm_word SoundMixCallback(mm_word len, mm_addr stream, mm_stream_formats format)
 {

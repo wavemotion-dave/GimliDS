@@ -613,7 +613,6 @@ bool C64::LoadSnapshot(char *filename)
             while (c != 10)
                 c = fgetc(f);   // Shouldn't be necessary
             if (fgetc(f) != SNAPSHOT_VERSION) {
-                ShowRequester("Unknown snapshot format", "OK", NULL);
                 fclose(f);
                 return false;
             }
@@ -666,18 +665,15 @@ bool C64::LoadSnapshot(char *filename)
             fclose(f);
 
             if (error) {
-                ShowRequester("Error reading snapshot file", "OK", NULL);
                 Reset();
                 return false;
             } else
                 return true;
         } else {
             fclose(f);
-            ShowRequester("Not a Frodo snapshot file", "OK", NULL);
             return false;
         }
     } else {
-        ShowRequester("Can't open snapshot file", "OK", NULL);
         return false;
     }
 }
@@ -853,14 +849,12 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
 
     if (draw_frame)
     {
-        TheDisplay->Update();
-
         frames++;
         while (GetTicks() < (((unsigned int)TICKS_PER_SEC/(unsigned int)50) * (unsigned int)frames))
         {
             if (ThePrefs.TrueDrive && TheDisplay->led_state[0]) break; // If reading the drive in 'true drive' mode, just plow along...
             asm("nop");
-            //break;  // Uncomment this for full speed...
+            break;  // Uncomment this for full speed...
         }
 
         frames_per_sec++;
@@ -1144,7 +1138,7 @@ void C64::main_loop(void)
 
         // The order of calls is important here
         int cycles = TheVIC->EmulateLine();
-        TheSID->EmulateLine();
+        TheSID->EmulateLine(SID_CYCLES_PER_LINE);        
 #if !PRECISE_CIA_CYCLES
         TheCIA1->EmulateLine(63);
         TheCIA2->EmulateLine(63);
@@ -1162,7 +1156,7 @@ void C64::main_loop(void)
                 // Note, we can't just use the Idle flag here as the drive periodically goes non-idle to
                 // check status - so we use the LED state which is a better indicator of drive activity...
                 // -----------------------------------------------------------------------------------------
-                if (TheDisplay->led_state[0]) ThePrefs.DrawEveryN = 10;
+                if (TheDisplay->led_state[0]) ThePrefs.DrawEveryN = 5;
                 else ThePrefs.DrawEveryN = isDSiMode() ? 1:2;
 
                 // -----------------------------------------------------------
