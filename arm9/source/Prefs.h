@@ -43,7 +43,6 @@ public:
     bool operator!=(const Prefs &rhs) const;
 
     char DrivePath[2][256]; // Path for drive 8 and 9
-    int DrawEveryN;         // Draw every n-th frame
     int SIDType;            // SID emulation type
     bool LimitSpeed;        // Limit speed to 100%
     bool FastReset;         // Skip RAM test on reset

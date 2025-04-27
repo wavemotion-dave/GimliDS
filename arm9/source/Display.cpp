@@ -380,16 +380,11 @@ int init_graphics(void)
   return TRUE;
 
 }
-int counta,firsttime;
-void WaitForVblank()
-{
-    swiWaitForVBlank();
-}
 
 /*
- *  Redraw bitmap
+ *  Redraw one raster line of the bitmap to the LCD
  */
-ITCM_CODE void C64Display::Update(int raster, u8 *src)
+ITCM_CODE void C64Display::UpdateRasterLine(int raster, u8 *src)
 {
     if ((raster < 32) || (raster > 272)) return;
     
@@ -492,14 +487,7 @@ void C64Display::Speedometer(int speed)
 uint8 *C64Display::BitmapBase(void)
 {
     extern uint8 fast_line_buffer[];
-    
-    // ---------------------------------------------------------------
-    // For the DSi we can write directly to the LCD screen as the DSi
-    // has the ability to read/write from individual bytes of the LCD
-    // unlike the older DS-Lite/Phat which requires 16-bit access...
-    // ---------------------------------------------------------------
-    if (isDSiMode()) return (uint8*)0x06000000;
-    else return (uint8 *)fast_line_buffer;
+    return (uint8 *)fast_line_buffer;
 }
 
 

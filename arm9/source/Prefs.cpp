@@ -36,9 +36,6 @@ Prefs ThePrefs __attribute__((section(".dtcm")));
 
 Prefs::Prefs()
 {
-    // These are PAL specific values
-    DrawEveryN = isDSiMode() ? 1:2;
-
     strcpy(DrivePath[0], "");
     strcpy(DrivePath[1], "");
 

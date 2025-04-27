@@ -51,7 +51,7 @@ class C64Display {
 public:
     C64Display(C64 *the_c64);
     ~C64Display();
-    void Update(int raster, u8 *src);
+    void UpdateRasterLine(int raster, u8 *src);
     void UpdateLEDs(int l0, int l1);
     void Speedometer(int speed);
     uint8 *BitmapBase(void);

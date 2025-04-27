@@ -68,6 +68,10 @@ smooth scroll that back into place. That works really well for games that have a
 of the screen... you can enjoy nearly full resolution output and just occasionally hit a PAN UP/DN button to see your score. Experiment and
 have fun - just like we did in 1982!
 
+Lastly, a few games use custom loaders that require you to enable 'True Drive'. Be warned that True Drive will render the floppy driver at 
+a speed that is comparable to the original Commodore 1541 floppy drive - that is: extremely slow. It could take 2-5 minutes to load a game
+this way. But if the game requires it, that's your only option. Recommended to snap out a Save State so you don't have to repeat the loading.
+
 ## Acknowledgements
 
   * The opening jingle was done by DeNL and comes courtesy of the roalty free jingles at pixabay
@@ -83,4 +87,8 @@ above where this port sits. My emulator is largely taken from older ports that u
 on the venerable DS hardwarwe. As such, GimliDS is a clear nod to the original emulator but also distinguishes it as a bit rough around the edges... it means well but
 can sometimes be a little short.
 
-More to come...
+## Change Log
+
+Version 0.8 release 27-Apr-2025 by wavemotion-dave
+  * First public beta released!
+

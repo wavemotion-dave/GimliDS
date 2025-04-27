@@ -187,6 +187,7 @@ void C64::Reset(void)
     TheCIA1->Reset();
     TheCIA2->Reset();
     TheIEC->Reset();
+    TheVIC->Reset();
 }
 
 
@@ -1166,14 +1167,6 @@ void C64::main_loop(void)
 
             if (!TheCPU1541->Idle)
             {
-                // -----------------------------------------------------------------------------------------
-                // Warp speed - only draw every 10 frames to give max time to CPUs when the drive is active
-                // Note, we can't just use the Idle flag here as the drive periodically goes non-idle to
-                // check status - so we use the LED state which is a better indicator of drive activity...
-                // -----------------------------------------------------------------------------------------
-                if (TheDisplay->led_state[0]) ThePrefs.DrawEveryN = 5;
-                else ThePrefs.DrawEveryN = isDSiMode() ? 1:2;
-
                 // -----------------------------------------------------------
                 // 1541 processor active, alternately execute 6502 and 6510
                 // instructions until both have used up their cycles. This
@@ -1184,7 +1177,6 @@ void C64::main_loop(void)
             }
             else
             {
-                ThePrefs.DrawEveryN = isDSiMode() ? 1:2;
                 TheCPU->EmulateLine(cycles);
             }
         }
