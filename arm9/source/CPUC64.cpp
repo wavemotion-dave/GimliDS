@@ -593,6 +593,22 @@ void MOS6510::ext_opcode(void)
             break;
     }
 }
+
+// -----------------------------------------------------
+// Not very frequent... so pull out from ITCM memory...
+// -----------------------------------------------------
+__attribute__((noinline)) void MOS6510::IntNMI(void)
+{
+    uint16 adr;
+    uint8 tmp;
+    interrupt.intr[INT_NMI] = false;    // Simulate an edge-triggered input
+    push_byte(pc >> 8); push_byte(pc);
+    push_flags(false);
+    i_flag = true;
+    adr = read_word(0xfffa);
+    jump(adr);
+}
+
 /*
  *  Emulate cycles_left worth of 6510 instructions
  *  Returns number of cycles of last instruction
@@ -613,14 +629,8 @@ handle_int:
         }
         else if (interrupt.intr[INT_NMI])
         {
-            interrupt.intr[INT_NMI] = false;    // Simulate an edge-triggered input
-            push_byte(pc >> 8); push_byte(pc);
-            push_flags(false);
-            i_flag = true;
-            adr = read_word(0xfffa);
-            jump(adr);
+            IntNMI();
             last_cycles = 7;
-
         }
         else if ((interrupt.intr[INT_VICIRQ] || interrupt.intr[INT_CIAIRQ]) && !i_flag)
         {

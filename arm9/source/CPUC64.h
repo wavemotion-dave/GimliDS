@@ -74,6 +74,7 @@ public:
     MOS6510(C64 *c64, uint8 *Ram, uint8 *Basic, uint8 *Kernal, uint8 *Char, uint8 *Color);
 
     int EmulateLine(int cycles_left);   // Emulate until cycles_left underflows
+    void IntNMI(void);
     void Reset(void);
     void AsyncReset(void);              // Reset the CPU asynchronously
     void AsyncNMI(void);                // Raise NMI asynchronously (NMI pulse)

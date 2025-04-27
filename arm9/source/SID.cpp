@@ -732,15 +732,15 @@ void DigitalRenderer::WriteRegister(uint16 adr, uint8 byte)
             voice[v].r_sub = EGTable[byte & 0xf];
             break;
 
-		case 21: // Filter Frequency - lower 3 bits
-			f_freq_low = ((byte & 0x7) > 3) ? 1:0;
+        case 21: // Filter Frequency - lower 3 bits
+            f_freq_low = ((byte & 0x7) > 3) ? 1:0;
             calc_filter();
-			break;
+            break;
 
-		case 22: // Filter Frequency - upper 8 bits
-			f_freq = byte;
+        case 22: // Filter Frequency - upper 8 bits
+            f_freq = byte;
             calc_filter();
-			break;
+            break;
 
         case 23:
             voice[0].filter = byte & 1;
@@ -1016,7 +1016,7 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
                     output = v->count >> 8;
                     break;
                 case WAVE_RECT:
-                    if (v->count > (uint32)(v->pw << 12))
+                    if (v->test || v->count >= (uint32_t)(v->pw << 12))
                         output = 0xffff;
                     else
                         output = 0;
@@ -1025,19 +1025,28 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
                     output = ((u16*) 0x068A0000)[v->count >> 16];
                     break;
                 case WAVE_TRIRECT:
-                    if (v->count > (uint32)(v->pw << 12))
-                        output = ((u16*) 0x068A1000)[v->count >> 16];
+                    if (v->test || v->count >= (uint32_t)(v->pw << 12))
+                    {
+                        uint32_t ctrl = v->count;
+                        if (v->ring) 
+                        {
+                            ctrl ^= ~(v->mod_by->count) & 0x800000;
+                        }
+                        output = TriRectTable[ctrl >> 16];
+                    }
                     else
+                    {
                         output = 0;
+                    }
                     break;
                 case WAVE_SAWRECT:
-                    if (v->count > (uint32)(v->pw << 12))
+                    if (v->test || v->count >= (uint32_t)(v->pw << 12))
                         output = ((u16*) 0x068A2000)[v->count >> 16];
                     else
                         output = 0;
                     break;
                 case WAVE_TRISAWRECT:
-                    if (v->count > (uint32)(v->pw << 12))
+                    if (v->test || v->count >= (uint32_t)(v->pw << 12))
                         output = ((u16*) 0x068A3000)[v->count >> 16];
                     else
                         output = 0;
