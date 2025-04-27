@@ -55,14 +55,11 @@
 #include "SID.h"
 #include "Prefs.h"
 
-#define USE_FIXPOINT_MATHS
 #define FIXPOINT_PREC 16    // number of fractional bits used in fixpoint representation
 #define PRECOMPUTE_RESONANCE
 #define ldSINTAB 9          // size of sinus table (0 to 90 degrees)
 
-#ifdef USE_FIXPOINT_MATHS
 #include "FixPoint.h"
-#endif
 
 
 uint8 regs[32]                __attribute__((section(".dtcm")));  // Copies of the 32 write-only SID registers
@@ -263,14 +260,14 @@ void MOS6581::SetState(MOS6581State *ss)
  **  Renderer for digital SID emulation (SIDTYPE_DIGITAL)
  **/
 
-const uint32 SAMPLE_FREQ    = 22050;        // NDS Sample Rate - reasonable quality and speed
+const uint32 SAMPLE_FREQ    = 15650;        // NDS Sample Rate - 50 frames x 313 scanlines = 15650 samples per second
 const uint32 SID_FREQ       = 985248;       // SID frequency in Hz
 const uint32 SID_CYCLES_FIX = ((SID_FREQ << 11)/SAMPLE_FREQ)<<5;    // # of SID clocks per sample frame * 65536
 const uint32 SID_CYCLES = SID_CYCLES_FIX << 16; // # of SID clocks per sample frame
 const int SAMPLE_BUF_SIZE = 0x138*2;// Size of buffer for sampled voice (double buffered)
 
-uint8 sample_buf[SAMPLE_BUF_SIZE] __attribute__((section(".dtcm"))); // Buffer for sampled voice
-int sample_in_ptr                 __attribute__((section(".dtcm"))); // Index in sample_buf for writing
+uint8 sample_vol_filt[SAMPLE_BUF_SIZE] __attribute__((section(".dtcm"))); // Buffer for sampled volumes and filter bits shifted up
+int sample_in_ptr                      __attribute__((section(".dtcm"))); // Index in sample_vol_filt[] for writing
 
 // SID waveforms (some of them :-)
 enum {
@@ -322,8 +319,7 @@ struct DRVoice {
     bool gate;      // EG gate bit
     bool ring;      // Ring modulation bit
     bool test;      // Test bit
-    bool filter;    // Flag: Voice filtered
-
+    
                     // The following bit is set for the modulating
                     // voice, not for the modulated one (as the SID bits)
     bool sync;      // Sync modulation bit
@@ -351,6 +347,7 @@ private:
     void init_sound(void);
     void calc_filter(void);
     uint8 volume;                   // Master volume
+    uint8_t res_filt;				// RES/FILT register
 
     static const uint16 TriSawTable[0x100];
     static const uint16 TriRectTable[0x100];
@@ -555,12 +552,6 @@ uint8_t EGDRShift[256] __attribute__((section(".dtcm"))) = {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
-int16 SampleTab[16] __attribute__((section(".dtcm"))) = {
-    0x8000, 0x9111, 0xa222, 0xb333, 0xc444, 0xd555, 0xe666, 0xf777,
-    0x0888, 0x1999, 0x2aaa, 0x3bbb, 0x4ccc, 0x5ddd, 0x6eee, 0x7fff,
-};
-
-
 /*
  *  Constructor
  */
@@ -576,7 +567,6 @@ DigitalRenderer::DigitalRenderer()
     voice[2].mod_to = &voice[0];
 
 #ifdef PRECOMPUTE_RESONANCE
-#ifdef USE_FIXPOINT_MATHS
     // slow floating point doesn't matter much on startup!
     for (int i=0; i<257; i++) {
       resonanceLP[i] = FixNo(CALC_RESONANCE_LP(i));
@@ -586,12 +576,6 @@ DigitalRenderer::DigitalRenderer()
     sidquot = SID_CYCLES_FIX;
     // compute lookup table for sin and cos
     InitFixSinTab();
-#else
-    for (int i=0; i<257; i++) {
-      resonanceLP[i] = CALC_RESONANCE_LP(i);
-      resonanceHP[i] = CALC_RESONANCE_HP(i);
-    }
-#endif
 #endif
 
     Reset();
@@ -608,6 +592,7 @@ DigitalRenderer::DigitalRenderer()
 void DigitalRenderer::Reset(void)
 {
     volume = 0;
+    res_filt = 0;
 
     for (int v=0; v<3; v++) {
         voice[v].wave = WAVE_NONE;
@@ -618,24 +603,18 @@ void DigitalRenderer::Reset(void)
         voice[v].eg_level = voice[v].s_level = 0;
         voice[v].a_add = voice[v].d_sub = voice[v].r_sub = EGTable[0];
         voice[v].gate = voice[v].ring = voice[v].test = false;
-        voice[v].filter = voice[v].sync = voice[v].mute = false;
+        voice[v].sync = voice[v].mute = false;
     }
 
     f_type = FILT_NONE;
     f_freq = f_res = 0;
     f_freq_low = 0;
-#ifdef USE_FIXPOINT_MATHS
     f_ampl = FixNo(1);
     d1 = d2 = g1 = g2 = 0;
     xn1 = xn2 = yn1 = yn2 = 0;
-#else
-    f_ampl = 1.0;
-    d1 = d2 = g1 = g2 = 0.0;
-    xn1 = xn2 = yn1 = yn2 = 0.0;
-#endif
 
     sample_in_ptr = 0;
-    memset(sample_buf, 0, SAMPLE_BUF_SIZE);
+    memset(sample_vol_filt, 0, SAMPLE_BUF_SIZE);
     
     // -------------------------------------------------------------------
     // Copy sawtooth tables to VRAM where they are a bit faster to access
@@ -668,22 +647,14 @@ void DigitalRenderer::WriteRegister(uint16 adr, uint8 byte)
         case 7:
         case 14:
             voice[v].freq = (voice[v].freq & 0xff00) | byte;
-#ifdef USE_FIXPOINT_MATHS
             voice[v].add = sidquot.imul((int)voice[v].freq);
-#else
-            voice[v].add = (uint32)((float)voice[v].freq * SID_FREQ / SAMPLE_FREQ);
-#endif
             break;
 
         case 1:
         case 8:
         case 15:
             voice[v].freq = (voice[v].freq & 0xff) | (byte << 8);
-#ifdef USE_FIXPOINT_MATHS
             voice[v].add = sidquot.imul((int)voice[v].freq);
-#else
-            voice[v].add = (uint32)((float)voice[v].freq * SID_FREQ / SAMPLE_FREQ);
-#endif
             break;
 
         case 2:
@@ -743,9 +714,7 @@ void DigitalRenderer::WriteRegister(uint16 adr, uint8 byte)
             break;
 
         case 23:
-            voice[0].filter = byte & 1;
-            voice[1].filter = byte & 2;
-            voice[2].filter = byte & 4;
+            res_filt = byte;
             if ((byte >> 4) != f_res) {
                 f_res = byte >> 4;
                 calc_filter();
@@ -757,11 +726,7 @@ void DigitalRenderer::WriteRegister(uint16 adr, uint8 byte)
             voice[2].mute = byte & 0x80;
             if (((byte >> 4) & 7) != f_type) {
                 f_type = (byte >> 4) & 7;
-#ifdef USE_FIXPOINT_MATHS
                 xn1 = xn2 = yn1 = yn2 = 0;
-#else
-                xn1 = xn2 = yn1 = yn2 = 0.0;
-#endif
                 calc_filter();
             }
             break;
@@ -785,7 +750,6 @@ void DigitalRenderer::NewPrefs(Prefs *prefs)
 
 void DigitalRenderer::calc_filter(void)
 {
-#ifdef USE_FIXPOINT_MATHS
     FixPoint fr, arg;
 
     if (f_type == FILT_ALL)
@@ -795,23 +759,7 @@ void DigitalRenderer::calc_filter(void)
     else if (f_type == FILT_NONE)
     {
         d1 = 0; d2 = 0; g1 = 0; g2 = 0; f_ampl = 0; return;
-        }
-#else
-    float fr, arg;
-
-    // Check for some trivial cases
-    if (f_type == FILT_ALL) {
-        d1 = 0.0; d2 = 0.0;
-        g1 = 0.0; g2 = 0.0;
-        f_ampl = 1.0;
-        return;
-    } else if (f_type == FILT_NONE) {
-        d1 = 0.0; d2 = 0.0;
-        g1 = 0.0; g2 = 0.0;
-        f_ampl = 0.0;
-        return;
     }
-#endif
 
     // Calculate resonance frequency
     if (f_type == FILT_LP || f_type == FILT_LPBP)
@@ -827,7 +775,6 @@ void DigitalRenderer::calc_filter(void)
         fr = CALC_RESONANCE_HP(f_freq);
 #endif
 
-#ifdef USE_FIXPOINT_MATHS
     // explanations see below.
     arg = fr / (int)(SAMPLE_FREQ >> 1);
 
@@ -867,60 +814,6 @@ void DigitalRenderer::calc_filter(void)
         break;
       default: break;
     }
-
-#else
-
-    // Limit to <1/2 sample frequency, avoid div by 0 in case FILT_BP below
-    arg = fr / (float)(SAMPLE_FREQ >> 1);
-    if (arg > 0.99)
-        arg = 0.99;
-    if (arg < 0.01)
-        arg = 0.01;
-
-    // Calculate poles (resonance frequency and resonance)
-    g2 = 0.55 + 1.2 * arg * arg - 1.2 * arg + (float)f_res * 0.0133333333;
-    g1 = -2.0 * sqrt(g2) * cos(M_PI * arg);
-
-    // Increase resonance if LP/HP combined with BP
-    if (f_type == FILT_LPBP || f_type == FILT_HPBP)
-        g2 += 0.1;
-
-    // Stabilize filter
-    if (fabs(g1) >= g2 + 1.0)
-        if (g1 > 0.0)
-            g1 = g2 + 0.99;
-        else
-            g1 = -(g2 + 0.99);
-
-    // Calculate roots (filter characteristic) and input attenuation
-    switch (f_type) {
-
-        case FILT_LPBP:
-        case FILT_LP:
-            d1 = 2.0; d2 = 1.0;
-            f_ampl = 0.25 * (1.0 + g1 + g2);
-            break;
-
-        case FILT_HPBP:
-        case FILT_HP:
-            d1 = -2.0; d2 = 1.0;
-            f_ampl = 0.25 * (1.0 - g1 + g2);
-            break;
-
-        case FILT_BP:
-            d1 = 0.0; d2 = -1.0;
-            f_ampl = 0.25 * (1.0 + g1 + g2) * (1 + cos(M_PI * arg)) / sin(M_PI * arg);
-            break;
-
-        case FILT_NOTCH:
-            d1 = -2.0 * cos(M_PI * arg); d2 = 1.0;
-            f_ampl = 0.25 * (1.0 + g1 + g2) * (1 + cos(M_PI * arg)) / (sin(M_PI * arg));
-            break;
-
-        default:
-            break;
-    }
-#endif
 }
 
 
@@ -932,26 +825,26 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
 {
     // Get filter coefficients, so the emulator won't change
     // them in the middle of our calculations
-#ifdef USE_FIXPOINT_MATHS
     FixPoint cf_ampl = f_ampl;
     FixPoint cd1 = d1, cd2 = d2, cg1 = g1, cg2 = g2;
-#else
-    float cf_ampl = f_ampl;
-    float cd1 = d1, cd2 = d2, cg1 = g1, cg2 = g2;
-#endif
 
-    // Index in sample_buf for reading, 16.16 fixed
+    // Index in sample_vol_filt[] for reading, 16.16 fixed
     uint32 sample_count = (sample_in_ptr + SAMPLE_BUF_SIZE/2) << 16;
+    
+    // Output DC offset
+ 	int32_t dc_offset = 0x100000;
 
     count >>= 1;    // 16 bit mono output, count is in bytes
 
     while (count--)
     {
-        // Get current master volume from sample buffer,
+		// Get current master volume and RES/FILT setting from sample buffers
+ 		uint8_t master_volume = sample_vol_filt[(sample_count >> 16) % SAMPLE_BUF_SIZE] & 0xf;
+ 		uint8_t res_filt = sample_vol_filt[(sample_count >> 16) % SAMPLE_BUF_SIZE] >> 4;
+                
         // calculate sampled voice
-        uint8 master_volume = sample_buf[(sample_count >> 16) % SAMPLE_BUF_SIZE];
         sample_count += ((0x138 * 50) << 16) / SAMPLE_FREQ;
-        int32 sum_output = SampleTab[master_volume] << 8;
+        int32_t sum_output = 0;
         int32 sum_output_filter = 0;
 
         // Loop for all three voices
@@ -959,7 +852,7 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
         {
             DRVoice *v = &voice[j];
 
-            // Envelope generators
+            // Envelope generator
             uint16 envelope;
 
             switch (v->eg_state) {
@@ -983,7 +876,7 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
                     }
                     break;
             }
-            envelope = ((v->eg_level >> 16) * master_volume) >> 4;
+            envelope = v->eg_level >> 16;
 
             // Waveform generator
             if (v->mute)
@@ -1062,27 +955,31 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
                     output = 0x8000;
                     break;
             }
-            if (v->filter)
+            
+            // Route voice through filter if selected
+ 			if (res_filt & (1 << j))
                 sum_output_filter += (int16)(output ^ 0x8000) * envelope;
             else
                 sum_output += (int16)(output ^ 0x8000) * envelope;
         }
 
         // Filter
-#ifdef USE_FIXPOINT_MATHS
         int32 xn = cf_ampl.imul(sum_output_filter);
         int32 yn = xn+cd1.imul(xn1)+cd2.imul(xn2)-cg1.imul(yn1)-cg2.imul(yn2);
         yn2 = yn1; yn1 = yn; xn2 = xn1; xn1 = xn;
         sum_output_filter = yn;
-#else
-        float xn = (float)sum_output_filter * cf_ampl;
-        float yn = xn + cd1 * xn1 + cd2 * xn2 - cg1 * yn1 - cg2 * yn2;
-        yn2 = yn1; yn1 = yn; xn2 = xn1; xn1 = xn;
-        sum_output_filter = (int32)yn;
-#endif
 
-        // Write to buffer
-        *buf++ = ((sum_output - sum_output_filter) >> 10 );
+        int32_t ext_output = (sum_output - sum_output_filter + dc_offset) * master_volume;
+        ext_output >>= 14;                
+
+		// Write to buffer
+ 		if (ext_output > 0x7fff) {	// Using filters can cause minor clipping
+ 			ext_output = 0x7fff;
+ 		} else if (ext_output < -0x8000) {
+ 			ext_output = -0x8000;
+ 		}
+        
+        *buf++ = ext_output;
     }
     buf--; return *buf;
 }
@@ -1144,7 +1041,7 @@ DigitalRenderer::~DigitalRenderer()
 
 void DigitalRenderer::EmulateLine(void)
 {
-    sample_buf[sample_in_ptr] = volume;
+    sample_vol_filt[sample_in_ptr] = volume | ((res_filt & 7) << 4);
     sample_in_ptr = (sample_in_ptr + 1) % SAMPLE_BUF_SIZE;
 }
 
