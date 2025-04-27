@@ -125,8 +125,8 @@ inline bool Job1541::SyncFound(void)
 
 inline uint8 Job1541::ReadGCRByte(void)
 {
-    extern void floppy_soundfx(void);
-    floppy_soundfx();   // Play floppy SFX if needed
+    extern void floppy_soundfx(u8 type);
+    floppy_soundfx(0);   // Play floppy SFX if needed
     
     uint8 byte = *gcr_ptr++;    // Rotate disk
     if (gcr_ptr == gcr_track_end)

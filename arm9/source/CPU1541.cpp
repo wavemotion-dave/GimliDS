@@ -683,7 +683,7 @@ void MOS6502_1541::illegal_op(uint8 op, uint16 at)
 // Push processor flags onto the stack
 #define push_flags(b_flag) \
     tmp = 0x20 | (n_flag & 0x80); \
-    if ((via2_pcr & 0x0e) == 0x0e && the_job->ByteReady()) v_flag = true; \
+    if (((via2_pcr & 0x0e) == 0x0e) && the_job->ByteReady()) v_flag = true; \
     if (v_flag) tmp |= 0x40; \
     if (b_flag) tmp |= 0x10; \
     if (d_flag) tmp |= 0x08; \

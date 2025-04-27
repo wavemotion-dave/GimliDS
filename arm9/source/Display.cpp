@@ -63,8 +63,10 @@ uint8_t palette_blue[16] = {
 };
 
 
-void floppy_soundfx(void)
+u8 last_drive_access_type = 0;
+void floppy_soundfx(u8 type)
 {
+    last_drive_access_type = type;
     if (myConfig.diskSFX)
     {
         if (floppy_sound_counter == 0) floppy_sound_counter = 250;
@@ -92,7 +94,14 @@ void C64Display::UpdateLEDs(int l0, int l1)
     {
         if (led_state[0] || led_state[1])
         {
-            DSPrint(24, 21, 2, (char*)"@AB"); // Green Activity Label
+            if (last_drive_access_type)
+            {
+                DSPrint(24, 21, 2, (char*)"#$%"); // Blue Activity Label (write)
+            }
+            else
+            {
+                DSPrint(24, 21, 2, (char*)"@AB"); // Green Activity Label (read or other access)
+            }
         }
         else
         {
@@ -145,13 +154,13 @@ void C64Display::UpdateLEDs(int l0, int l1)
 #define MAIN_MENU  0xFF
 
 #define LFA 0x095 //Left arrow
-#define CLR 0x147
+#define CLR 0x147 // Home/clear
 #define PND 0x92
 
 #define RST 0x13 // Restore
 #define RET '\n' // Enter
 #define BSP 0x08 // Backspace
-#define CTR 0x21 // Ctrl
+#define CTL 0x21 // Ctrl
 #define SPC 0x20// Space
 #define ATT 0x22 // At@
 #define UPA 0x23 //uparrow symbol
@@ -427,7 +436,7 @@ void DSPrint(int iX,int iY,int iScr,char *szMessage)
 
 void show_joysticks(void)
 {
-    if (current_joystick)
+    if (myConfig.joyPort)
     {
         DSPrint(1, 3, 2, (char*)"()");
         DSPrint(1, 4, 2, (char*)"HI");
@@ -545,287 +554,298 @@ int c64_key=-1;
 int lastc64key=-1;
 bool m_tpActive=false;
 touchPosition m_tp;
+u8 issue_commodore_key = 0;
 
 void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joystick)
 {
         scanKeys();
-
-        if ((lastc64key >-1) && ((keysCurrent() & KEY_TOUCH) == 0))
+        
+        if (issue_commodore_key)
         {
-            KeyRelease(lastc64key, key_matrix, rev_matrix);
-        }
-
-        if ((keysCurrent() & KEY_TOUCH) == 0)   // No touch screen... reset the flag
-        {
-            m_tpActive = false;
+            issue_commodore_key = 0;
+            c64_key = MATRIX(7,5);
+            KeyPress(c64_key, key_matrix, rev_matrix);
+            lastc64key=c64_key;
         }
         else
-        if ((m_tpActive == false) && (keysCurrent() & KEY_TOUCH))
         {
-            touchRead(&m_tp);
-            m_tpActive = true;
-
-            unsigned short c = 0;
-            int tilex, tiley;
-
-            tilex = m_tp.px;
-            tiley = m_tp.py;
-
-            if (tiley > 20) // We're in the keyboard area...
+            if ((lastc64key >-1) && ((keysCurrent() & KEY_TOUCH) == 0))
             {
-                if (tiley < 44) // Big Key Row
-                {
-                     if (tilex < 42)
-                     {
-                        current_joystick ^= 1;
-                        extern void show_joysticks();
-                        show_joysticks();
-                     }
-                    else if (tilex < 80)   c = CTR;
-                    else if (tilex < 118)  c = BSP;
-                    else if (tilex < 156)  c = RST;
-                    else if (tilex < 194)  c = CMD;
-                    else if (tilex < 255)  c = RUN;
-                }
-                else if (tiley < 74) // Number Row
-                {
-                         if (tilex < 23)  c = '1';
-                    else if (tilex < 42)  c = '2';
-                    else if (tilex < 61)  c = '3';
-                    else if (tilex < 80)  c = '4';
-                    else if (tilex < 99)  c = '5';
-                    else if (tilex < 118) c = '6';
-                    else if (tilex < 137) c = '7';
-                    else if (tilex < 156) c = '8';
-                    else if (tilex < 175) c = '9';
-                    else if (tilex < 194) c = '0';
-                    else if (tilex < 213) c = '+';
-                    else if (tilex < 233) c = '-';
-                    else if (tilex < 256) c = UPA;
-                }
-                else if (tiley < 104) // QWERTY Row
-                {
-                         if (tilex < 23)  c = CUP;
-                    else if (tilex < 42)  c = 'Q';
-                    else if (tilex < 61)  c = 'W';
-                    else if (tilex < 80)  c = 'E';
-                    else if (tilex < 99)  c = 'R';
-                    else if (tilex < 118) c = 'T';
-                    else if (tilex < 137) c = 'Y';
-                    else if (tilex < 156) c = 'U';
-                    else if (tilex < 175) c = 'I';
-                    else if (tilex < 194) c = 'O';
-                    else if (tilex < 213) c = 'P';
-                    else if (tilex < 233) c = '@';
-                    else if (tilex < 256) c = '*';
-                }
-                else if (tiley < 134) // ASDF Row
-                {
-                         if (tilex < 23)  c = CDL;
-                    else if (tilex < 42)  c = 'A';
-                    else if (tilex < 61)  c = 'S';
-                    else if (tilex < 80)  c = 'D';
-                    else if (tilex < 99)  c = 'F';
-                    else if (tilex < 118) c = 'G';
-                    else if (tilex < 137) c = 'H';
-                    else if (tilex < 156) c = 'J';
-                    else if (tilex < 175) c = 'K';
-                    else if (tilex < 194) c = 'L';
-                    else if (tilex < 213) c = ':';
-                    else if (tilex < 233) c = ';';
-                    else if (tilex < 256) c = '=';
-                }
-                else if (tiley < 164) // ZXCV Row
-                {
-                         if (tilex < 23)  c = SHF;
-                    else if (tilex < 42)  c = 'Z';
-                    else if (tilex < 61)  c = 'X';
-                    else if (tilex < 80)  c = 'C';
-                    else if (tilex < 99)  c = 'V';
-                    else if (tilex < 118) c = 'B';
-                    else if (tilex < 137) c = 'N';
-                    else if (tilex < 156) c = 'M';
-                    else if (tilex < 175) c = ',';
-                    else if (tilex < 194) c = '.';
-                    else if (tilex < 213) c = '/';
-                    else if (tilex < 256) c = RET;
-                }
-                else if (tiley < 192) // Bottom Row
-                {
-                         if (tilex < 23)  c = F_1;
-                    else if (tilex < 42)  c = F_3;
-                    else if (tilex < 61)  c = F_5;
-                    else if (tilex < 80)  c = F_7;
-                    else if (tilex < 190) c = ' ';
-                    else if (tilex < 222) c = MOUNT_DISK;
-                    else if (tilex < 256) c = MAIN_MENU;
-                }
+                KeyRelease(lastc64key, key_matrix, rev_matrix);
+            }
 
-                if (c==MAIN_MENU)
-                {
-                    TheC64->Pause();
-                    MainMenu(TheC64);
-                    ShowKeyboard();
-                    TheC64->Resume();
-                }
-                else if (c==MOUNT_DISK)
-                {
-                    TheC64->Pause();
-                    u8 reload = mount_disk(TheC64);
-                    ShowKeyboard();
+            if ((keysCurrent() & KEY_TOUCH) == 0)   // No touch screen... reset the flag
+            {
+                m_tpActive = false;
+            }
+            else
+            if ((m_tpActive == false) && (keysCurrent() & KEY_TOUCH))
+            {
+                touchRead(&m_tp);
+                m_tpActive = true;
 
-                    if (reload & 0x7F)
+                unsigned short c = 0;
+                int tilex, tiley;
+
+                tilex = m_tp.px;
+                tiley = m_tp.py;
+
+                if (tiley > 20) // We're in the keyboard area...
+                {
+                    if (tiley < 44) // Big Key Row
                     {
-                        kbd_buf_reset();
+                         if (tilex < 42)
+                         {
+                            myConfig.joyPort ^= 1;
+                            extern void show_joysticks();
+                            show_joysticks();
+                         }
+                        else if (tilex < 80)   c = CTL;
+                        else if (tilex < 118)  c = BSP;
+                        else if (tilex < 156)  c = RST;
+                        else if (tilex < 194)  c = CLR;
+                        else if (tilex < 255)  c = RUN;
+                    }
+                    else if (tiley < 74) // Number Row
+                    {
+                             if (tilex < 23)  c = '1';
+                        else if (tilex < 42)  c = '2';
+                        else if (tilex < 61)  c = '3';
+                        else if (tilex < 80)  c = '4';
+                        else if (tilex < 99)  c = '5';
+                        else if (tilex < 118) c = '6';
+                        else if (tilex < 137) c = '7';
+                        else if (tilex < 156) c = '8';
+                        else if (tilex < 175) c = '9';
+                        else if (tilex < 194) c = '0';
+                        else if (tilex < 213) c = '+';
+                        else if (tilex < 233) c = '-';
+                        else if (tilex < 256) c = UPA;
+                    }
+                    else if (tiley < 104) // QWERTY Row
+                    {
+                             if (tilex < 23)  c = CUP;
+                        else if (tilex < 42)  c = 'Q';
+                        else if (tilex < 61)  c = 'W';
+                        else if (tilex < 80)  c = 'E';
+                        else if (tilex < 99)  c = 'R';
+                        else if (tilex < 118) c = 'T';
+                        else if (tilex < 137) c = 'Y';
+                        else if (tilex < 156) c = 'U';
+                        else if (tilex < 175) c = 'I';
+                        else if (tilex < 194) c = 'O';
+                        else if (tilex < 213) c = 'P';
+                        else if (tilex < 233) c = '@';
+                        else if (tilex < 256) c = '*';
+                    }
+                    else if (tiley < 134) // ASDF Row
+                    {
+                             if (tilex < 23)  c = CDL;
+                        else if (tilex < 42)  c = 'A';
+                        else if (tilex < 61)  c = 'S';
+                        else if (tilex < 80)  c = 'D';
+                        else if (tilex < 99)  c = 'F';
+                        else if (tilex < 118) c = 'G';
+                        else if (tilex < 137) c = 'H';
+                        else if (tilex < 156) c = 'J';
+                        else if (tilex < 175) c = 'K';
+                        else if (tilex < 194) c = 'L';
+                        else if (tilex < 213) c = ':';
+                        else if (tilex < 233) c = ';';
+                        else if (tilex < 256) c = '=';
+                    }
+                    else if (tiley < 164) // ZXCV Row
+                    {
+                             if (tilex < 23)  c = SHF;
+                        else if (tilex < 42)  c = 'Z';
+                        else if (tilex < 61)  c = 'X';
+                        else if (tilex < 80)  c = 'C';
+                        else if (tilex < 99)  c = 'V';
+                        else if (tilex < 118) c = 'B';
+                        else if (tilex < 137) c = 'N';
+                        else if (tilex < 156) c = 'M';
+                        else if (tilex < 175) c = ',';
+                        else if (tilex < 194) c = '.';
+                        else if (tilex < 213) c = '/';
+                        else if (tilex < 256) c = RET;
+                    }
+                    else if (tiley < 192) // Bottom Row
+                    {
+                             if (tilex < 23)  c = F_1;
+                        else if (tilex < 42)  c = F_3;
+                        else if (tilex < 61)  c = F_5;
+                        else if (tilex < 80)  c = F_7;
+                        else if (tilex < 190) c = ' ';
+                        else if (tilex < 222) c = MOUNT_DISK;
+                        else if (tilex < 256) c = MAIN_MENU;
+                    }
 
-                        // Insert the new disk into the drive...
-                        Prefs *prefs = new Prefs(ThePrefs);
-                        strcpy(prefs->DrivePath[0], Drive8File);
-                        strcpy(prefs->DrivePath[1], Drive9File);
-                        prefs->TrueDrive = myConfig.trueDrive;
-                        TheC64->NewPrefs(prefs);
-                        ThePrefs = *prefs;
-                        delete prefs;
+                    if (c==MAIN_MENU)
+                    {
+                        TheC64->Pause();
+                        MainMenu(TheC64);
+                        ShowKeyboard();
+                        TheC64->Resume();
+                    }
+                    else if (c==MOUNT_DISK)
+                    {
+                        TheC64->Pause();
+                        u8 reload = mount_disk(TheC64);
+                        ShowKeyboard();
 
-                        // See if we should issue a system-wide RESET
-                        if (reload == 2)
+                        if (reload & 0x7F)
                         {
-                            TheC64->PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
-                            TheC64->Reset();
+                            kbd_buf_reset();
+
+                            // Insert the new disk into the drive...
+                            Prefs *prefs = new Prefs(ThePrefs);
+                            strcpy(prefs->DrivePath[0], Drive8File);
+                            strcpy(prefs->DrivePath[1], Drive9File);
+                            prefs->TrueDrive = myConfig.trueDrive;
+                            TheC64->NewPrefs(prefs);
+                            ThePrefs = *prefs;
+                            delete prefs;
+
+                            // See if we should issue a system-wide RESET
+                            if (reload == 2)
+                            {
+                                TheC64->PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
+                                TheC64->Reset();
+                            }
+                        }
+                        TheC64->Resume();
+
+                        if (reload & 0x80)
+                        {
+                            extern void kbd_buf_feed(const char *s);
+                            kbd_buf_feed("\rLOAD\"*\",8,1\rRUN\r");
                         }
                     }
-                    TheC64->Resume();
-
-                    if (reload & 0x80)
+                    else if (c != 0)
                     {
-                        extern void kbd_buf_feed(const char *s);
-                        kbd_buf_feed("\rLOAD\"*\",8,1\rRUN\r");
+                       mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
                     }
-                }
-                else if (c != 0)
-                {
-                   mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
-                }
 
-                if(c==RET) // Return
-                {
-                    c64_key = MATRIX(0,1);
-                    KeyPress(c64_key, key_matrix, rev_matrix);
-                    lastc64key=c64_key;
-                } else
-                if(c==BSP) // Backspace
-                {
-                    c64_key = MATRIX(0,0);
-                    KeyPress(c64_key, key_matrix, rev_matrix);
-                    lastc64key=c64_key;
-
-                } else
-                if(c==RUN)
-                {
-                    mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
-                    c64_key = MATRIX(7,7);
-                    KeyPress(c64_key, key_matrix, rev_matrix);
-                    lastc64key=c64_key;
-
-                } else
-                if(c==SLK || c==SHF)
-                {
-                    if(m_Mode==KB_NORMAL) {
-                        m_Mode = KB_SHIFT;
-                    } else {
-                        m_Mode = KB_NORMAL;
-                    }
-                    show_shift_key();
-                }
-                else
-                {
-                    if(c!=0x0)
+                    if(c==RET) // Return
                     {
-                        switch (c)
-                        {
-                            case 'A': c64_key = MATRIX(1,2); break;
-                            case 'B': c64_key = MATRIX(3,4); break;
-                            case 'C': c64_key = MATRIX(2,4); break;
-                            case 'D': c64_key = MATRIX(2,2); break;
-                            case 'E': c64_key = MATRIX(1,6); break;
-                            case 'F': c64_key = MATRIX(2,5); break;
-                            case 'G': c64_key = MATRIX(3,2); break;
-                            case 'H': c64_key = MATRIX(3,5); break;
-                            case 'I': c64_key = MATRIX(4,1); break;
-                            case 'J': c64_key = MATRIX(4,2); break;
-                            case 'K': c64_key = MATRIX(4,5); break;
-                            case 'L': c64_key = MATRIX(5,2); break;
-                            case 'M': c64_key = MATRIX(4,4); break;
-                            case 'N': c64_key = MATRIX(4,7); break;
-                            case 'O': c64_key = MATRIX(4,6); break;
-                            case 'P': c64_key = MATRIX(5,1); break;
-                            case 'Q': c64_key = MATRIX(7,6); break;
-                            case 'R': c64_key = MATRIX(2,1); break;
-                            case 'S': c64_key = MATRIX(1,5); break;
-                            case 'T': c64_key = MATRIX(2,6); break;
-                            case 'U': c64_key = MATRIX(3,6); break;
-                            case 'V': c64_key = MATRIX(3,7); break;
-                            case 'W': c64_key = MATRIX(1,1); break;
-                            case 'X': c64_key = MATRIX(2,7); break;
-                            case 'Y': c64_key = MATRIX(3,1); break;
-                            case 'Z': c64_key = MATRIX(1,4); break;
-
-                            case ' ': c64_key = MATRIX(7,4); break;
-
-                            case '0': c64_key = MATRIX(4,3); break;
-                            case '1': c64_key = MATRIX(7,0); break;
-                            case '2': c64_key = MATRIX(7,3); break;
-                            case '3': c64_key = MATRIX(1,0); break;
-                            case '4': c64_key = MATRIX(1,3); break;
-                            case '5': c64_key = MATRIX(2,0); break;
-                            case '6': c64_key = MATRIX(2,3); break;
-                            case '7': c64_key = MATRIX(3,0); break;
-                            case '8': c64_key = MATRIX(3,3); break;
-                            case '9': c64_key = MATRIX(4,0); break;
-                            case '*': c64_key = MATRIX(6,1); break;
-                            case ':': c64_key = MATRIX(5,5); break;
-                            case ';': c64_key = MATRIX(6,2); break;
-                            case '=': c64_key = MATRIX(6,5); break;
-                            case '/': c64_key = MATRIX(6,7); break;
-
-                            case ATT: c64_key = MATRIX(5,6); break;
-
-                            case ',': c64_key = MATRIX(5,7); break;
-                            case '.': c64_key = MATRIX(5,4); break;
-                            case '+': c64_key = MATRIX(5,0); break;
-                            case '-': c64_key = MATRIX(5,3); break;
-
-                            case RST: c64_key = MATRIX(7,7); break;
-                            case CLR: c64_key = MATRIX(6,3); break;
-                            case LFA: c64_key = MATRIX(7,1); break;
-                            case UPA: c64_key = MATRIX(6,6); break;
-                            case PND: c64_key = MATRIX(6,0); break;
-
-                            case CUP: c64_key = MATRIX(0,7); break;
-                            case CDL: c64_key = MATRIX(0,2); break;
-
-                            case F_1: c64_key = MATRIX(0,4); break;
-                            case F_3: c64_key = MATRIX(0,5); break;
-                            case F_5: c64_key = MATRIX(0,6); break;
-                            case F_7: c64_key = MATRIX(0,3); break;
-
-
-                            default :  c64_key = -1; break;
-
-                        }
-                        if (c64_key < 0)
-                            return;
-                        if(m_Mode==KB_NORMAL)
-                        {
-                            c64_key= c64_key| 0x80;
-                        }
+                        c64_key = MATRIX(0,1);
                         KeyPress(c64_key, key_matrix, rev_matrix);
                         lastc64key=c64_key;
+                    } else
+                    if(c==BSP) // Backspace
+                    {
+                        c64_key = MATRIX(0,0);
+                        KeyPress(c64_key, key_matrix, rev_matrix);
+                        lastc64key=c64_key;
+
+                    } else
+                    if(c==RUN)
+                    {
+                        mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+                        c64_key = MATRIX(7,7);
+                        KeyPress(c64_key, key_matrix, rev_matrix);
+                        lastc64key=c64_key;
+
+                    } else
+                    if(c==SLK || c==SHF)
+                    {
+                        if(m_Mode==KB_NORMAL) {
+                            m_Mode = KB_SHIFT;
+                        } else {
+                            m_Mode = KB_NORMAL;
+                        }
+                        show_shift_key();
+                    }
+                    else
+                    {
+                        if(c!=0x0)
+                        {
+                            switch (c)
+                            {
+                                case 'A': c64_key = MATRIX(1,2); break;
+                                case 'B': c64_key = MATRIX(3,4); break;
+                                case 'C': c64_key = MATRIX(2,4); break;
+                                case 'D': c64_key = MATRIX(2,2); break;
+                                case 'E': c64_key = MATRIX(1,6); break;
+                                case 'F': c64_key = MATRIX(2,5); break;
+                                case 'G': c64_key = MATRIX(3,2); break;
+                                case 'H': c64_key = MATRIX(3,5); break;
+                                case 'I': c64_key = MATRIX(4,1); break;
+                                case 'J': c64_key = MATRIX(4,2); break;
+                                case 'K': c64_key = MATRIX(4,5); break;
+                                case 'L': c64_key = MATRIX(5,2); break;
+                                case 'M': c64_key = MATRIX(4,4); break;
+                                case 'N': c64_key = MATRIX(4,7); break;
+                                case 'O': c64_key = MATRIX(4,6); break;
+                                case 'P': c64_key = MATRIX(5,1); break;
+                                case 'Q': c64_key = MATRIX(7,6); break;
+                                case 'R': c64_key = MATRIX(2,1); break;
+                                case 'S': c64_key = MATRIX(1,5); break;
+                                case 'T': c64_key = MATRIX(2,6); break;
+                                case 'U': c64_key = MATRIX(3,6); break;
+                                case 'V': c64_key = MATRIX(3,7); break;
+                                case 'W': c64_key = MATRIX(1,1); break;
+                                case 'X': c64_key = MATRIX(2,7); break;
+                                case 'Y': c64_key = MATRIX(3,1); break;
+                                case 'Z': c64_key = MATRIX(1,4); break;
+
+                                case ' ': c64_key = MATRIX(7,4); break;
+
+                                case '0': c64_key = MATRIX(4,3); break;
+                                case '1': c64_key = MATRIX(7,0); break;
+                                case '2': c64_key = MATRIX(7,3); break;
+                                case '3': c64_key = MATRIX(1,0); break;
+                                case '4': c64_key = MATRIX(1,3); break;
+                                case '5': c64_key = MATRIX(2,0); break;
+                                case '6': c64_key = MATRIX(2,3); break;
+                                case '7': c64_key = MATRIX(3,0); break;
+                                case '8': c64_key = MATRIX(3,3); break;
+                                case '9': c64_key = MATRIX(4,0); break;
+                                case '*': c64_key = MATRIX(6,1); break;
+                                case ':': c64_key = MATRIX(5,5); break;
+                                case ';': c64_key = MATRIX(6,2); break;
+                                case '=': c64_key = MATRIX(6,5); break;
+                                case '/': c64_key = MATRIX(6,7); break;
+
+                                case ATT: c64_key = MATRIX(5,6); break;
+
+                                case ',': c64_key = MATRIX(5,7); break;
+                                case '.': c64_key = MATRIX(5,4); break;
+                                case '+': c64_key = MATRIX(5,0); break;
+                                case '-': c64_key = MATRIX(5,3); break;
+
+                                case CTL: c64_key = MATRIX(7,2); break;
+                                case RST: c64_key = MATRIX(7,7); break;
+                                case CLR: c64_key = MATRIX(6,3); break;
+                                case LFA: c64_key = MATRIX(7,1); break;
+                                case UPA: c64_key = MATRIX(6,6); break;
+                                case PND: c64_key = MATRIX(6,0); break;
+                                case CMD: c64_key = MATRIX(7,5); break;
+
+                                case CUP: c64_key = MATRIX(0,7); break;
+                                case CDL: c64_key = MATRIX(0,2); break;
+
+                                case F_1: c64_key = MATRIX(0,4); break;
+                                case F_3: c64_key = MATRIX(0,5); break;
+                                case F_5: c64_key = MATRIX(0,6); break;
+                                case F_7: c64_key = MATRIX(0,3); break;
+
+                                default :  c64_key = -1; break;
+
+                            }
+                            if (c64_key < 0)
+                                return;
+                            if(m_Mode==KB_NORMAL)
+                            {
+                                c64_key= c64_key| 0x80;
+                            }
+                            KeyPress(c64_key, key_matrix, rev_matrix);
+                            lastc64key=c64_key;
+                        }
                     }
                 }
             }
         }
-
 }
 
 

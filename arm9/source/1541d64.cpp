@@ -1298,7 +1298,7 @@ const int conv_job_error[16] = {
 // Read sector, return error code
 static int read_sector(FILE *f, const image_file_desc &desc, int track, int sector, uint8 *buffer)
 {
-    floppy_soundfx();   // Play floppy SFX if needed
+    floppy_soundfx(0);   // Play floppy SFX if needed
 
     // Convert track/sector to byte offset in file
     long offset = offset_from_ts(desc, track, sector);
@@ -1320,7 +1320,7 @@ static int read_sector(FILE *f, const image_file_desc &desc, int track, int sect
 // Write sector, return error code
 static int write_sector(FILE *f, const image_file_desc &desc, int track, int sector, uint8 *buffer)
 {
-    floppy_soundfx();   // Play floppy SFX if needed
+    floppy_soundfx(1);   // Play floppy SFX if needed
 
     // Convert track/sector to byte offset in file
     long offset = offset_from_ts(desc, track, sector);

@@ -49,6 +49,7 @@ extern void BottomScreenMainMenu(void);
 #define MENU_ACTION_SAVE_STATE      2   // 
 #define MENU_ACTION_LOAD_STATE      3   // 
 #define MENU_ACTION_CONFIG          4   // 
+#define MENU_ACTION_PRESS_C64       5   // Issue the actual C= key!
 #define MENU_ACTION_SKIP            99  // Skip this MENU choice
 
 typedef struct
@@ -72,6 +73,7 @@ MainMenu_t main_menu =
         {(char *)"  SAVE     STATE  ",      MENU_ACTION_SAVE_STATE},
         {(char *)"  LOAD     STATE  ",      MENU_ACTION_LOAD_STATE},
         {(char *)"  RESET    C64    ",      MENU_ACTION_RESET_EMU},
+        {(char *)"  PRESS    @ KEY  ",      MENU_ACTION_PRESS_C64},
         {(char *)"  EXIT     MENU   ",      MENU_ACTION_EXIT},
         {(char *)"  NULL            ",      MENU_ACTION_END},
     },
@@ -166,6 +168,12 @@ u8 MainMenu(C64 *the_c64)
         {
             switch(menu->menulist[menuSelection].menu_action)
             {
+                case MENU_ACTION_PRESS_C64:
+                    extern u8 issue_commodore_key;
+                    issue_commodore_key = 1;
+                    bExitMenu = true;
+                    break;
+                    
                 case MENU_ACTION_RESET_EMU:
                     the_c64->PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
                     the_c64->Reset();
@@ -338,7 +346,7 @@ void SetDefaultGameConfig(void)
     myConfig.trueDrive   = 0;
     myConfig.jitter      = 1; // Medium 
     myConfig.diskSFX     = 1; // Disk sound effects on
-    myConfig.reserved1   = 0;
+    myConfig.joyPort     = 0; // Default to Joy1
     myConfig.reserved2   = 0;
     myConfig.reserved3   = 0;
     myConfig.reserved4   = 0;
@@ -539,6 +547,7 @@ const struct options_t Option_Table[1][20] =
     {
         {"TRUE DRIVE",     {"DISABLE (FAST)", "ENABLED (SLOW)"},                                        &myConfig.trueDrive,   2},
         {"AUTO FIRE",      {"OFF", "ON"},                                                               &myConfig.autoFire,    2},
+        {"JOY PORT",       {"PORT 1", "PORT 2"},                                                        &myConfig.joyPort,     2},
         {"LCD JITTER",     {"NONE", "LIGHT", "HEAVY"},                                                  &myConfig.jitter,      3},
         {"DISK SOUND",     {"SFX OFF", "SFX ON"},                                                       &myConfig.diskSFX,     2},
         {"A BUTTON",       {"JOY FIRE", "SPACE", "RETURN", "JOY UP", "JOY DOWN", "PAN-UP", "PAN-DOWN"}, &myConfig.key_A,       7},

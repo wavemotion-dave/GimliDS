@@ -271,7 +271,7 @@ bool Job1541::read_sector(int track, int sector, uint8 *buffer)
 {
     int offset;
 
-    floppy_soundfx();   // Play floppy SFX if needed
+    floppy_soundfx(0);   // Play floppy SFX if needed
 
     // Convert track/sector to byte offset in file
     if ((offset = offset_from_ts(track, sector)) < 0)
@@ -292,7 +292,7 @@ bool Job1541::write_sector(int track, int sector, uint8 *buffer)
 {
     int offset;
 
-    floppy_soundfx();   // Play floppy SFX if needed
+    floppy_soundfx(1);   // Play floppy SFX if needed
 
     // Convert track/sector to byte offset in file
     if ((offset = offset_from_ts(track, sector)) < 0)

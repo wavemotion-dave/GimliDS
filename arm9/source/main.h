@@ -53,6 +53,5 @@ extern C64 *TheC64;
 extern bool IsDirectory(const char *path);
 extern void DSPrint(int iX,int iY,int iScr,char *szMessage);
 extern void kbd_buf_reset(void);
-extern int current_joystick;
 
 #endif
