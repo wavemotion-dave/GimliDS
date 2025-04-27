@@ -1290,25 +1290,24 @@ ITCM_CODE void el_sprites(uint8 *chunky_ptr)
         }
     }
 
-    if (1) {
-
-        // Check sprite-sprite collisions
-        if (clx_spr) {
-            clx_spr |= spr_coll;
-        } else {
-            clx_spr |= spr_coll;
+    // Check sprite-sprite collisions
+    if (spr_coll) {
+        uint8_t old_clx_spr = clx_spr;
+        clx_spr |= spr_coll;
+        if (old_clx_spr == 0) { // Interrupt on first detected collision
             irq_flag |= 0x04;
             if (irq_mask & 0x04) {
                 irq_flag |= 0x80;
                 the_cpu->TriggerVICIRQ();
             }
         }
+    }
 
-        // Check sprite-background collisions
-        if (clx_bgr) {
-            clx_bgr |= gfx_coll;
-        } else {
-            clx_bgr |= gfx_coll;
+    // Check sprite-background collisions
+    if (gfx_coll) {
+        uint8_t old_clx_bgr = clx_bgr;
+        clx_bgr |= gfx_coll;
+        if (old_clx_bgr == 0) { // Interrupt on first detected collision
             irq_flag |= 0x02;
             if (irq_mask & 0x02) {
                 irq_flag |= 0x80;
@@ -1460,14 +1459,12 @@ int MOS6569::EmulateLine(void)
             border_on = false;
 
         if (!border_on) {
-
             // Display window contents
             uint8 *p = chunky_ptr + COL40_XSTART;       // Pointer in chunky display buffer
             uint8 *r = fore_mask_buf + COL40_XSTART/8;  // Pointer in foreground mask buffer
 #ifdef ALIGNMENT_CHECK
             uint8 *use_p = ((((int)p) & 3) == 0) ? p : text_chunky_buf;
 #endif
-
             {
                 p--;
                 uint8 b0cc = b0c_color;
@@ -1655,7 +1652,7 @@ int MOS6569::EmulateLine(void)
             for (int i=5; i<COL40_XSTART/4; i++)
                 *++lp = c;
             lp = (uint32 *)(chunky_ptr + COL40_XSTOP) - 1;
-            for (int i=0; i<(DISPLAY_X-COL40_XSTOP)/4; i++)
+            for (int i=0; i<((DISPLAY_X-COL40_XSTOP)-16)/4; i++)
                 *++lp = c;
             if (!border_40_col) {
                 c = ec_color;
@@ -1671,7 +1668,7 @@ int MOS6569::EmulateLine(void)
             // Display border
             uint32 *lp = (uint32 *)chunky_ptr + 4;
             uint32 c = ec_color_long;
-            for (int i=4; i<(DISPLAY_X/4)-1; i++)
+            for (int i=4; i<(DISPLAY_X/4)-5; i++)
                 *++lp = c;
         }
 
