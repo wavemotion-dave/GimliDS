@@ -74,12 +74,12 @@ this way. But if the game requires it, that's your only option. Recommended to s
 
 ## Acknowledgements
 
-  * The opening jingle was done by DeNL and comes courtesy of the roalty free jingles at pixabay
+  * The opening jingle was done by DeNL and comes courtesy of the roalty free jingles at pixabay.
   * The dwarf icon on the title screen was submitted online by 'anonymous' to an artwork site.  If this is yours and you would like to be credited, please contact me.
-  * Christian Bauer - Original Frodo author - without whom none of this exists
-  * Troy Davis(GPF) http://gpf.dcemu.co.uk - FrodoDS initial porter and others who have contributed over the years
-  * Wintermute and the contributes for devkitpro and libnds
-  * djleviticus for his time and efforts in helping shake out some bugs during the beta testing
+  * Christian Bauer - Original Frodo author - without whom none of this exists!
+  * Troy Davis(GPF) http://gpf.dcemu.co.uk - FrodoDS initial porter and others who have contributed over the years.
+  * Wintermute and the contributes for devkitpro and libnds.
+  * djleviticus for his time and efforts in helping shake out some bugs during the beta testing.
 
 ## Why GimliDS?
 
@@ -89,6 +89,24 @@ a codebase and numerous tweaks and hacks were done to get it running on the vene
 improvements but also add my own tweaks and hacks to make it fully playable on the little handheld. As such, the GimliDS naming is a clear nod to the original emulator
 but also distinguishes it as a bit rough around the edges...
 
+## Original Frodo Copyright
+```
+Frodo Copyright (C) Christian Bauer
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+```
 ## Change Log
 
 Version 0.8 release 27-Apr-2025 by wavemotion-dave
