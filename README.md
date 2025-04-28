@@ -79,6 +79,7 @@ this way. But if the game requires it, that's your only option. Recommended to s
   * Christian Bauer - Original Frodo author - without whom none of this exists
   * Troy Davis(GPF) http://gpf.dcemu.co.uk - FrodoDS initial porter and others who have contributed over the years
   * Wintermute and the contributes for devkitpro and libnds
+  * djleviticus for his time and efforts in helping shake out some bugs during the beta testing
 
 ## Why GimliDS?
 
