@@ -42,8 +42,8 @@ and be sure they are named exactly as follows:
 ## Emulator Use
 
 To use GimliDS you launch GimliDS.NDS on your DS/DSi/XL/LL. Please note that if you are running from an R4 card (or similar), you 
-will be running in 'Compatibility' mode that keeps the CPU at the slower 67MHz. While GimliDS will run, it must use some heavy 
-frameskip to get anywhere near full speed. If you're running from the SD card on a DSi/XL/LL with something like Twilight Menu++
+will be running in 'Compatibility' mode that keeps the CPU at the slower 67MHz. While GimliDS will run, it must use some level 
+of light frameskip to get full speed gameplay. If you're running from the SD card on a DSi/XL/LL with something like Twilight Menu++
 or Unlaunch - you will be happy to know that you are running at 134MHz and there will be no frameskip and the audio will be 
 much improved.
 
