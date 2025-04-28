@@ -83,10 +83,11 @@ this way. But if the game requires it, that's your only option. Recommended to s
 
 ## Why GimliDS?
 
-Well - this is not enitrely the Frodo emulator. Frodo has taken many great steps forward in recent years to be more accurate and generally is a couple of full notches
-above where this port sits. My emulator is largely taken from older ports that used Frodo 4.2 as a codebase and numerous tweaks and hacks were done to get it running
-on the venerable DS hardwarwe. As such, GimliDS is a clear nod to the original emulator but also distinguishes it as a bit rough around the edges... it means well but
-can sometimes be a little short.
+Well - this is not enitrely a classic Frodo emulator but is clearly derived from those sources. Mainline Frodo has taken many great steps forward in recent years to be 
+more accurate and generally is a couple of full notches above where this port sits. My emulator is largely taken from older DS ports that used Frodo 4.2 (circa 2007) as
+a codebase and numerous tweaks and hacks were done to get it running on the venerable DS hardwarwe. I've taken that and tried to back-port some of the newer Frodo mainline
+improvements but also add my own tweaks and hacks to make it fully playable on the little handheld. As such, the GimliDS naming is a clear nod to the original emulator
+but also distinguishes it as a bit rough around the edges...
 
 ## Change Log
 
