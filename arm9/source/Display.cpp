@@ -176,25 +176,13 @@ static int m_Mode=KB_SHIFT;
 
 extern u8 col, row; // console cursor position
 
-extern uint16 *screen;
-uint16 * map;
-uint8 *bufmem;
-#define BUFMEM_SIZE ((512*(DISPLAY_Y-1))+DISPLAY_X)
-
-uint8 *emu_screen;
-uint8 *emu_buffers[2];
-int emu_buf=0;
-
 static int keystate[256];
 
 extern u8 MainMenu(C64 *the_c64);
 void show_joysticks(void);
 void show_shift_key(void);
 
-
 char str[300];
-int menufirsttime =0;
-int choosingfile = 1;
 int bg0b, bg1b;
 
 void ShowKeyboard(void)
@@ -346,8 +334,6 @@ int init_graphics(void)
 
     frontBuffer = (uint8*)(0x06000000);
 
-    bufmem = (uint8*)malloc(BUFMEM_SIZE);
-
     if (!fatInitDefault())
     {
         iprintf("Unable to initialize media device!");
@@ -478,26 +464,6 @@ void C64Display::Speedometer(int speed)
 }
 
 
-/*
- *  Return pointer to bitmap data
- */
-
-uint8 *C64Display::BitmapBase(void)
-{
-    extern uint8 fast_line_buffer[];
-    return (uint8 *)fast_line_buffer;
-}
-
-
-
-/*
- *  Return number of bytes per row
- */
-
-int C64Display::BitmapXMod(void)
-{
-    return 512;
-}
 
 void C64Display::KeyPress(int key, uint8 *key_matrix, uint8 *rev_matrix) {
     int c64_byte, c64_bit, shifted;

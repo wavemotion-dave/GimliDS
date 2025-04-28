@@ -54,8 +54,6 @@ public:
     void UpdateRasterLine(int raster, u8 *src);
     void UpdateLEDs(int l0, int l1);
     void Speedometer(int speed);
-    uint8 *BitmapBase(void);
-    int BitmapXMod(void);
     void KeyPress(int key, uint8 *key_matrix, uint8 *rev_matrix);
     void KeyRelease(int key, uint8 *key_matrix, uint8 *rev_matrix);
     void PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joystick);

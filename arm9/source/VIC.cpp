@@ -234,9 +234,6 @@ static uint32 ec_color_long             __attribute__((section(".dtcm")));    //
 static uint8 matrix_line[40]            __attribute__((section(".dtcm")));    // Buffer for video line, read in Bad Lines
 static uint8 color_line[40]             __attribute__((section(".dtcm")));    // Buffer for color line, read in Bad Lines
 
-static uint8 *chunky_line_start         __attribute__((section(".dtcm")));    // Pointer to start of current line in bitmap buffer
-static int xmod                         __attribute__((section(".dtcm")));    // Number of bytes per row
-
 static uint8 *matrix_base               __attribute__((section(".dtcm")));    // Video matrix base
 static uint8 *char_base                 __attribute__((section(".dtcm")));    // Character generator base
 static uint8 *bitmap_base               __attribute__((section(".dtcm")));    // Bitmap base
@@ -306,10 +303,6 @@ MOS6569::MOS6569(C64 *c64, C64Display *disp, MOS6510 *CPU, uint8 *RAM, uint8 *Ch
     matrix_base = RAM;
     char_base = RAM;
     bitmap_base = RAM;
-
-    // Get bitmap info
-    chunky_line_start = disp->BitmapBase();
-    xmod = disp->BitmapXMod();
 
     // Initialize VIC registers
     mx8 = 0;
@@ -879,12 +872,6 @@ inline void MOS6569::vblank(void)
     }
     
     the_c64->VBlank(!frame_skipped);
-
-    // Get bitmap pointer for next frame. This must be done
-    // after calling the_c64->VBlank() because the preferences
-    // and screen configuration may have been changed there
-    chunky_line_start = the_display->BitmapBase();
-    xmod = the_display->BitmapXMod();
 }
 
 
@@ -1449,7 +1436,7 @@ int MOS6569::EmulateLine(void)
     {
         u8 bSkipDraw = 0;
         // Our output goes here
-        uint8 *chunky_ptr = chunky_line_start;
+        uint8 *chunky_ptr = fast_line_buffer;
         uint32 *direct_scr_ptr = (uint32*)((u32)0x06000000 + (512*(raster-FIRST_DISP_LINE)));
 
         // Set video counter
@@ -1511,8 +1498,8 @@ int MOS6569::EmulateLine(void)
 #else
                         if (x_scroll & 3) {
                             el_std_text(text_chunky_buf, char_base + rc, r);
+                            // Experimentally, this is slightly faster than memcpy()
                             u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
-                            //memcpy(p, text_chunky_buf, 8*40);
                         } else
                             el_std_text(p, char_base + rc, r);
 #endif
@@ -1530,8 +1517,8 @@ int MOS6569::EmulateLine(void)
 #else
                         if (x_scroll & 3) {
                             el_mc_text(text_chunky_buf, char_base + rc, r);
+                            // Experimentally, this is slightly faster than memcpy()
                             u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
-                            //memcpy(p, text_chunky_buf, 8*40);
                         } else
                             el_mc_text(p, char_base + rc, r);
 #endif
@@ -1549,8 +1536,8 @@ int MOS6569::EmulateLine(void)
 #else
                         if (x_scroll & 3) {
                             el_std_bitmap(text_chunky_buf, bitmap_base + (vc << 3) + rc, r);
+                            // Experimentally, this is slightly faster than memcpy()
                             u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
-                            //memcpy(p, text_chunky_buf, 8*40);
                         } else
                             el_std_bitmap(p, bitmap_base + (vc << 3) + rc, r);
 #endif
@@ -1568,8 +1555,8 @@ int MOS6569::EmulateLine(void)
 #else
                         if (x_scroll & 3) {
                             el_mc_bitmap(text_chunky_buf, bitmap_base + (vc << 3) + rc, r);
+                            // Experimentally, this is slightly faster than memcpy()
                             u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
-                            //memcpy(p, text_chunky_buf, 8*40);
                         } else
                             el_mc_bitmap(p, bitmap_base + (vc << 3) + rc, r);
 #endif
@@ -1587,8 +1574,8 @@ int MOS6569::EmulateLine(void)
 #else
                         if (x_scroll & 3) {
                             el_ecm_text(text_chunky_buf, char_base + rc, r);
+                            // Experimentally, this is slightly faster than memcpy()
                             u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
-                            //memcpy(p, text_chunky_buf, 8*40);
                         } else
                             el_ecm_text(p, char_base + rc, r);
 #endif
@@ -1617,8 +1604,8 @@ int MOS6569::EmulateLine(void)
 #else
                         if (x_scroll & 3) {
                             el_std_idle(text_chunky_buf, r);
+                            // Experimentally, this is slightly faster than memcpy()
                             u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
-                            //memcpy(p, text_chunky_buf, 8*40);
                         } else
                             el_std_idle(p, r);
 #endif
@@ -1635,8 +1622,8 @@ int MOS6569::EmulateLine(void)
 #else
                         if (x_scroll & 3) {
                             el_mc_idle(text_chunky_buf, r);
+                            // Experimentally, this is slightly faster than memcpy()
                             u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
-                            //memcpy(p, text_chunky_buf, 8*40);
                         } else
                             el_mc_idle(p, r);
 #endif
@@ -1654,8 +1641,11 @@ int MOS6569::EmulateLine(void)
 
             // Draw sprites
             // Clear sprite collision buffer - but only if we have spites to draw on this line
-            if (sprite_on) memset((uint32 *)spr_coll_buf, 0x00, sizeof(spr_coll_buf));
-            el_sprites(chunky_ptr);
+            if (sprite_on) 
+            {
+                memset((uint32 *)spr_coll_buf, 0x00, sizeof(spr_coll_buf));
+                el_sprites(chunky_ptr);
+            }
 
             // Handle left/right border
             uint32 *lp = (uint32 *)chunky_ptr + 4;
@@ -1665,14 +1655,46 @@ int MOS6569::EmulateLine(void)
             lp = (uint32 *)(chunky_ptr + COL40_XSTOP) - 1;
             for (int i=0; i<((DISPLAY_X-COL40_XSTOP)-16)/4; i++)
                 *++lp = c;
-            if (!border_40_col) {
-                c = ec_color;
-                p = chunky_ptr + COL40_XSTART - 1;
-                for (int i=0; i<COL38_XSTART-COL40_XSTART; i++)
-                    *++p = c;
-                p = chunky_ptr + COL38_XSTOP - 1;
-                for (int i=0; i<COL40_XSTOP-COL38_XSTOP; i++)
-                    *++p = c;
+            if (!border_40_col)
+            {
+                // Get us onto an even alignment and do 16-bits for added speed
+                u16 c16 = ec_color_long & 0xFFFF;
+                p = chunky_ptr + COL40_XSTART;
+                if ((u32)p & 1)
+                {
+                    *p++ = ec_color;
+                    u16 *p16 = (u16 *) p;
+                    *p16++ = c16;
+                    *p16++ = c16;
+                    *p16   = c16;                    
+                }
+                else
+                {
+                    u16 *p16 = (u16 *) p;
+                    *p16++ = c16;
+                    *p16++ = c16;
+                    *p16++ = c16;
+                     p = (u8 *) p16;
+                    *p = ec_color;                 
+                }
+
+                // Get us onto an even alignment and do 32-bits for added speed
+                p = chunky_ptr + COL38_XSTOP;
+                if ((u32)p & 1)
+                {
+                    *p++ = ec_color;
+                    u32 *p32 = (u32 *) p;
+                    *p32++ = c;
+                    *p32 = c;
+                }
+                else
+                {
+                    u32 *p32 = (u32 *) p;
+                    *p32++ = c;
+                    *p32++ = c;
+                     p = (u8 *) p32;
+                    *p = ec_color;                 
+                }
             }
         }
         else 
@@ -1701,7 +1723,7 @@ int MOS6569::EmulateLine(void)
         {
             if (!bSkipDraw)
             {
-                the_display->UpdateRasterLine(raster, (u8*)(chunky_line_start));
+                the_display->UpdateRasterLine(raster, (u8*)(fast_line_buffer));
             }
         }
     }
