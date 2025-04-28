@@ -82,7 +82,7 @@
 #include "Prefs.h"
 
 // First and last displayed line
-const unsigned FIRST_DISP_LINE = 0x10;
+const unsigned FIRST_DISP_LINE = 0x20;
 const unsigned LAST_DISP_LINE = 0x110;
 
 // First and last possible line for Bad Lines
@@ -871,7 +871,11 @@ inline void MOS6569::vblank(void)
     }
     else
     {
-        frame_skipped = (total_frames & 1);
+        frame_skipped = (total_frames & 1); // Skip every other...
+        if (frame_skipped)
+        {
+            if ((total_frames % 3) == 0) frame_skipped = 0; // But every so often toss in an odd frame
+        }
     }
     
     the_c64->VBlank(!frame_skipped);
@@ -1414,12 +1418,6 @@ int MOS6569::EmulateLine(void)
     // End of screen reached?
     if (raster != TOTAL_RASTERS)
     {
-        // Not end of screen... output the next scanline as it will be 'stale' and not cached...
-        // This also helps with tearing as we'll be outputting the 'stale' (last frame) line while the new frame is drawing.
-        if (!frame_skipped)
-        {
-            the_display->UpdateRasterLine(raster, (u8*)(chunky_line_start));
-        }
         raster_y = raster;
     }
     else  // Yes, enter vblank - new frame coming up
@@ -1447,17 +1445,19 @@ int MOS6569::EmulateLine(void)
     }
 
     // Within the visible range?
-    if (raster >= FIRST_DISP_LINE && raster <= LAST_DISP_LINE) {
-
+    if (raster >= FIRST_DISP_LINE && raster <= LAST_DISP_LINE) 
+    {
+        u8 bSkipDraw = 0;
         // Our output goes here
         uint8 *chunky_ptr = chunky_line_start;
+        uint32 *direct_scr_ptr = (uint32*)((u32)0x06000000 + (512*(raster-FIRST_DISP_LINE)));
 
         // Set video counter
         vc = vc_base;
 
         // Bad Line condition?
-        if (raster >= FIRST_DMA_LINE && raster <= LAST_DMA_LINE && ((raster & 7) == y_scroll) && bad_lines_enabled) {
-
+        if (raster >= FIRST_DMA_LINE && raster <= LAST_DMA_LINE && ((raster & 7) == y_scroll) && bad_lines_enabled)
+        {
             // Turn on display
             display_state = is_bad_line = true;
             cycles_left = 23 + CycleDeltas[myConfig.badCycles];
@@ -1482,7 +1482,8 @@ int MOS6569::EmulateLine(void)
         if (raster == dy_start && (ctrl1 & 0x10)) // Don't turn off border if DEN bit cleared
             border_on = false;
 
-        if (!border_on) {
+        if (!border_on) 
+        {
             // Display window contents
             uint8 *p = chunky_ptr + COL40_XSTART;       // Pointer in chunky display buffer
             uint8 *r = fore_mask_buf + COL40_XSTART/8;  // Pointer in foreground mask buffer
@@ -1510,7 +1511,8 @@ int MOS6569::EmulateLine(void)
 #else
                         if (x_scroll & 3) {
                             el_std_text(text_chunky_buf, char_base + rc, r);
-                            memcpy(p, text_chunky_buf, 8*40);
+                            u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
+                            //memcpy(p, text_chunky_buf, 8*40);
                         } else
                             el_std_text(p, char_base + rc, r);
 #endif
@@ -1528,7 +1530,8 @@ int MOS6569::EmulateLine(void)
 #else
                         if (x_scroll & 3) {
                             el_mc_text(text_chunky_buf, char_base + rc, r);
-                            memcpy(p, text_chunky_buf, 8*40);
+                            u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
+                            //memcpy(p, text_chunky_buf, 8*40);
                         } else
                             el_mc_text(p, char_base + rc, r);
 #endif
@@ -1546,7 +1549,8 @@ int MOS6569::EmulateLine(void)
 #else
                         if (x_scroll & 3) {
                             el_std_bitmap(text_chunky_buf, bitmap_base + (vc << 3) + rc, r);
-                            memcpy(p, text_chunky_buf, 8*40);
+                            u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
+                            //memcpy(p, text_chunky_buf, 8*40);
                         } else
                             el_std_bitmap(p, bitmap_base + (vc << 3) + rc, r);
 #endif
@@ -1564,7 +1568,8 @@ int MOS6569::EmulateLine(void)
 #else
                         if (x_scroll & 3) {
                             el_mc_bitmap(text_chunky_buf, bitmap_base + (vc << 3) + rc, r);
-                            memcpy(p, text_chunky_buf, 8*40);
+                            u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
+                            //memcpy(p, text_chunky_buf, 8*40);
                         } else
                             el_mc_bitmap(p, bitmap_base + (vc << 3) + rc, r);
 #endif
@@ -1582,7 +1587,8 @@ int MOS6569::EmulateLine(void)
 #else
                         if (x_scroll & 3) {
                             el_ecm_text(text_chunky_buf, char_base + rc, r);
-                            memcpy(p, text_chunky_buf, 8*40);
+                            u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
+                            //memcpy(p, text_chunky_buf, 8*40);
                         } else
                             el_ecm_text(p, char_base + rc, r);
 #endif
@@ -1611,7 +1617,8 @@ int MOS6569::EmulateLine(void)
 #else
                         if (x_scroll & 3) {
                             el_std_idle(text_chunky_buf, r);
-                            memcpy(p, text_chunky_buf, 8*40);
+                            u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
+                            //memcpy(p, text_chunky_buf, 8*40);
                         } else
                             el_std_idle(p, r);
 #endif
@@ -1628,7 +1635,8 @@ int MOS6569::EmulateLine(void)
 #else
                         if (x_scroll & 3) {
                             el_mc_idle(text_chunky_buf, r);
-                            memcpy(p, text_chunky_buf, 8*40);
+                            u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
+                            //memcpy(p, text_chunky_buf, 8*40);
                         } else
                             el_mc_idle(p, r);
 #endif
@@ -1666,13 +1674,15 @@ int MOS6569::EmulateLine(void)
                 for (int i=0; i<COL40_XSTOP-COL38_XSTOP; i++)
                     *++p = c;
             }
-        } else {
-
-            // Display border
-            uint32 *lp = (uint32 *)chunky_ptr + 4;
+        }
+        else 
+        {
+            // Display border - directly to screen!
+            bSkipDraw = 1;
+            direct_scr_ptr+=4;
             uint32 c = ec_color_long;
             for (int i=4; i<(DISPLAY_X/4)-5; i++)
-                *++lp = c;
+                *++direct_scr_ptr = c;
         }
 
         // Increment row counter, go to idle state on overflow
@@ -1684,7 +1694,18 @@ int MOS6569::EmulateLine(void)
 
         if (raster >= FIRST_DMA_LINE-1 && raster <= LAST_DMA_LINE-1 && (((raster+1) & 7) == y_scroll) && bad_lines_enabled)
             rc = 0;
+    
+        // Not end of screen... output the next scanline as it will be 'stale' and not cached...
+        // This also helps with tearing as we'll be outputting the 'stale' (last frame) line while the new frame is drawing.
+        if (!frame_skipped)
+        {
+            if (!bSkipDraw)
+            {
+                the_display->UpdateRasterLine(raster, (u8*)(chunky_line_start));
+            }
+        }
     }
+    
 
 VIC_nop:
     // Skip this if all sprites are off

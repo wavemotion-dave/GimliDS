@@ -1,6 +1,6 @@
 
 #define MAX_CONFIGS                 1150
-#define CONFIG_VERSION              0x0004
+#define CONFIG_VERSION              0x0005
 
 extern s16 CycleDeltas[];
 

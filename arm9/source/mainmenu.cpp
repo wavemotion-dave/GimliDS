@@ -357,7 +357,7 @@ void SetDefaultGameConfig(void)
     myConfig.badCycles   = 0;   // Normal 23 - this is the adjustment to that
     
     myConfig.offsetX     = 32;
-    myConfig.offsetY     = 35;
+    myConfig.offsetY     = 19;
     myConfig.scaleX      = 256;
     myConfig.scaleY      = 200;
 }

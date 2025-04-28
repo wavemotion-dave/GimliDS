@@ -386,10 +386,8 @@ int init_graphics(void)
  */
 ITCM_CODE void C64Display::UpdateRasterLine(int raster, u8 *src)
 {
-    if ((raster < 32) || (raster > 272)) return;
-    
     // Output the raster line to the LCD...
-    u32 *dest = (uint32*)((u32)0x06000000 + (512*(raster-17)));
+    u32 *dest = (uint32*)((u32)0x06000000 + (512*(raster-FIRST_DISP_LINE)));
     u32 *source = (u32*) src;
     for (int i=0; i<(DISPLAY_X-0x10)/4; i++)
     {

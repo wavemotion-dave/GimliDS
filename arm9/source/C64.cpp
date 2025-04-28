@@ -863,31 +863,28 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
     TheCIA1->Joystick1 = poll_joystick(0);
     TheCIA1->Joystick2 = poll_joystick(1);
 
-    if (draw_frame)
+    frames++;
+    while (GetTicks() < (((unsigned int)TICKS_PER_SEC/(unsigned int)50) * (unsigned int)frames))
     {
-        frames++;
-        while (GetTicks() < (((unsigned int)TICKS_PER_SEC/(unsigned int)50) * (unsigned int)frames))
-        {
-            if (ThePrefs.TrueDrive && TheDisplay->led_state[0]) break; // If reading the drive in 'true drive' mode, just plow along...
-            asm("nop");
-            //break;  // Uncomment this for full speed...
-        }
+        if (ThePrefs.TrueDrive && TheDisplay->led_state[0]) break; // If reading the drive in 'true drive' mode, just plow along...
+        asm("nop");
+        //break;  // Uncomment this for full speed...
+    }
 
-        frames_per_sec++;
+    frames_per_sec++;
 
-        extern u16 vBlanks;
-        if (vBlanks >= 60)
-        {
-            vBlanks = 0;
-            TheDisplay->Speedometer((int)frames_per_sec);
-            frames_per_sec = 0;
-        }
+    extern u16 vBlanks;
+    if (vBlanks >= 60)
+    {
+        vBlanks = 0;
+        TheDisplay->Speedometer((int)frames_per_sec);
+        frames_per_sec = 0;
+    }
 
-        if (frames == 50)
-        {
-            frames = 0;
-            StartTimers();
-        }
+    if (frames == 50)
+    {
+        frames = 0;
+        StartTimers();
     }
 }
 

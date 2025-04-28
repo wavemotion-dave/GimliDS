@@ -260,7 +260,7 @@ void MOS6581::SetState(MOS6581State *ss)
  **  Renderer for digital SID emulation (SIDTYPE_DIGITAL)
  **/
 
-const uint32 SAMPLE_FREQ    = 15650;        // NDS Sample Rate - 50 frames x 313 scanlines = 15650 samples per second
+const uint32 SAMPLE_FREQ    = 15600;        // NDS Sample Rate - 50 frames x 312 scanlines = 15600 samples per second
 const uint32 SID_FREQ       = 985248;       // SID frequency in Hz
 const uint32 SID_CYCLES_FIX = ((SID_FREQ << 11)/SAMPLE_FREQ)<<5;    // # of SID clocks per sample frame * 65536
 const uint32 SID_CYCLES = SID_CYCLES_FIX << 16; // # of SID clocks per sample frame
