@@ -746,11 +746,7 @@ handle_int:
     }
 
 #define IS_CPU_1541
-#undef PRECISE_CPU_CYCLES
-#define PRECISE_CPU_CYCLES 0
 #include "CPU_emulline.h"
-#undef PRECISE_CPU_CYCLES
-#define PRECISE_CPU_CYCLES 1
 
     return last_cycles;
 }

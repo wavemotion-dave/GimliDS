@@ -950,7 +950,7 @@
         case 0x7c:
         case 0xdc:
         case 0xfc:
-#if PRECISE_CPU_CYCLESz
+#if PRECISE_CPU_CYCLES
             read_byte_abs_x();
 #else
             pc+=2;

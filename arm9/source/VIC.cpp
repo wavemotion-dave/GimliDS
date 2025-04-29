@@ -225,6 +225,7 @@ static uint8 b0c_color                  __attribute__((section(".dtcm")));
 static uint8 b1c_color                  __attribute__((section(".dtcm")));
 static uint8 b2c_color                  __attribute__((section(".dtcm")));
 static uint8 b3c_color                  __attribute__((section(".dtcm")));
+static uint32 b0c_color32               __attribute__((section(".dtcm")));
 
 static uint8 mm0_color                  __attribute__((section(".dtcm")));
 static uint8 mm1_color                  __attribute__((section(".dtcm")));    // Indices for MOB multicolors
@@ -313,6 +314,7 @@ MOS6569::MOS6569(C64 *c64, C64Display *disp, MOS6510 *CPU, uint8 *RAM, uint8 *Ch
     clx_spr = clx_bgr = 0;
     cia_vabase = 0;
     ec = b0c = b1c = b2c = b3c = mm0 = mm1 = 0;
+    b0c_color32 = 0;
     for (i=0; i<8; i++) mx[i] = my[i] = sc[i] = 0;
 
     // Initialize other variables
@@ -522,6 +524,7 @@ void MOS6569::SetState(MOS6569State *vd)
     b1c_color = colors[b1c];
     b2c_color = colors[b2c];
     b3c_color = colors[b3c];
+    b0c_color32 = (b0c_color << 24) | (b0c_color << 16) | (b0c_color << 8) | (b0c_color << 0);
     make_mc_table();
 
     mm0 = vd->mm0; mm1 = vd->mm1;
@@ -776,6 +779,7 @@ ITCM_CODE void MOS6569::WriteRegister(uint16 adr, uint8 byte)
         case 0x21:
             if (b0c != byte) {
                 b0c_color = colors[b0c = byte & 0xF];
+                b0c_color32 = (b0c_color << 24) | (b0c_color << 16) | (b0c_color << 8) | (b0c_color << 0);
                 make_mc_table();
             }
             break;
@@ -885,7 +889,6 @@ inline void MOS6569::el_std_text(uint8 *p, uint8 *q, uint8 *r)
     uint32 *lp = (uint32 *)p;
     uint8 *cp = color_line;
     uint8 *mp = matrix_line;
-    u32 bgcolor = (b0cc << 24) | (b0cc << 16) | (b0cc << 8) | (b0cc << 0);
 
     // Loop for 40 characters
     for (int i=0; i<40; i++)
@@ -894,8 +897,8 @@ inline void MOS6569::el_std_text(uint8 *p, uint8 *q, uint8 *r)
         
         if (!data)
         {
-            *lp++ = bgcolor; 
-            *lp++ = bgcolor;
+            *lp++ = b0c_color32; 
+            *lp++ = b0c_color32;
         }
         else
         {
@@ -913,12 +916,9 @@ ITCM_CODE void el_mc_text(uint8 *p, uint8 *q, uint8 *r)
 inline void MOS6569::el_mc_text(uint8 *p, uint8 *q, uint8 *r)
 #endif
 {
-    uint16 *wp = (uint16 *)p;
+    uint32 *wp = (uint32 *)p;
     uint8 *cp = color_line;
     uint8 *mp = matrix_line;
-    uint16 *mclp = mc_color_lookup;
-    u32 bgcolor  = (mclp[0] << 24) | (mclp[0] << 16) | (mclp[0] << 8) | (mclp[0] << 0);
-    u32 bgcolor2 = (b0c << 24) | (b0c << 16) | (b0c << 8) | (b0c << 0);
 
     // Loop for 40 characters
     for (int i=0; i<40; i++)
@@ -929,37 +929,29 @@ inline void MOS6569::el_mc_text(uint8 *p, uint8 *q, uint8 *r)
             r[i] = (data & 0xaa) | (data & 0xaa) >> 1;
             if (!data)
             {
-                *(uint32 *)wp = bgcolor;
-                wp += 2;
-                *(uint32 *)wp = bgcolor;
-                wp += 2;
+                *wp++ = b0c_color32;
+                *wp++ = b0c_color32;
             }
             else
             {
                 uint8 color = colors[cp[i] & 7];
-                mclp[3] = color | (color << 8);
-                *wp++ = mclp[(data >> 6) & 3];
-                *wp++ = mclp[(data >> 4) & 3];
-                *wp++ = mclp[(data >> 2) & 3];
-                *wp++ = mclp[(data >> 0) & 3];
+                mc_color_lookup[3] = color | (color << 8);
+                *wp++ = mc_color_lookup[(data >> 6) & 3] | (mc_color_lookup[(data >> 4) & 3] << 16);
+                *wp++ = mc_color_lookup[(data >> 2) & 3] | (mc_color_lookup[(data >> 0) & 3] << 16);
             }
 
         } else { // Standard mode in multicolor mode
             r[i] = data;
             if (!data)
             {
-                *(uint32 *)wp = bgcolor2;
-                wp += 2;
-                *(uint32 *)wp = bgcolor2;
-                wp += 2;
+                *wp++ = b0c_color32;
+                *wp++ = b0c_color32;
             }
             else
             {
                 uint8 color = cp[i];
-                *(uint32 *)wp = TextColorTable[color][b0c][data>>4].b;
-                wp += 2;
-                *(uint32 *)wp = TextColorTable[color][b0c][data&0xf].b;
-                wp += 2;
+                *wp++ = TextColorTable[color][b0c][data>>4].b;
+                *wp++ = TextColorTable[color][b0c][data&0xf].b;
             }
         }
     }
@@ -995,31 +987,38 @@ inline void MOS6569::el_mc_bitmap(uint8 *p, uint8 *q, uint8 *r)
 #endif
 {
     uint16 lookup[4];
-    uint16 *wp = (uint16 *)p - 1;
+    uint32 *wp = (uint32 *)p;
     uint8 *cp = color_line;
     uint8 *mp = matrix_line;
 
     lookup[0] = (b0c_color << 8) | b0c_color;
+    uint32 bg32 = (b0c_color << 24) | (b0c_color << 16) | (b0c_color << 8) | b0c_color;
 
     // Loop for 40 characters
     for (int i=0; i<40; i++, q+=8) 
     {
         uint8 color, acolor, bcolor;
 
-        color = colors[mp[i] >> 4];
-        lookup[1] = (color << 8) | color;
-        bcolor = colors[mp[i]];
-        lookup[2] = (bcolor << 8) | bcolor;
-        acolor = colors[cp[i]];
-        lookup[3] = (acolor << 8) | acolor;
-
         uint8 data = *q;
         r[i] = (data & 0xaa) | (data & 0xaa) >> 1;
+        
+        if (!data)
+        {
+            *wp++ = bg32;
+            *wp++ = bg32;
+        }
+        else
+        {
+            color = mp[i] >> 4;
+            lookup[1] = (color << 8) | color;
+            bcolor = mp[i] & 0xf;
+            lookup[2] = (bcolor << 8) | bcolor;
+            acolor = cp[i] & 0xf;
+            lookup[3] = (acolor << 8) | acolor;        
 
-        *++wp = lookup[(data >> 6) & 3];
-        *++wp = lookup[(data >> 4) & 3];
-        *++wp = lookup[(data >> 2) & 3];
-        *++wp = lookup[(data >> 0) & 3];
+            *wp++ = lookup[(data >> 6) & 3] | (lookup[(data >> 4) & 3] << 16);
+            *wp++ = lookup[(data >> 2) & 3] | (lookup[(data >> 0) & 3] << 16);
+        }
     }
 }
 
@@ -1490,98 +1489,68 @@ int MOS6569::EmulateLine(void)
                 switch (display_idx) {
 
                     case 0: // Standard text
-#ifndef CAN_ACCESS_UNALIGNED
-#ifdef ALIGNMENT_CHECK
-                        el_std_text(use_p, char_base + rc, r);
-                        if (use_p != p)
-                            memcpy(p, use_p, 8*40);
-#else
-                        if (x_scroll & 3) {
+                        if (x_scroll & 3) 
+                        {
                             el_std_text(text_chunky_buf, char_base + rc, r);
                             // Experimentally, this is slightly faster than memcpy()
                             u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
-                        } else
+                        }
+                        else
+                        {
                             el_std_text(p, char_base + rc, r);
-#endif
-#else
-                        el_std_text(p, char_base + rc, r);
-#endif
+                        }
                         break;
 
                     case 1: // Multicolor text
-#ifndef CAN_ACCESS_UNALIGNED
-#ifdef ALIGNMENT_CHECK
-                        el_mc_text(use_p, char_base + rc, r);
-                        if (use_p != p)
-                            memcpy(p, use_p, 8*40);
-#else
-                        if (x_scroll & 3) {
+                        if (x_scroll & 3) 
+                        {
                             el_mc_text(text_chunky_buf, char_base + rc, r);
                             // Experimentally, this is slightly faster than memcpy()
                             u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
-                        } else
+                        }
+                        else
+                        {
                             el_mc_text(p, char_base + rc, r);
-#endif
-#else
-                        el_mc_text(p, char_base + rc, r);
-#endif
+                        }
                         break;
 
                     case 2: // Standard bitmap
-#ifndef CAN_ACCESS_UNALIGNED
-#ifdef ALIGNMENT_CHECK
-                        el_std_bitmap(use_p, bitmap_base + (vc << 3) + rc, r);
-                        if (use_p != p)
-                            memcpy(p, use_p, 8*40);
-#else
-                        if (x_scroll & 3) {
+                        if (x_scroll & 3) 
+                        {
                             el_std_bitmap(text_chunky_buf, bitmap_base + (vc << 3) + rc, r);
                             // Experimentally, this is slightly faster than memcpy()
                             u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
-                        } else
+                        }
+                        else
+                        {
                             el_std_bitmap(p, bitmap_base + (vc << 3) + rc, r);
-#endif
-#else
-                        el_std_bitmap(p, bitmap_base + (vc << 3) + rc, r);
-#endif
+                        }
                         break;
 
                     case 3: // Multicolor bitmap
-#ifndef CAN_ACCESS_UNALIGNED
-#ifdef ALIGNMENT_CHECK
-                        el_mc_bitmap(use_p, bitmap_base + (vc << 3) + rc, r);
-                        if (use_p != p)
-                            memcpy(p, use_p, 8*40);
-#else
-                        if (x_scroll & 3) {
+                        if (x_scroll & 3) 
+                        {
                             el_mc_bitmap(text_chunky_buf, bitmap_base + (vc << 3) + rc, r);
                             // Experimentally, this is slightly faster than memcpy()
                             u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
-                        } else
+                        }
+                        else
+                        {
                             el_mc_bitmap(p, bitmap_base + (vc << 3) + rc, r);
-#endif
-#else
-                        el_mc_bitmap(p, bitmap_base + (vc << 3) + rc, r);
-#endif
+                        }
                         break;
 
                     case 4: // ECM text
-#ifndef CAN_ACCESS_UNALIGNED
-#ifdef ALIGNMENT_CHECK
-                        el_ecm_text(use_p, char_base + rc, r);
-                        if (use_p != p)
-                            memcpy(p, use_p, 8*40);
-#else
-                        if (x_scroll & 3) {
+                        if (x_scroll & 3) 
+                        {
                             el_ecm_text(text_chunky_buf, char_base + rc, r);
                             // Experimentally, this is slightly faster than memcpy()
                             u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
-                        } else
+                        }
+                        else
+                        {
                             el_ecm_text(p, char_base + rc, r);
-#endif
-#else
-                        el_ecm_text(p, char_base + rc, r);
-#endif
+                        }
                         break;
 
                     default:    // Invalid mode (all black)
@@ -1591,9 +1560,11 @@ int MOS6569::EmulateLine(void)
                 }
                 vc += 40;
 
-            } else {    // Idle state graphics
-                switch (display_idx) {
-
+            }
+            else 
+            {    // Idle state graphics
+                switch (display_idx) 
+                {
                     case 0:     // Standard text
                     case 1:     // Multicolor text
                     case 4:     // ECM text

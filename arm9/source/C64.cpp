@@ -97,7 +97,21 @@ C64::C64()
     TheCIA2 = TheCPU->TheCIA2 = TheCPU1541->TheCIA2 = new MOS6526_2(TheCPU, TheVIC, TheCPU1541);
     TheIEC = TheCPU->TheIEC = new IEC(TheDisplay);
 
-    // Initialize RAM with powerup pattern
+    InitMemory();
+
+    // Clear joykey
+    joykey = 0xff;
+
+    // System-dependent things
+    c64_ctor2();
+}
+
+void C64::InitMemory(void)
+{
+    // Clear all of memory...
+    memset(RAM, 0x00, sizeof(myRAM));
+    
+    // Then Initialize RAM with powerup pattern
     // Sampled from a PAL C64 (Assy 250425) with Fujitsu MB8264A-15 DRAM chips
     uint8_t *p = RAM;
     for (unsigned i = 0; i < 512; ++i) {
@@ -138,14 +152,7 @@ C64::C64()
 
     // Clear 1541 RAM
     memset(RAM1541, 0, DRIVE_RAM_SIZE);
-
-    // Clear joykey
-    joykey = 0xff;
-
-    // System-dependent things
-    c64_ctor2();
 }
-
 
 /*
  *  Destructor: Delete all objects
@@ -181,6 +188,7 @@ C64::~C64()
 
 void C64::Reset(void)
 {
+    InitMemory();
     TheCPU->AsyncReset();
     TheCPU1541->AsyncReset();
     TheSID->Reset();

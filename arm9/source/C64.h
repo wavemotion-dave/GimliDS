@@ -47,6 +47,7 @@ public:
     C64();
     ~C64();
 
+    void InitMemory(void);
     void Run(void);
     void Quit(void);
     void Pause(void);
