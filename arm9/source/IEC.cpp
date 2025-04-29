@@ -59,14 +59,11 @@
  */
 
 #include "sysdeps.h"
-
 #include "IEC.h"
-#include "1541fs.h"
 #include "1541d64.h"
 #include "Prefs.h"
 #include "Display.h"
 #include "main.h"
-
 
 // IEC command codes
 enum {
@@ -90,31 +87,17 @@ enum {
 
 Drive *IEC::create_drive(const char *path)
 {
-    //printdbg("h1");
-    if (IsDirectory(path)) {
-        // Mount host directory
-        //printdbg((char*)path);
-        //printdbg("h2");
-        return new FSDrive(this, path);
-    } else {
+    if (!IsDirectory(path))
+    {
         // Not a directory, check for mountable file type
-        //printdbg("h3");
         int type;
-        if (IsMountableFile(path, type)) {
-            //printdbg("h4");
-            if (type == FILE_IMAGE) {
-                //printdbg("h5");
+        if (IsMountableFile(path, type)) 
+        {
+            if (type == FILE_IMAGE) 
+            {
                 // Mount disk image
                 return new ImageDrive(this, path);
-            } else {
-                // Mount archive type file
-                //printdbg("h6");
-                //return new ArchDrive(this, path);
             }
-        } else {
-            //printdbg("h7");
-            // Unknown file type
-            // print error?
         }
     }
     return NULL;
