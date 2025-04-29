@@ -262,8 +262,8 @@ u16 vBlanks;
 void vblankIntr(void)
 {
     vBlanks++;
-    int cxBG = (myConfig.offsetX << 8);
-    int cyBG = (myConfig.offsetY+temp_offset) << 8;
+    int cxBG = ((s16)myConfig.offsetX << 8);
+    int cyBG = ((s16)myConfig.offsetY+temp_offset) << 8;
     int xdxBG = ((320 / myConfig.scaleX) << 8) | (320 % myConfig.scaleX) ;
     int ydyBG = ((200 / myConfig.scaleY) << 8) | (200 % myConfig.scaleY);
 
@@ -509,6 +509,13 @@ int lastc64key=-1;
 bool m_tpActive=false;
 touchPosition m_tp;
 u8 issue_commodore_key = 0;
+
+void C64Display::IssueKeypress(uint8 row, uint8 col, uint8 *key_matrix, uint8 *rev_matrix)
+{
+    c64_key = MATRIX(row,col);
+    KeyPress(c64_key, key_matrix, rev_matrix);
+    lastc64key=c64_key;
+}
 
 void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joystick)
 {

@@ -44,7 +44,6 @@ public:
 
     char DrivePath[2][256]; // Path for drive 8 and 9
     int SIDType;            // SID emulation type
-    bool LimitSpeed;        // Limit speed to 100%
     bool FastReset;         // Skip RAM test on reset
     bool CIAIRQHack;        // Write to CIA ICR clears IRQ
     bool TrueDrive;         // Enable processor-level 1541 emulation

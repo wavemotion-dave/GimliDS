@@ -41,7 +41,6 @@ Prefs::Prefs()
 
     SIDType = SIDTYPE_DIGITAL;
 
-    LimitSpeed = true;
     FastReset = true;
     CIAIRQHack = false;
     TrueDrive = false; // True Drive Emulation when TRUE (slower emulation)

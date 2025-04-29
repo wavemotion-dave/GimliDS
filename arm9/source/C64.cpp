@@ -170,12 +170,9 @@ C64::~C64()
     delete TheCPU;
     delete TheDisplay;
 
-    //delete[] RAM;
     delete[] Basic;
-    //delete[] Kernal;
     delete[] Char;
     delete[] Color;
-    //delete[] RAM1541;
     delete[] ROM1541;
 
     c64_dtor();
@@ -896,6 +893,8 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
     }
 }
 
+u8 key_row_map[] __attribute__((section(".dtcm"))) = {7,7,0,0,0,0,6,6,5,5,5,5,5,6,6,5,    1,3,2,2,1,2,3,3,4,4,4,5,4,4,4,5,7,2,1,2,3,3,1,2,3,1,   7,7,1,1,2,2,3,3,4,4};
+u8 key_col_map[] __attribute__((section(".dtcm"))) = {7,5,4,5,6,3,1,5,0,3,4,7,5,2,7,6,    2,4,4,2,6,5,2,5,1,2,5,2,4,7,6,1,6,1,5,6,6,7,1,7,1,4,   0,3,0,3,0,3,0,3,0,3};
 
 /*
  *  Poll joystick port, return CIA mask
@@ -905,6 +904,15 @@ u8  retkey=0;
 u16 dampen=0;
 extern s16 temp_offset;
 extern u16 slide_dampen;
+// ----------------------------------------------------------------------------
+// Chuckie-Style d-pad keeps moving in the last known direction for a few more
+// frames to help make those hairpin turns up and off ladders much easier...
+// ----------------------------------------------------------------------------
+u8 slide_n_glide_key_up = 0;
+u8 slide_n_glide_key_down = 0;
+u8 slide_n_glide_key_left = 0;
+u8 slide_n_glide_key_right = 0;
+
 uint8 C64::poll_joystick(int port)
 {
     uint8 j = 0xff;
@@ -922,140 +930,147 @@ uint8 C64::poll_joystick(int port)
 
     u32 keys= keysHeld();
 
-    u8 joy_up = 0;
-    u8 joy_dn = 0;
-    u8 joy_fire = 0;
-
-    if(keys & KEY_B)
+    u8 joy_up    = 0;
+    u8 joy_down  = 0;
+    u8 joy_left  = 0;
+    u8 joy_right = 0;
+    u8 joy_fire  = 0;
+    u8 mappable_key_press[8] = {0,0,0,0,0,0,0,0};
+    
+    if (keys & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_X | KEY_Y))
     {
-        switch (myConfig.key_B)
+        if (myConfig.joyMode == JOYMODE_SLIDE_N_GLIDE)
         {
-            case KEY_MAP_RETURN:
-                TheDisplay->KeyPress(MATRIX(0,1), TheCIA1->KeyMatrix, TheCIA1->RevMatrix);
-                retkey=1;
-                break;
-            case KEY_MAP_SPACE:
-                TheDisplay->KeyPress(MATRIX(7,4), TheCIA1->KeyMatrix, TheCIA1->RevMatrix);
-                space=1;
-                break;
-            case KEY_MAP_PAN_UP:
-                temp_offset = -16;
-                slide_dampen = 15;
-                break;
-            case KEY_MAP_PAN_DN:
-                temp_offset = 16;
-                slide_dampen = 15;
-                break;
-            case KEY_MAP_JOY_UP:
-                joy_up = 1;
-                break;
-            case KEY_MAP_JOY_DN:
-                joy_dn = 1;
-                break;
-            case KEY_MAP_JOY_FIRE:
-                joy_fire = 1;
-                break;
+            if (keys & KEY_UP)
+            {
+                slide_n_glide_key_up    = 12;
+                slide_n_glide_key_down  = 0;
+            }
+            if (keys & KEY_DOWN)
+            {
+                slide_n_glide_key_down  = 12;
+                slide_n_glide_key_up    = 0;
+            }
+            if (keys & KEY_LEFT)
+            {
+                slide_n_glide_key_left  = 12;
+                slide_n_glide_key_right = 0;
+            }
+            if (keys & KEY_RIGHT)
+            {
+                slide_n_glide_key_right = 12;
+                slide_n_glide_key_left  = 0;
+            }
+
+            if (slide_n_glide_key_up)
+            {
+                slide_n_glide_key_up--;
+                keys |= KEY_UP;
+            }
+
+            if (slide_n_glide_key_down)
+            {
+                slide_n_glide_key_down--;
+                keys |= KEY_DOWN;
+            }
+
+            if (slide_n_glide_key_left)
+            {
+                slide_n_glide_key_left--;
+                keys |= KEY_LEFT;
+            }
+
+            if (slide_n_glide_key_right)
+            {
+                slide_n_glide_key_right--;
+                keys |= KEY_RIGHT;
+            }
         }
-    }
+        
+        if (keys & KEY_UP)    mappable_key_press[0] = 1;
+        if (keys & KEY_DOWN)  mappable_key_press[1] = 1;
+        if (keys & KEY_LEFT)  mappable_key_press[2] = 1;
+        if (keys & KEY_RIGHT) mappable_key_press[3] = 1;
 
-    if(keys & KEY_A)
-    {
-        switch (myConfig.key_A)
-        {
-            case KEY_MAP_RETURN:
-                TheDisplay->KeyPress(MATRIX(0,1), TheCIA1->KeyMatrix, TheCIA1->RevMatrix);
-                retkey=1;
-                break;
-            case KEY_MAP_SPACE:
-                TheDisplay->KeyPress(MATRIX(7,4), TheCIA1->KeyMatrix, TheCIA1->RevMatrix);
-                space=1;
-                break;
-            case KEY_MAP_PAN_UP:
-                temp_offset = -16;
-                slide_dampen = 15;
-                break;
-            case KEY_MAP_PAN_DN:
-                temp_offset = 16;
-                slide_dampen = 15;
-                break;
-            case KEY_MAP_JOY_UP:
-                joy_up = 1;
-                break;
-            case KEY_MAP_JOY_DN:
-                joy_dn = 1;
-                break;
-            case KEY_MAP_JOY_FIRE:
-                joy_fire = 1;
-                break;
-        }
-    }
+        if (keys & KEY_A)     mappable_key_press[4] = 1;
+        if (keys & KEY_B)     mappable_key_press[5] = 1;
+        if (keys & KEY_X)     mappable_key_press[6] = 1;
+        if (keys & KEY_Y)     mappable_key_press[7] = 1;
+      }
+      else // No NDS keys pressed...
+      {
+          if (slide_n_glide_key_up)    slide_n_glide_key_up--;
+          if (slide_n_glide_key_down)  slide_n_glide_key_down--;
+          if (slide_n_glide_key_left)  slide_n_glide_key_left--;
+          if (slide_n_glide_key_right) slide_n_glide_key_right--;
+      }
 
-    if(keys & KEY_X)
+    u8 auto_fire = 0;
+    for (int i=0; i<8; i++)
     {
-        switch (myConfig.key_X)
+        if (mappable_key_press[i])
         {
-            case KEY_MAP_RETURN:
-                TheDisplay->KeyPress(MATRIX(0,1), TheCIA1->KeyMatrix, TheCIA1->RevMatrix);
-                retkey=1;
-                break;
-            case KEY_MAP_SPACE:
-                TheDisplay->KeyPress(MATRIX(7,4), TheCIA1->KeyMatrix, TheCIA1->RevMatrix);
-                space=1;
-                break;
-            case KEY_MAP_PAN_UP:
-                temp_offset = -16;
-                slide_dampen = 15;
-                break;
-            case KEY_MAP_PAN_DN:
-                temp_offset = 16;
-                slide_dampen = 15;
-                break;
-            case KEY_MAP_JOY_UP:
-                joy_up = 1;
-                break;
-            case KEY_MAP_JOY_DN:
-                joy_dn = 1;
-                break;
-            case KEY_MAP_JOY_FIRE:
-                joy_fire = 1;
-                break;
-        }
-    }
+            switch (myConfig.key_map[i])
+            {
+                // Handle space and return specially
+                case KEY_MAP_RETURN:
+                    TheDisplay->KeyPress(MATRIX(0,1), TheCIA1->KeyMatrix, TheCIA1->RevMatrix);
+                    retkey=1;
+                    break;
+                case KEY_MAP_SPACE:
+                    TheDisplay->KeyPress(MATRIX(7,4), TheCIA1->KeyMatrix, TheCIA1->RevMatrix);
+                    space=1;
+                    break;
 
-    if(keys & KEY_Y)
-    {
-        switch (myConfig.key_Y)
-        {
-            case KEY_MAP_RETURN:
-                TheDisplay->KeyPress(MATRIX(0,1), TheCIA1->KeyMatrix, TheCIA1->RevMatrix);
-                retkey=1;
-                break;
-            case KEY_MAP_SPACE:
-                TheDisplay->KeyPress(MATRIX(7,4), TheCIA1->KeyMatrix, TheCIA1->RevMatrix);
-                space=1;
-                break;
-            case KEY_MAP_PAN_UP:
-                temp_offset = -16;
-                slide_dampen = 15;
-                break;
-            case KEY_MAP_PAN_DN:
-                temp_offset = 16;
-                slide_dampen = 15;
-                break;
-            case KEY_MAP_JOY_UP:
-                joy_up = 1;
-                break;
-            case KEY_MAP_JOY_DN:
-                joy_dn = 1;
-                break;
-            case KEY_MAP_JOY_FIRE:
-                joy_fire = 1;
-                break;
+                // Handle all joystick mapped buttons
+                case KEY_MAP_JOY_UP:
+                    joy_up = 1;
+                    break;
+                case KEY_MAP_JOY_DOWN:
+                    joy_down = 1;
+                    break;
+                case KEY_MAP_JOY_LEFT:
+                    joy_left = 1;
+                    break;
+                case KEY_MAP_JOY_RIGHT:
+                    joy_right = 1;
+                    break;
+                case KEY_MAP_JOY_FIRE:
+                    joy_fire = 1;
+                    break;
+                case KEY_MAP_JOY_AUTO:
+                    joy_fire = 1;
+                    auto_fire = 1;
+                    break;
+
+                // Handle special meta-mapped buttons (pan screen Up/Down)
+                case KEY_MAP_PAN_UP16:
+                    temp_offset = -16;
+                    slide_dampen = 15;
+                    break;
+                case KEY_MAP_PAN_UP24:
+                    temp_offset = -24;
+                    slide_dampen = 15;
+                    break;
+                case KEY_MAP_PAN_DN16:
+                    temp_offset = 16;
+                    slide_dampen = 15;
+                    break;
+                case KEY_MAP_PAN_DN24:
+                    temp_offset = 24;
+                    slide_dampen = 15;
+                    break;
+                    
+                // Handle all other keypresses... mark the key as pressed for the PollKeyboard() routine
+                default:
+                    TheDisplay->IssueKeypress(key_row_map[myConfig.key_map[i]-8], key_col_map[myConfig.key_map[i]-8], TheCIA1->KeyMatrix, TheCIA1->RevMatrix);
+                    break;
+            }
         }
     }
 
     static u32 auto_fire_dampen=0;
-    if ((myConfig.autoFire) && joy_fire)
+    if (auto_fire && joy_fire)
     {
         if (++auto_fire_dampen & 0x08) joy_fire=0;
     } else auto_fire_dampen=0;
@@ -1075,7 +1090,7 @@ uint8 C64::poll_joystick(int port)
         if (keys & KEY_LEFT)
         {
             dampen = 4;
-            myConfig.offsetX++;
+            if (myConfig.offsetX < 64) myConfig.offsetX++;
         }
         if (keys & KEY_RIGHT)
         {
@@ -1094,12 +1109,12 @@ uint8 C64::poll_joystick(int port)
         if (keys & KEY_DOWN)
         {
             dampen = 4;
-            myConfig.scaleY--;
+            if (myConfig.scaleY > 140) myConfig.scaleY--;
         }
         if (keys & KEY_LEFT)
         {
             dampen = 4;
-            myConfig.scaleX--;
+            if (myConfig.scaleX > 200) myConfig.scaleX--;
         }
         if (keys & KEY_RIGHT)
         {
@@ -1119,23 +1134,19 @@ uint8 C64::poll_joystick(int port)
     if( keys & KEY_START && !dampen)
     {
         kbd_buf_feed("\rLOAD\"*\",8,1\rRUN\r");
-        dampen = 30;
+        dampen = 50; // Full second - do not repeat this often!
     }
 
     if (dampen) dampen--;
 
-    if (!dampen)
-    {
-        if(port != myConfig.joyPort) return j;
+    // Handle the joystick input... never dampen this!
+    if(port != myConfig.joyPort) return j;
 
-        if( keys & KEY_LEFT  ) j&=0xfb;
-        if( keys & KEY_RIGHT ) j&=0xf7;
-        if( keys & KEY_UP    ) j&=0xfe;
-        if( keys & KEY_DOWN  ) j&=0xfd;
-        if( joy_fire )         j&=0xef; // Fire button
-        if( joy_up )           j&=0xfe;
-        if( joy_dn )           j&=0xfd;
-    }
+    if( joy_up )           j&=0xfe; // Up
+    if( joy_down )         j&=0xfd; // Down
+    if( joy_left )         j&=0xfb; // Left
+    if( joy_right )        j&=0xf7; // Right
+    if( joy_fire )         j&=0xef; // Fire button
 
     return j;
 }

@@ -59,6 +59,7 @@ public:
     void PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joystick);
     void InitColors(uint8 *colors);
     void NewPrefs(Prefs *prefs);
+    void IssueKeypress(uint8 row, uint8 col, uint8 *key_matrix, uint8 *rev_matrix);
     C64 *TheC64;
 
 public:

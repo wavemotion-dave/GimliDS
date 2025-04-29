@@ -46,10 +46,11 @@ extern void BottomScreenMainMenu(void);
 #define MENU_ACTION_END             255 // Always the last sentinal value
 #define MENU_ACTION_EXIT            0   // Exit the menu
 #define MENU_ACTION_RESET_EMU       1   // Reset Emulator
-#define MENU_ACTION_SAVE_STATE      2   // 
-#define MENU_ACTION_LOAD_STATE      3   // 
-#define MENU_ACTION_CONFIG          4   // 
+#define MENU_ACTION_SAVE_STATE      2   // Save State
+#define MENU_ACTION_LOAD_STATE      3   // Load State
+#define MENU_ACTION_CONFIG          4   // Configure Game
 #define MENU_ACTION_PRESS_C64       5   // Issue the actual C= key!
+#define MENU_ACTION_QUIT_EMU        6   // Exit Emulator
 #define MENU_ACTION_SKIP            99  // Skip this MENU choice
 
 typedef struct
@@ -74,6 +75,7 @@ MainMenu_t main_menu =
         {(char *)"  LOAD     STATE  ",      MENU_ACTION_LOAD_STATE},
         {(char *)"  RESET    C64    ",      MENU_ACTION_RESET_EMU},
         {(char *)"  PRESS    @ KEY  ",      MENU_ACTION_PRESS_C64},
+        {(char *)"  QUIT     GIMLIDS",      MENU_ACTION_QUIT_EMU},        
         {(char *)"  EXIT     MENU   ",      MENU_ACTION_EXIT},
         {(char *)"  NULL            ",      MENU_ACTION_END},
     },
@@ -168,6 +170,10 @@ u8 MainMenu(C64 *the_c64)
         {
             switch(menu->menulist[menuSelection].menu_action)
             {
+                case MENU_ACTION_QUIT_EMU:
+                    exit(0);
+                    break;
+                    
                 case MENU_ACTION_PRESS_C64:
                     extern u8 issue_commodore_key;
                     issue_commodore_key = 1;
@@ -338,31 +344,41 @@ void SetDefaultGameConfig(void)
 {
     myConfig.game_crc    = 0;    // No game in this slot yet
 
-    myConfig.key_A       = 0;
-    myConfig.key_B       = 1;
-    myConfig.key_Y       = 2;
-    myConfig.key_X       = 3;
-    myConfig.autoFire    = 0;
-    myConfig.trueDrive   = 0;
-    myConfig.jitter      = 1; // Medium 
-    myConfig.diskSFX     = 1; // Disk sound effects on
-    myConfig.joyPort     = 0; // Default to Joy1
+    myConfig.key_map[0]  = KEY_MAP_JOY_UP;   // D-Pad Up
+    myConfig.key_map[1]  = KEY_MAP_JOY_DOWN; // D-Pad Down
+    myConfig.key_map[2]  = KEY_MAP_JOY_LEFT; // D-Pad Left
+    myConfig.key_map[3]  = KEY_MAP_JOY_RIGHT;// D-Pad Right
+
+    myConfig.key_map[4]  = KEY_MAP_JOY_FIRE; // A = Fire Button
+    myConfig.key_map[5]  = KEY_MAP_SPACE;    // B = SPACE key
+    myConfig.key_map[6]  = KEY_MAP_JOY_UP;   // X = Joy Up
+    myConfig.key_map[7]  = KEY_MAP_RETURN;   // Y = RETURN key
+    
+    myConfig.key_map[8]  = KEY_MAP_SPACE;    // Spare 1
+    myConfig.key_map[9]  = KEY_MAP_SPACE;    // Spare 2
+    
+    myConfig.trueDrive   = 0;                // Fast 1541 emulation by default
+    myConfig.jitter      = 1;                // Medium level of jitter
+    myConfig.diskSFX     = 1;                // Disk sound effects on
+    myConfig.joyPort     = 0;                // Default to Joy1
+    myConfig.joyMode     = 0;                // Default is normal joypad / dpad
     myConfig.reserved2   = 0;
     myConfig.reserved3   = 0;
     myConfig.reserved4   = 0;
     myConfig.reserved5   = 0;
-    myConfig.reserved6   = 0xA5;    // So it's easy to spot on an "upgrade" and we can re-default it
+    myConfig.reserved6   = 0;
+    myConfig.reserved7   = 0;
+    myConfig.reserved8   = 0xA5;             // So it's easy to spot on an "upgrade" and we can re-default it
+    myConfig.cpuCycles   = 0;                // Normal 63 - this is the delta adjustment to that
+    myConfig.badCycles   = 0;                // Normal 23 - this is the delta adjustment to that
     
-    myConfig.cpuCycles   = 0;   // Normal 63 - this is the adjustment to that
-    myConfig.badCycles   = 0;   // Normal 23 - this is the adjustment to that
-    
-    myConfig.offsetX     = 32;
-    myConfig.offsetY     = 19;
-    myConfig.scaleX      = 256;
-    myConfig.scaleY      = 200;
+    myConfig.offsetX     = 32;              // Push the side border off the main display
+    myConfig.offsetY     = 19;              // Push the top border off the main display
+    myConfig.scaleX      = 256;             // Scale the 320 pixels of C64 display to the DS 256 pixels (squashed... booo!)
+    myConfig.scaleY      = 200;             // Scale the 200 pixels of C64 display to the DS 200 (yes, there is only 192 so this will cut... use PAN UP/DN)
 }
 
-s16 CycleDeltas[] = {0,1,2,3,4,5,6,7,8,9,-9,-8,-7,-6,-5,-4,-3,-2,-1};
+s16 CycleDeltas[] = {0,1,2,3,4,5,6,7,8,9,-9,-8,-7,-6,-5,-4,-3,-2,-1};  // Used with myConfig.cpuCycles and myConfig.badCycles
 
 // ----------------------------------------------------------------------
 // Read file twice and ensure we get the same CRC... if not, do it again
@@ -533,29 +549,44 @@ void FindConfig(void)
 struct options_t
 {
     const char  *label;
-    const char  *option[20];
+    const char  *option[64];
     u8          *option_val;
     u8           option_max;
 };
 
 #define CYCLE_DELTA_STR  "+0","+1","+2","+3","+4","+5","+6","+7","+8","+9","-9","-8","-7","-6","-5","-4","-3","-2","-1",
 
+#define KEY_MAP_OPTIONS "JOY FIRE", "JOY UP", "JOY DOWN", "JOY LEFT", "JOY RIGHT", "JOY AUTOFIRE",\
+                        "KEY SPACE", "KEY RETURN", "RUN/STOP", "KEY C=", "KEY F1", "KEY F3", "KEY F5", "KEY F7",\
+                        "KEY *", "KEY =", "KEY +", "KEY -", "KEY PERIOD", "KEY COMMA", "KEY COLON", "KEY SEMI", "KEY SLASH", "KEY @",\
+                        "KEY A", "KEY B", "KEY C", "KEY D", "KEY E", "KEY F", "KEY G", "KEY H", "KEY I", "KEY J", "KEY K", "KEY L",\
+                        "KEY M", "KEY N", "KEY O", "KEY P", "KEY Q", "KEY R", "KEY S", "KEY T", "KEY U", "KEY V", "KEY W", "KEY X",\
+                        "KEY Y", "KEY Z", "KEY 1", "KEY 2", "KEY 3", "KEY 4", "KEY 5", "KEY 6", "KEY 7", "KEY 8", "KEY 9", "KEY 0",\
+                        "PAN-UP 16", "PAN-UP 24", "PAN-DOWN 16", "PAN-DOWN 24"
+                        
 
 const struct options_t Option_Table[1][20] =
 {
     // Game Specific Configuration
     {
         {"TRUE DRIVE",     {"DISABLE (FAST)", "ENABLED (SLOW)"},                                        &myConfig.trueDrive,   2},
-        {"AUTO FIRE",      {"OFF", "ON"},                                                               &myConfig.autoFire,    2},
         {"JOY PORT",       {"PORT 1", "PORT 2"},                                                        &myConfig.joyPort,     2},
+        {"JOY MODE",       {"NORMAL", "SLIDE-N-GLIDE"},                                                 &myConfig.joyMode,     2},        
         {"LCD JITTER",     {"NONE", "LIGHT", "HEAVY"},                                                  &myConfig.jitter,      3},
         {"DISK SOUND",     {"SFX OFF", "SFX ON"},                                                       &myConfig.diskSFX,     2},
-        {"A BUTTON",       {"JOY FIRE", "SPACE", "RETURN", "JOY UP", "JOY DOWN", "PAN-UP", "PAN-DOWN"}, &myConfig.key_A,       7},
-        {"B BUTTON",       {"JOY FIRE", "SPACE", "RETURN", "JOY UP", "JOY DOWN", "PAN-UP", "PAN-DOWN"}, &myConfig.key_B,       7},
-        {"X BUTTON",       {"JOY FIRE", "SPACE", "RETURN", "JOY UP", "JOY DOWN", "PAN-UP", "PAN-DOWN"}, &myConfig.key_X,       7},
-        {"Y BUTTON",       {"JOY FIRE", "SPACE", "RETURN", "JOY UP", "JOY DOWN", "PAN-UP", "PAN-DOWN"}, &myConfig.key_Y,       7},
         {"CPU CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.cpuCycles,   19},
         {"BAD CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.badCycles,   19},        
+
+        {"D-PAD UP",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[0],  64},
+        {"D-PAD DOWN",     {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[1],  64},
+        {"D-PAD LEFT",     {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[2],  64},
+        {"D-PAD RIGHT",    {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[3],  64},
+
+        {"A BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[4],  64},
+        {"B BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[5],  64},
+        {"X BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[6],  64},
+        {"Y BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[7],  64},
+        
         {NULL,             {"",      ""},                                                               NULL,                  1},
     }
 };
