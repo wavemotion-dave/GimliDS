@@ -49,6 +49,8 @@ char        strBuf[40];
 
 #define WAITVBL swiWaitForVBlank();swiWaitForVBlank();swiWaitForVBlank();
 
+extern u8 bDebugDisplay;
+
 /*********************************************************************************
  * Show The 14 games on the list to allow the user to choose a new game.
  ********************************************************************************/
@@ -113,7 +115,7 @@ int Filescmp (const void *c1, const void *c2)
 /*********************************************************************************
  * Find files (TAP/TZX/Z80/SNA) available - sort them for display.
  ********************************************************************************/
-void speccySEFindFiles(u8 bTapeOnly)
+void gimliDSFindFiles(u8 bTapeOnly)
 {
   u32 uNbFile;
   DIR *dir;
@@ -146,7 +148,7 @@ void speccySEFindFiles(u8 bTapeOnly)
       {
         if ( (strcasecmp(strrchr(szFile, '.'), ".D64") == 0) )  {
           strcpy(gpFic[uNbFile].szName,szFile);
-          gpFic[uNbFile].uType = SPECCY_FILE;
+          gpFic[uNbFile].uType = NORMALFILE;
           uNbFile++;
           countZX++;
         }
@@ -167,7 +169,7 @@ void speccySEFindFiles(u8 bTapeOnly)
 // ----------------------------------------------------------------
 // Let the user select a new game (rom) file and load it up!
 // ----------------------------------------------------------------
-u8 speccySELoadFile(u8 bTapeOnly)
+u8 gimliDSLoadFile(u8 bTapeOnly)
 {
   bool bDone=false;
   u16 ucHaut=0x00, ucBas=0x00,ucSHaut=0x00, ucSBas=0x00, romSelected= 0, firstRomDisplay=0,nbRomPerPage, uNbRSPage;
@@ -177,7 +179,7 @@ u8 speccySELoadFile(u8 bTapeOnly)
   // Show the menu...
   while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B))!=0);
 
-  speccySEFindFiles(bTapeOnly);
+  gimliDSFindFiles(bTapeOnly);
 
   ucGameChoice = -1;
 
@@ -333,13 +335,14 @@ u8 speccySELoadFile(u8 bTapeOnly)
       {
         bDone=true;
         if (keysCurrent() & KEY_X) retVal = 2; else retVal = 1;
+        if (keysCurrent() & KEY_Y) bDebugDisplay = 1; else bDebugDisplay = 0;
         ucGameChoice = ucGameAct;
         WAITVBL;
       }
       else
       {
         chdir(gpFic[ucGameAct].szName);
-        speccySEFindFiles(bTapeOnly);
+        gimliDSFindFiles(bTapeOnly);
         ucGameAct = 0;
         nbRomPerPage = (countZX>=14 ? 14 : countZX);
         uNbRSPage = (countZX>=5 ? 5 : countZX);
@@ -597,7 +600,7 @@ u8 DisketteMenu(C64 *the_c64)
 
                 case MENU_ACTION_DRIVE8:
                     BottomScreenMainMenu();
-                    retVal = speccySELoadFile(0);
+                    retVal = gimliDSLoadFile(0);
                     if (ucGameChoice >= 0)
                     {
                         retVal = 1;
@@ -609,7 +612,7 @@ u8 DisketteMenu(C64 *the_c64)
                     
                 case MENU_ACTION_DRIVE9:
                     BottomScreenMainMenu();
-                    retVal = speccySELoadFile(0);
+                    retVal = gimliDSLoadFile(0);
                     if (ucGameChoice >= 0)
                     {
                         retVal = 1;

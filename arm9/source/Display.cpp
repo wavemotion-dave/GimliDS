@@ -48,6 +48,7 @@
 
 
 u8 floppy_sound_counter = 0;
+u8 bDebugDisplay = 0;
 
 // "Colodore" palette
 uint8_t palette_red[16] = {
@@ -449,15 +450,16 @@ int i = 0;
 int debug[8]={0,0,0,0,0,0,0,0};
 void C64Display::Speedometer(int speed)
 {
-#if 0
     char tmp[34];
 
-    sprintf(tmp, "%-8d", speed);
-    DSPrint(19, 1, 6, tmp);
+    if (bDebugDisplay)
+    {
+        sprintf(tmp, "%-8d", speed);
+        DSPrint(19, 1, 6, tmp);
 
-    sprintf(tmp, "%-8d %-8d %-6d %-6d", debug[0],debug[1],debug[2],debug[3]);
-    DSPrint(0, 0, 6, tmp);
-#endif
+        sprintf(tmp, "%-8d %-8d %-6d %-6d", debug[0],debug[1],debug[2],debug[3]);
+        DSPrint(0, 0, 6, tmp);
+    }
 
     show_joysticks();
     show_shift_key();

@@ -1,7 +1,7 @@
 #define MAX_FILES                   2048
 #define MAX_FILENAME_LEN            256
 
-#define SPECCY_FILE                 0x01
+#define NORMALFILE                  0x01
 #define DIRECTORY                   0x02
 class C64;
 extern void DSPrint(int iX,int iY,int iScr,char *szMessage);
