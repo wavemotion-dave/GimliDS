@@ -39,7 +39,7 @@
 #include <nds.h>
 #include "sysdeps.h"
 
-#include "1541job.h"
+#include "1541gcr.h"
 #include "CPU1541.h"
 #include "Prefs.h"
 

@@ -44,7 +44,7 @@
 #include "SID.h"
 #include "CIA.h"
 #include "IEC.h"
-#include "1541job.h"
+#include "1541gcr.h"
 #include "Display.h"
 #include "Prefs.h"
 #include "mainmenu.h"

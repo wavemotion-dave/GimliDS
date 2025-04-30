@@ -35,8 +35,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _1541JOB_H
-#define _1541JOB_H
+#ifndef _1541GCR_H
+#define _1541GCR_H
 #include <nds.h>
 #include "sysdeps.h"
 
