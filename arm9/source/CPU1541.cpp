@@ -118,13 +118,10 @@ MOS6502_1541::MOS6502_1541(C64 *c64, Job1541 *job, C64Display *disp, uint8 *Ram,
     borrowed_cycles = 0;
 
     rom = Rom - 0xC000; // So we don't have to mask the ROM when reading
-
-    via1_t1c = via1_t1l = via1_t2c = via1_t2l = 0;
-    via1_sr = 0;
-    via2_t1c = via2_t1l = via2_t2c = via2_t2l = 0;
-    via2_sr = 0;
-
+    
     Idle = false;
+
+    Reset();
 }
 
 
@@ -634,8 +631,13 @@ void MOS6502_1541::Reset(void)
     IECLines = 0xc0;
 
     via1_pra = via1_ddra = via1_prb = via1_ddrb = 0;
+    via1_t1c = via1_t1l = via1_t2c = via1_t2l = 0xffff;
+    via1_sr = 0;    
     via1_acr = via1_pcr = 0;
     via1_ifr = via1_ier = 0;
+    
+    via2_t1c = via2_t1l = via2_t2c = via2_t2l = 0xffff;
+    via2_sr = 0;    
     via2_pra = via2_ddra = via2_prb = via2_ddrb = 0;
     via2_acr = via2_pcr = 0;
     via2_ifr = via2_ier = 0;
