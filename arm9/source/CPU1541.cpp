@@ -114,6 +114,7 @@ MOS6502_1541::MOS6502_1541(C64 *c64, Job1541 *job, C64Display *disp, uint8 *Ram,
     v_flag = d_flag = c_flag = false;
     i_flag = true;
 
+    cycle_counter = 0;
     borrowed_cycles = 0;
 
     rom = Rom - 0xC000; // So we don't have to mask the ROM when reading
@@ -192,13 +193,13 @@ inline uint8 MOS6502_1541::read_byte_io(uint16 adr)
     else if ((adr & 0xfc00) == 0x1c00)  // VIA 2
         switch (adr & 0xf) {
             case 0:
-                if (the_job->SyncFound())
+                if (the_job->SyncFound(cycle_counter))
                     return (via2_prb & 0x7f) | the_job->WPState();
                 else
                     return (via2_prb | 0x80) | the_job->WPState();
             case 1:
             case 15:
-                return the_job->ReadGCRByte();
+                return the_job->ReadGCRByte(cycle_counter);
             case 2:
                 return via2_ddrb;
             case 3:
@@ -348,9 +349,9 @@ void MOS6502_1541::write_byte_io(uint16 adr, uint8 byte)
                 if ((via2_prb ^ byte) & 3)  // Bits 0/1: Stepper motor
                 {
                     if ((via2_prb & 3) == ((byte+1) & 3))
-                        the_job->MoveHeadOut();
+                        the_job->MoveHeadOut(cycle_counter);
                     else if ((via2_prb & 3) == ((byte-1) & 3))
-                        the_job->MoveHeadIn();
+                        the_job->MoveHeadIn(cycle_counter);
                 }
                 via2_prb = byte;
                 break;
@@ -571,6 +572,8 @@ void MOS6502_1541::GetState(MOS6502State *s)
     s->via2_sr = via2_sr;
     s->via2_acr = via2_acr; s->via2_pcr = via2_pcr;
     s->via2_ifr = via2_ifr; s->via2_ier = via2_ier;
+    
+    s->cycle_counter = cycle_counter;
 }
 
 
@@ -614,6 +617,8 @@ void MOS6502_1541::SetState(MOS6502State *s)
     via2_sr = s->via2_sr;
     via2_acr = s->via2_acr; via2_pcr = s->via2_pcr;
     via2_ifr = s->via2_ifr; via2_ier = s->via2_ier;
+    
+    cycle_counter = s->cycle_counter;
 }
 
 
@@ -637,6 +642,9 @@ void MOS6502_1541::Reset(void)
 
     // Clear all interrupt lines
     interrupt.intr_any = 0;
+    
+    cycle_counter = 0;
+    borrowed_cycles = 0;
 
     // Read reset vector
     jump(read_word(0xfffc));
@@ -683,7 +691,7 @@ void MOS6502_1541::illegal_op(uint8 op, uint16 at)
 // Push processor flags onto the stack
 #define push_flags(b_flag) \
     tmp = 0x20 | (n_flag & 0x80); \
-    if (((via2_pcr & 0x0e) == 0x0e) && the_job->ByteReady()) v_flag = true; \
+    if (((via2_pcr & 0x0e) == 0x0e) && the_job->ByteReady(cycle_counter)) v_flag = true; \
     if (v_flag) tmp |= 0x40; \
     if (b_flag) tmp |= 0x10; \
     if (d_flag) tmp |= 0x08; \

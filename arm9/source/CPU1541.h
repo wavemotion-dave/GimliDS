@@ -79,6 +79,7 @@ public:
     void trigger_via1_irq(void);
     void trigger_via2_irq(void);
     bool InterruptEnabled(void);
+    uint32_t CycleCounter() const { return cycle_counter; }
 
     MOS6526_2 *TheCIA2;     // Pointer to C64 CIA 2
 
@@ -120,6 +121,7 @@ private:
     uint8 a, x, y, sp;
     uint16_t pc;
 
+    uint32 cycle_counter;
     int borrowed_cycles;    // Borrowed cycles from next line
 
     uint8 via1_pra;     // PRA of VIA 1
@@ -188,6 +190,8 @@ struct MOS6502State {
     uint8 via2_pcr;
     uint8 via2_ifr;
     uint8 via2_ier;
+    
+    uint32 cycle_counter;
 };
 
 

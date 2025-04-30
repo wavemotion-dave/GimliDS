@@ -188,6 +188,7 @@ void C64::Reset(void)
     InitMemory();
     TheCPU->AsyncReset();
     TheCPU1541->AsyncReset();
+    TheJob1541->Reset();
     TheSID->Reset();
     TheCIA1->Reset();
     TheCIA2->Reset();

@@ -155,6 +155,7 @@
 
     while ((cycles_left -= last_cycles) >= 0)
     {
+        cycle_counter += last_cycles;	// Needed for GCR timing
         // If we are 1541CPU, we want to alternate running instructions with the main CPU ...
         while (cpu_cycles > cycles_left) cpu_cycles -= localCPU->EmulateLine(0);
 #endif
@@ -844,7 +845,7 @@
             Branch(v_flag);
 #else
             Branch((via2_pcr & 0x0e) == 0x0e ? 1 : v_flag); // GCR byte ready flag
-            if ((via2_pcr & 0x0e) == 0x0e && the_job->ByteReady()) {    // CA2 high output and byte ready
+            if ((via2_pcr & 0x0e) == 0x0e && the_job->ByteReady(cycle_counter)) {    // CA2 high output and byte ready
                 v_flag = true;
             }
             Branch(v_flag);
@@ -854,7 +855,7 @@
 #ifndef IS_CPU_1541
             Branch(!v_flag);
 #else
-            if ((via2_pcr & 0x0e) == 0x0e && the_job->ByteReady()) {    // CA2 high output and byte ready
+            if ((via2_pcr & 0x0e) == 0x0e && the_job->ByteReady(cycle_counter)) {    // CA2 high output and byte ready
                 v_flag = true;
             }
             Branch(!v_flag);
