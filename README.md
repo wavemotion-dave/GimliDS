@@ -109,6 +109,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
 
+Version 0.9 release 30-Apr-2025 by wavemotion-dave
+  * New and improved key mapping - including the new Slide-n-Glide joysticks handling.
+  * SID filtering improved for better audio rendering (Space Taxi voice heard!).
+  * Faster across the board - even the DS-Lite/Phat is now running at (or close to) full speed.
+  * Fixed joystick handling so we sample at the correct rate - smoother motion on screen.
+
 Version 0.8 release 27-Apr-2025 by wavemotion-dave
   * First public beta released!
 
