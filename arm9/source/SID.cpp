@@ -970,7 +970,7 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
         sum_output_filter = yn;
 
         int32_t ext_output = (sum_output - sum_output_filter + dc_offset) * master_volume;
-        ext_output >>= 14;                
+        ext_output >>= 13;
 
 		// Write to buffer
  		if (ext_output > 0x7fff) {	// Using filters can cause minor clipping
