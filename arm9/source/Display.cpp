@@ -446,6 +446,24 @@ void show_shift_key(void)
     }
 }
 
+extern u8 *fake_heap_end;     // current heap start
+extern u8 *fake_heap_start;   // current heap end
+
+u8* getHeapStart() {return fake_heap_start;}
+u8* getHeapEnd()   {return (u8*)sbrk(0);}
+u8* getHeapLimit() {return fake_heap_end;}
+
+int getMemUsed() { // returns the amount of used memory in bytes
+   struct mallinfo mi = mallinfo();
+   return mi.uordblks;
+}
+
+int getMemFree() { // returns the amount of free memory in bytes
+   struct mallinfo mi = mallinfo();
+   return mi.fordblks + (getHeapLimit() - getHeapEnd());
+}
+
+
 int i = 0;
 int debug[8]={0,0,0,0,0,0,0,0};
 void C64Display::Speedometer(int speed)
@@ -454,6 +472,9 @@ void C64Display::Speedometer(int speed)
 
     if (bDebugDisplay)
     {
+        debug[0] = getMemUsed();
+        debug[1] = getMemFree();
+        
         sprintf(tmp, "%-8d", speed);
         DSPrint(19, 1, 6, tmp);
 

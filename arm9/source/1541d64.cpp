@@ -1317,6 +1317,12 @@ static int read_sector(FILE *f, const image_file_desc &desc, int track, int sect
     }
 }
 
+// Convert to job error code
+int get_job_error(int error)
+{
+    return conv_job_error[error & 0x0f];
+}
+
 // Write sector, return error code
 static int write_sector(FILE *f, const image_file_desc &desc, int track, int sector, uint8 *buffer)
 {

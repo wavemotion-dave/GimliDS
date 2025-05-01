@@ -191,9 +191,9 @@ inline uint8 MOS6502_1541::read_byte_io(uint16 adr)
         switch (adr & 0xf) {
             case 0:
                 if (the_job->SyncFound(cycle_counter))
-                    return (via2_prb & 0x7f) | the_job->WPState();
+                    return (via2_prb & 0x7f) | (the_job->WPSensorClosed(cycle_counter) ? 0x10:0x00);
                 else
-                    return (via2_prb | 0x80) | the_job->WPState();
+                    return (via2_prb | 0x80) | (the_job->WPSensorClosed(cycle_counter) ? 0x10:0x00);
             case 1:
             case 15:
                 return the_job->ReadGCRByte(cycle_counter);
@@ -346,9 +346,9 @@ void MOS6502_1541::write_byte_io(uint16 adr, uint8 byte)
                 if ((via2_prb ^ byte) & 3)  // Bits 0/1: Stepper motor
                 {
                     if ((via2_prb & 3) == ((byte+1) & 3))
-                        the_job->MoveHeadOut(cycle_counter);
+                        the_job->MoveHeadOut();
                     else if ((via2_prb & 3) == ((byte-1) & 3))
-                        the_job->MoveHeadIn(cycle_counter);
+                        the_job->MoveHeadIn();
                 }
                 via2_prb = byte;
                 break;

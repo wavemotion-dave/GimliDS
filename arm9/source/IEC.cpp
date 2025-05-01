@@ -521,73 +521,77 @@ void Drive::set_error(int error, int track, int sector)
 
 void Drive::parse_file_name(const uint8 *src, int src_len, uint8 *dest, int &dest_len, int &mode, int &type, int &rec_len, bool convert_charset)
 {
+	// If the string contains a ':', the file name starts after that
+	const uint8_t *p = (const uint8_t *)memchr(src, ':', src_len);
+	if (p) {
+		p++;
+		src_len -= p - src;
+	} else {
+		p = src;
+	}
 
-    // If the string contains a ':', the file name starts after that
-    const uint8 *p = (const uint8 *)memchr(src, ':', src_len);
-    if (p) {
-        p++;
-        src_len -= p - src;
-    } else
-        p = src;
+	// Transfer file name upto ','
+	dest_len = 0;
+	uint8_t *q = dest;
+	while (*p != ',' && src_len-- > 0) {
+		if (convert_charset) {
+			char c = petscii2ascii(*p++);
+			*q++ = c;
+		} else {
+			*q++ = *p++;
+		}
+		dest_len++;
+	}
+	*q++ = 0;
 
-    // Transfer file name upto ','
-    dest_len = 0;
-    uint8 *q = dest;
-    while (*p != ',' && src_len-- > 0) {
-        if (convert_charset)
-            *q++ = petscii2ascii(*p++);
-        else
-            *q++ = *p++;
-        dest_len++;
-    }
-    *q++ = 0;
+	// Strip trailing CRs
+	while (dest_len > 0 && dest[dest_len - 1] == 0x0d) {
+		dest[--dest_len] = 0;
+	}
 
-    // Strip trailing CRs
-    while (dest_len > 0 && dest[dest_len - 1] == 0x0d)
-        dest[--dest_len] = 0;
+	// Look for mode and type parameters separated by ','
+	p++; src_len--;
+	while (src_len > 0) {
+		switch (*p) {
+			case 'D':
+				type = FTYPE_DEL;
+				break;
+			case 'S':
+				type = FTYPE_SEQ;
+				break;
+			case 'P':
+				type = FTYPE_PRG;
+				break;
+			case 'U':
+				type = FTYPE_USR;
+				break;
+			case 'L':
+				type = FTYPE_REL;
+				while (*p != ',' && src_len-- > 0) p++;
+				p++; src_len--;
+				rec_len = *p++; src_len--;
+				if (src_len < 0) {
+					rec_len = 0;
+				}
+				break;
+			case 'R':
+				mode = FMODE_READ;
+				break;
+			case 'W':
+				mode = FMODE_WRITE;
+				break;
+			case 'A':
+				mode = FMODE_APPEND;
+				break;
+			case 'M':
+				mode = FMODE_M;
+				break;
+		}
 
-    // Look for mode and type parameters separated by ','
-    p++; src_len--;
-    while (src_len > 0) {
-        switch (*p) {
-            case 'D':
-                type = FTYPE_DEL;
-                break;
-            case 'S':
-                type = FTYPE_SEQ;
-                break;
-            case 'P':
-                type = FTYPE_PRG;
-                break;
-            case 'U':
-                type = FTYPE_USR;
-                break;
-            case 'L':
-                type = FTYPE_REL;
-                while (*p != ',' && src_len-- > 0) p++;
-                p++; src_len--;
-                rec_len = *p++; src_len--;
-                if (src_len < 0)
-                    rec_len = 0;
-                break;
-            case 'R':
-                mode = FMODE_READ;
-                break;
-            case 'W':
-                mode = FMODE_WRITE;
-                break;
-            case 'A':
-                mode = FMODE_APPEND;
-                break;
-            case 'M':
-                mode = FMODE_M;
-                break;
-        }
-
-        // Skip to ','
-        while (*p != ',' && src_len-- > 0) p++;
-        p++; src_len--;
-    }
+		// Skip to ','
+		while (*p != ',' && src_len-- > 0) p++;
+		p++; src_len--;
+	}
 }
 
 
@@ -618,161 +622,169 @@ static void parse_block_cmd_args(const uint8 *p, int &arg1, int &arg2, int &arg3
 
 void Drive::execute_cmd(const uint8 *cmd, int cmd_len)
 {
-    // Strip trailing CRs
-    while (cmd_len > 0 && cmd[cmd_len - 1] == 0x0d)
-        cmd_len--;
+	// Strip trailing CRs
+	while (cmd_len > 0 && cmd[cmd_len - 1] == 0x0d) {
+		cmd_len--;
+	}
 
-    // Find token delimiters
-    const uint8 *colon = (const uint8 *)memchr(cmd, ':', cmd_len);
-    const uint8 *equal = colon ? (const uint8 *)memchr(colon, '=', cmd_len - (colon - cmd)) : NULL;
-    const uint8 *comma = (const uint8 *)memchr(cmd, ',', cmd_len);
-    const uint8 *minus = (const uint8 *)memchr(cmd, '-', cmd_len);
+	// Find token delimiters
+	const uint8_t *colon = (const uint8_t *)memchr(cmd, ':', cmd_len);
+	const uint8_t *equal = colon ? (const uint8_t *)memchr(colon, '=', cmd_len - (colon - cmd)) : nullptr;
+	const uint8_t *comma = (const uint8_t *)memchr(cmd, ',', cmd_len);
+	const uint8_t *minus = (const uint8_t *)memchr(cmd, '-', cmd_len);
 
-    // Parse command name
-    set_error(ERR_OK);
-    switch (cmd[0]) {
-        case 'B':   // Block/buffer
-            if (!minus)
-                set_error(ERR_SYNTAX31);
-            else {
-                // Parse arguments (up to 4 decimal numbers separated by
-                // space, cursor right or comma)
-                const uint8 *p = colon ? colon + 1 : cmd + 3;
-                int arg1, arg2, arg3, arg4;
-                parse_block_cmd_args(p, arg1, arg2, arg3, arg4);
+	// Parse command name
+	set_error(ERR_OK);
+	switch (cmd[0]) {
+		case 'B':	// Block/buffer
+			if (!minus) {
+				set_error(ERR_SYNTAX31);
+			} else {
+				// Parse arguments (up to 4 decimal numbers separated by
+				// space, cursor right or comma)
+				const uint8_t *p = colon ? colon + 1 : cmd + 3;
+				int arg1, arg2, arg3, arg4;
+				parse_block_cmd_args(p, arg1, arg2, arg3, arg4);
 
-                // Switch on command
-                switch (minus[1]) {
-                    case 'R':
-                        block_read_cmd(arg1, arg3, arg4);
-                        break;
-                    case 'W':
-                        block_write_cmd(arg1, arg3, arg4);
-                        break;
-                    case 'E':
-                        block_execute_cmd(arg1, arg3, arg4);
-                        break;
-                    case 'A':
-                        block_allocate_cmd(arg2, arg3);
-                        break;
-                    case 'F':
-                        block_free_cmd(arg2, arg3);
-                        break;
-                    case 'P':
-                        buffer_pointer_cmd(arg1, arg2);
-                        break;
-                    default:
-                        set_error(ERR_SYNTAX31);
-                        break;
-                }
-            }
-            break;
+				// Switch on command
+				switch (minus[1]) {
+					case 'R':
+						block_read_cmd(arg1, arg3, arg4);
+						break;
+					case 'W':
+						block_write_cmd(arg1, arg3, arg4);
+						break;
+					case 'E':
+						block_execute_cmd(arg1, arg3, arg4);
+						break;
+					case 'A':
+						block_allocate_cmd(arg2, arg3);
+						break;
+					case 'F':
+						block_free_cmd(arg2, arg3);
+						break;
+					case 'P':
+						buffer_pointer_cmd(arg1, arg2);
+						break;
+					default:
+						set_error(ERR_SYNTAX31);
+						break;
+				}
+			}
+			break;
 
-        case 'M':   // Memory
-            if (cmd[1] != '-')
-                set_error(ERR_SYNTAX31);
-            else {
-                // Read parameters
-                uint16 adr = uint8(cmd[3]) | (uint8(cmd[4]) << 8);
-                uint8 len = uint8(cmd[5]);
+		case 'M':	// Memory
+			if (cmd[1] != '-') {
+				set_error(ERR_SYNTAX31);
+			} else {
+				// Read parameters
+				uint16_t adr = uint8_t(cmd[3]) | (uint8_t(cmd[4]) << 8);
+				uint8_t len = uint8_t(cmd[5]);
 
-                // Switch on command
-                switch (cmd[2]) {
-                    case 'R':
-                        mem_read_cmd(adr, (cmd_len < 6) ? 1 : len);
-                        break;
-                    case 'W':
-                        mem_write_cmd(adr, len, (uint8 *)cmd + 6);
-                        break;
-                    case 'E':
-                        mem_execute_cmd(adr);
-                        break;
-                    default:
-                        set_error(ERR_SYNTAX31);
-                        break;
-                }
-            }
-            break;
+				// Switch on command
+				switch (cmd[2]) {
+					case 'R':
+						mem_read_cmd(adr, (cmd_len < 6) ? 1 : len);
+						break;
+					case 'W':
+						mem_write_cmd(adr, len, (uint8_t *)cmd + 6);
+						break;
+					case 'E':
+						mem_execute_cmd(adr);
+						break;
+					default:
+						set_error(ERR_SYNTAX31);
+						break;
+				}
+			}
+			break;
 
-        case 'C':   // Copy
-            if (!colon)
-                set_error(ERR_SYNTAX31);
-            else if (!equal || memchr(cmd, '*', cmd_len) || memchr(cmd, '?', cmd_len) || (comma && comma < equal))
-                set_error(ERR_SYNTAX30);
-            else
-                copy_cmd(colon + 1, equal - colon - 1, equal + 1, cmd_len - (equal + 1 - cmd));
-            break;
+		case 'C':	// Copy
+			if (!colon) {
+				set_error(ERR_SYNTAX31);
+			} else if (!equal || memchr(cmd, '*', cmd_len) || memchr(cmd, '?', cmd_len) || (comma && comma < equal)) {
+				set_error(ERR_SYNTAX30);
+			} else {
+				copy_cmd(colon + 1, equal - colon - 1, equal + 1, cmd_len - (equal + 1 - cmd));
+			}
+			break;
 
-        case 'R':   // Rename
-            if (!colon)
-                set_error(ERR_SYNTAX34);
-            else if (!equal || comma || memchr(cmd, '*', cmd_len) || memchr(cmd, '?', cmd_len))
-                set_error(ERR_SYNTAX30);
-            else
-                rename_cmd(colon + 1, equal - colon - 1, equal + 1, cmd_len - (equal + 1 - cmd));
-            break;
+		case 'R':	// Rename
+			if (!colon) {
+				set_error(ERR_SYNTAX34);
+			} else if (!equal || comma || memchr(cmd, '*', cmd_len) || memchr(cmd, '?', cmd_len)) {
+				set_error(ERR_SYNTAX30);
+			} else {
+				rename_cmd(colon + 1, equal - colon - 1, equal + 1, cmd_len - (equal + 1 - cmd));
+			}
+			break;
 
-        case 'S':   // Scratch
-            if (!colon)
-                set_error(ERR_SYNTAX34);
-            else
-                scratch_cmd(colon + 1, cmd_len - (colon + 1 - cmd));
-            break;
+		case 'S':	// Scratch
+			if (!colon) {
+				set_error(ERR_SYNTAX34);
+			} else {
+				scratch_cmd(colon + 1, cmd_len - (colon + 1 - cmd));
+			}
+			break;
 
-        case 'P':   // Position
-            position_cmd(cmd + 1, cmd_len - 1);
-            break;
+		case 'P':	// Position
+			position_cmd(cmd + 1, cmd_len - 1);
+			break;
 
-        case 'I':   // Initialize
-            initialize_cmd();
-            break;
+		case 'I':	// Initialize
+			initialize_cmd();
+			break;
 
-        case 'N':   // New (format)
-            if (!colon)
-                set_error(ERR_SYNTAX34);
-            else
-                new_cmd(colon + 1, comma ? (comma - colon - 1) : cmd_len - (colon + 1 - cmd), comma);
-            break;
+		case 'N':	// New (format)
+			if (!colon) {
+				set_error(ERR_SYNTAX34);
+			} else {
+				new_cmd(colon + 1, comma ? (comma - colon - 1) : cmd_len - (colon + 1 - cmd), comma);
+			}
+			break;
 
-        case 'V':   // Validate
-            validate_cmd();
-            break;
+		case 'V':	// Validate
+			validate_cmd();
+			break;
 
-        case 'U':   // User
-            if (cmd[1] == '0')
-                break;
-            switch (cmd[1] & 0x0f) {
-                case 1: {   // U1/UA: Read block
-                    const uint8 *p = colon ? colon + 1 : cmd + 2;
-                    int arg1, arg2, arg3, arg4;
-                    parse_block_cmd_args(p, arg1, arg2, arg3, arg4);
-                    block_read_cmd(arg1, arg3, arg4, true);
-                    break;
-                }
-                case 2: {   // U2/UB: Write block
-                    const uint8 *p = colon ? colon + 1 : cmd + 2;
-                    int arg1, arg2, arg3, arg4;
-                    parse_block_cmd_args(p, arg1, arg2, arg3, arg4);
-                    block_write_cmd(arg1, arg3, arg4, true);
-                    break;
-                }
-                case 9:     // U9/UI: C64/VC20 mode switch
-                    if (cmd[2] != '+' && cmd[2] != '-')
-                        Reset();
-                    break;
-                case 10:    // U:/UJ: Reset
-                    Reset();
-                    break;
-                default:
-                    set_error(ERR_UNIMPLEMENTED);
-                    break;
-            }
-            break;
+		case 'U':	// User
+			if (cmd[1] == '0')
+				break;
 
-        default:
-            set_error(ERR_SYNTAX31);
-            break;
-    }
+			switch (cmd[1] & 0x0f) {
+				case 1: {	// U1/UA: Read block
+					const uint8_t *p = colon ? colon + 1 : cmd + 2;
+					int arg1, arg2, arg3, arg4;
+					parse_block_cmd_args(p, arg1, arg2, arg3, arg4);
+					block_read_cmd(arg1, arg3, arg4, true);
+					break;
+				}
+				case 2: {	// U2/UB: Write block
+					const uint8_t *p = colon ? colon + 1 : cmd + 2;
+					int arg1, arg2, arg3, arg4;
+					parse_block_cmd_args(p, arg1, arg2, arg3, arg4);
+					block_write_cmd(arg1, arg3, arg4, true);
+					break;
+				}
+				case 9:		// U9/UI: C64/VC20 mode switch
+					if (cmd[2] != '+' && cmd[2] != '-') {
+						Reset();
+					}
+					break;
+				case 10:	// U:/UJ: Reset
+					Reset();
+					break;
+				default:
+					unsupp_cmd();
+					set_error(ERR_UNIMPLEMENTED);
+					break;
+			}
+			break;
+
+		default:
+			set_error(ERR_SYNTAX31);
+			break;
+	}
 }
 
 // BLOCK-READ:channel,0,track,sector
