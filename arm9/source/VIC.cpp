@@ -863,7 +863,7 @@ inline void MOS6569::vblank(void)
          frame_skipped = false;
          if (myConfig.trueDrive && last_led_states) // If True Drive and we're accessing the drive...
          {
-             frame_skipped = (total_frames & 3); // Skip 3 of 4 frames in true drive mode when accessing drive
+             frame_skipped = (total_frames & 1); // Skip every other...
          }
     }
     else
