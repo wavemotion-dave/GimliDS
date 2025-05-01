@@ -14,7 +14,7 @@ Frodo emulator codebase to get it running on the small handheld system. You
 are strongly encouraged to seek out the official Frodo sources if you're at
 all interested in this emulator code.
 
-The GimliDS emulator is offered as-is, without any warranty. Please see readme.md
+The GimliDS emulator is offered as-is, without any warranty.
 
 ## BIOS Files
 
@@ -78,7 +78,7 @@ this way. But if the game requires it, that's your only option. Recommended to s
   * The dwarf icon on the title screen was submitted online by 'anonymous' to an artwork site.  If this is yours and you would like to be credited, please contact me.
   * Christian Bauer - Original Frodo author - without whom none of this exists!
   * Troy Davis(GPF) http://gpf.dcemu.co.uk - FrodoDS initial porter and others who have contributed over the years.
-  * Wintermute and the contributes for devkitpro and libnds.
+  * Wintermute and the contributors for devkitpro and libnds.
   * djleviticus for his time and efforts in helping shake out some bugs during the beta testing.
 
 ## Why GimliDS?
