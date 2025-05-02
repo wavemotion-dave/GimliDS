@@ -1170,16 +1170,17 @@ void C64::main_loop(void)
         }
 
         // The order of calls is important here
-        int cycles = TheVIC->EmulateLine();
+        int cpu_cycles_to_execute = TheVIC->EmulateLine();
         TheSID->EmulateLine(SID_CYCLES_PER_LINE);
-#if !PRECISE_CIA_CYCLES
-        TheCIA1->EmulateLine(63);
-        TheCIA2->EmulateLine(63);
-#endif
+        TheCIA1->EmulateLine(CIA_CYCLES_PER_LINE);
+        TheCIA2->EmulateLine(CIA_CYCLES_PER_LINE);
 
+        // -----------------------------------------------------------------
+        // TrueDrive is more complicated as we must interleave the two CPUs
+        // -----------------------------------------------------------------
         if (ThePrefs.TrueDrive)
         {
-            int cycles_1541 = 64;
+            int cycles_1541 = FLOPPY_CYCLES_PER_LINE + CycleDeltas[myConfig.flopCycles];
             TheCPU1541->CountVIATimers(cycles_1541);
 
             if (!TheCPU1541->Idle)
@@ -1190,17 +1191,17 @@ void C64::main_loop(void)
                 // is now handled inside CPU_emuline.h for the 1541 processor
                 // to avoid the overhead of lots of function calls...
                 // -----------------------------------------------------------
-                TheCPU1541->EmulateLine(cycles_1541, cycles);
+                TheCPU1541->EmulateLine(cycles_1541, cpu_cycles_to_execute);
             }
             else
             {
-                TheCPU->EmulateLine(cycles);
+                TheCPU->EmulateLine(cpu_cycles_to_execute);
             }
         }
         else
         {
             // 1541 processor disabled, only emulate 6510
-            TheCPU->EmulateLine(cycles);
+            TheCPU->EmulateLine(cpu_cycles_to_execute);
         }
 
         linecnt++;

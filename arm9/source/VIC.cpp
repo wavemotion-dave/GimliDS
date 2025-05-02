@@ -1464,7 +1464,7 @@ int MOS6569::EmulateLine(void)
     {
         if (raster >= FIRST_DMA_LINE && raster <= LAST_DMA_LINE && ((raster & 7) == y_scroll) && bad_lines_enabled) {
             is_bad_line = true;
-            cycles_left = 23 + CycleDeltas[myConfig.badCycles];
+            cycles_left = BAD_CYCLES_PER_LINE;
         }
         goto VIC_nop;
     }
@@ -1485,7 +1485,7 @@ int MOS6569::EmulateLine(void)
         {
             // Turn on display
             display_state = is_bad_line = true;
-            cycles_left = 23 + CycleDeltas[myConfig.badCycles];
+            cycles_left = BAD_CYCLES_PER_LINE;
             rc = 0;
 
             // Read and latch 40 bytes from video matrix and color RAM

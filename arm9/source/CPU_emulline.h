@@ -128,34 +128,23 @@
 
 #define ENDOP(cyc) last_cycles = cyc; break;
 
-#ifndef IS_CPU_1541
+#ifndef IS_CPU_1541 // If main C64 CPU we handle borrowed cycles
     // Main opcode fetch/execute loop
-#if PRECISE_CPU_CYCLES
     if (cycles_left) cycles_left -= borrowed_cycles;
 
     while (true)
     {
-#if PRECISE_CIA_CYCLES && !defined(IS_CPU_1541)
-        if (last_cycles) {
-            TheCIA1->EmulateLine(last_cycles);
-            TheCIA2->EmulateLine(last_cycles);
-        }
-#endif
-        if ((cycles_left -= last_cycles) < 0) {
+        if ((cycles_left -= last_cycles) < 0) 
+        {
             borrowed_cycles = -cycles_left;
             break;
         }
-#else
-    while ((cycles_left -= last_cycles) >= 0) {
-#endif
-
-#else
+#else // CPU is 1541
     cpu_cycles += CycleDeltas[myConfig.cpuCycles];
     MOS6510 *localCPU = the_c64->TheCPU;
 
     while ((cycles_left -= last_cycles) >= 0)
     {
-        cycle_counter += last_cycles;	// Needed for GCR timing
         // If we are 1541CPU, we want to alternate running instructions with the main CPU ...
         while (cpu_cycles > cycles_left) cpu_cycles -= localCPU->EmulateLine(0);
 #endif
@@ -1381,8 +1370,12 @@
         // Extension opcode
         case 0xf2: ext_opcode(); break;
         }
+        
+#ifdef IS_CPU_1541
+        cycle_counter += last_cycles;	// Needed for GCR timing
+#endif        
     }
 #ifdef IS_CPU_1541
         // See if there are any straggler cycles left for the CPU
-    while (cpu_cycles > 0) cpu_cycles -= the_c64->TheCPU->EmulateLine(1);
+    while (cpu_cycles > 0) cpu_cycles -= the_c64->TheCPU->EmulateLine(0);
 #endif

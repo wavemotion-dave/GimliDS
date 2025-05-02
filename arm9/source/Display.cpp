@@ -162,7 +162,7 @@ void C64Display::UpdateLEDs(int l0, int l1)
 #define RET '\n' // Enter
 #define BSP 0x08 // Backspace
 #define CTL 0x21 // Ctrl
-#define SPC 0x20// Space
+#define SPC 0x20 // Space
 #define ATT 0x22 // At@
 #define UPA 0x23 //uparrow symbol
 #define RUN 0x00 // RunStop
@@ -602,7 +602,7 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
                         else if (tilex < 194) c = '0';
                         else if (tilex < 213) c = '+';
                         else if (tilex < 233) c = '-';
-                        else if (tilex < 256) c = UPA;
+                        else if (tilex < 256) c = PND;
                     }
                     else if (tiley < 104) // QWERTY Row
                     {

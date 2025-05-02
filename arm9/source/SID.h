@@ -40,9 +40,6 @@
 #include <nds.h>
 #include <stdlib.h>
 
-
-#define SID_CYCLES_PER_LINE 63
-
 extern uint8 regs[32];
 extern uint8 last_sid_byte;
 extern int16_t EGDivTable[16];    // Clock divisors for A/D/R settings

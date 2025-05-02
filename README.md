@@ -109,6 +109,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
 
+Version 0.9a release 02-May-2025 by wavemotion-dave
+  * Fixed TrueDrive loading so it doesn't alter the CPU speed (for games like Pang which were playing quite 'uneven').
+  * Bumped up volume of the SID output by 50% (was too quiet)
+  * Improved 1541 Drive emulation - mostly in the GCR and IEC areas. Nothing noticeable but should be more accurate.
+  * Fixed write floppy icon color (instead of the usual green, will flash blue).
+  * Tweaks to C64 keyboard graphic to be more authentic.
+
 Version 0.9 release 30-Apr-2025 by wavemotion-dave
   * New and improved key mapping - including the new Slide-n-Glide joysticks handling.
   * SID filtering improved for better audio rendering (Space Taxi voice heard!).

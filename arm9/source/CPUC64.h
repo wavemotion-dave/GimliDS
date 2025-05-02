@@ -46,11 +46,6 @@
 #define PRECISE_CPU_CYCLES 0
 #endif
 
-// Set this to 1 for instruction-aligned CIA emulation
-#ifndef PRECISE_CIA_CYCLES
-#define PRECISE_CIA_CYCLES 0
-#endif
-
 
 // Interrupt types
 enum {

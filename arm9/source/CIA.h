@@ -116,9 +116,10 @@ public:
     uint8 IECLines;     // State of IEC lines (bit 7 - DATA, bit 6 - CLK, bit 4 - ATN)
 
 private:
+    void write_pa(uint8_t byte);
+    
     MOS6569 *the_vic;
     MOS6502_1541 *the_cpu_1541;
-    void write_pa(uint8_t byte);
 };
 
 
