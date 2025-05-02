@@ -79,9 +79,22 @@ public:
     void Reset(void);
 
 private:
-#ifndef GLOBAL_VARS
     void vblank(void);
     void raster_irq(void);
+    uint8 *get_physical(uint16 adr);
+    void el_std_text(uint8 *p, uint8 *q, uint8 *r);
+    void el_mc_text(uint8 *p, uint8 *q, uint8 *r);
+    void el_std_bitmap(uint8 *p, uint8 *q, uint8 *r);
+    void el_mc_bitmap(uint8 *p, uint8 *q, uint8 *r);
+    void el_ecm_text(uint8 *p, uint8 *q, uint8 *r);
+    void el_std_idle(uint8 *p, uint8 *r);
+    void el_mc_idle(uint8 *p, uint8 *r);
+    void el_sprites(uint8 *chunky_ptr);
+    int el_update_mc(int raster);
+    void init_text_color_table(uint8 *colors);
+    void make_mc_table(void);
+    
+#ifndef GLOBAL_VARS
 
     uint16 mx[8];               // VIC registers
     uint8 my[8];
@@ -142,18 +155,6 @@ private:
     bool frame_skipped;         // Flag: Frame is being skipped
     uint8 bad_lines_enabled;    // Flag: Bad Lines enabled for this frame
     bool lp_triggered;          // Flag: Lightpen was triggered in this frame
-
-    uint8 *get_physical(uint16 adr);
-    void make_mc_table(void);
-    void el_std_text(uint8 *p, uint8 *q, uint8 *r);
-    void el_mc_text(uint8 *p, uint8 *q, uint8 *r);
-    void el_std_bitmap(uint8 *p, uint8 *q, uint8 *r);
-    void el_mc_bitmap(uint8 *p, uint8 *q, uint8 *r);
-    void el_ecm_text(uint8 *p, uint8 *q, uint8 *r);
-    void el_std_idle(uint8 *p, uint8 *r);
-    void el_mc_idle(uint8 *p, uint8 *r);
-    void el_sprites(uint8 *chunky_ptr);
-    int el_update_mc(int raster);
 
     uint16 mc_color_lookup[4];
 

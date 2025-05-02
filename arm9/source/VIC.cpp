@@ -273,7 +273,7 @@ static u32  total_frames                __attribute__((section(".dtcm")));     /
  *  Constructor: Initialize variables
  */
 
-static void init_text_color_table(uint8 *colors)
+void MOS6569::init_text_color_table(uint8 *colors)
 {
     for (int i = 0; i < 16; i++)
         for (int j = 0; j < 16; j++)
@@ -364,11 +364,7 @@ void MOS6569::Reset(void)
 }
 
 
-#ifdef GLOBAL_VARS
-static void make_mc_table(void)
-#else
 void MOS6569::make_mc_table(void)
-#endif
 {
     mc_color_lookup[0] = b0c_color | (b0c_color << 8);
     mc_color_lookup[1] = b1c_color | (b1c_color << 8);
@@ -380,11 +376,7 @@ void MOS6569::make_mc_table(void)
  *  Convert video address to pointer
  */
 
-#ifdef GLOBAL_VARS
-inline uint8 *get_physical(uint16 adr)
-#else
-inline uint8 *MOS6569::get_physical(uint16 adr)
-#endif
+uint8 *MOS6569::get_physical(uint16 adr)
 {
     int va = adr | cia_vabase;
     if ((va & 0x7000) == 0x1000)
@@ -557,11 +549,7 @@ void MOS6569::SetState(MOS6569State *vd)
  *  Trigger raster IRQ
  */
 
-#ifdef GLOBAL_VARS
-static inline void raster_irq(void)
-#else
-inline void MOS6569::raster_irq(void)
-#endif
+void MOS6569::raster_irq(void)
 {
     irq_flag |= 0x01;
     if (irq_mask & 0x01) {
@@ -575,7 +563,7 @@ inline void MOS6569::raster_irq(void)
  *  Read from VIC register
  */
 
-ITCM_CODE uint8 MOS6569::ReadRegister(uint16 adr)
+uint8 MOS6569::ReadRegister(uint16 adr)
 {
     switch (adr) {
         case 0x00: case 0x02: case 0x04: case 0x06:
@@ -846,11 +834,7 @@ void MOS6569::TriggerLightpen(void)
  *  VIC vertical blank: Reset counters and redraw screen
  */
 
-#ifdef GLOBAL_VARS
-static inline void vblank(void)
-#else
 inline void MOS6569::vblank(void)
-#endif
 {
     raster_y = vc_base = 0;
     lp_triggered = false;
@@ -879,11 +863,7 @@ inline void MOS6569::vblank(void)
 }
 
 
-#ifdef GLOBAL_VARS
-ITCM_CODE void el_std_text(uint8 *p, uint8 *q, uint8 *r)
-#else
-inline void MOS6569::el_std_text(uint8 *p, uint8 *q, uint8 *r)
-#endif
+__attribute__ ((noinline))  ITCM_CODE void MOS6569::el_std_text(uint8 *p, uint8 *q, uint8 *r)
 {
     unsigned int b0cc = b0c;
     uint32 *lp = (uint32 *)p;
@@ -910,11 +890,7 @@ inline void MOS6569::el_std_text(uint8 *p, uint8 *q, uint8 *r)
 }
 
 
-#ifdef GLOBAL_VARS
-ITCM_CODE void el_mc_text(uint8 *p, uint8 *q, uint8 *r)
-#else
-inline void MOS6569::el_mc_text(uint8 *p, uint8 *q, uint8 *r)
-#endif
+__attribute__ ((noinline))  ITCM_CODE void MOS6569::el_mc_text(uint8 *p, uint8 *q, uint8 *r)
 {
     uint32 *wp = (uint32 *)p;
     uint8 *cp = color_line;
@@ -958,11 +934,7 @@ inline void MOS6569::el_mc_text(uint8 *p, uint8 *q, uint8 *r)
 }
 
 
-#ifdef GLOBAL_VARS
-void el_std_bitmap(uint8 *p, uint8 *q, uint8 *r)
-#else
-inline void MOS6569::el_std_bitmap(uint8 *p, uint8 *q, uint8 *r)
-#endif
+void MOS6569::el_std_bitmap(uint8 *p, uint8 *q, uint8 *r)
 {
     uint32 *lp = (uint32 *)p;
     uint8 *mp = matrix_line;
@@ -980,11 +952,7 @@ inline void MOS6569::el_std_bitmap(uint8 *p, uint8 *q, uint8 *r)
 }
 
 
-#ifdef GLOBAL_VARS
-void el_mc_bitmap(uint8 *p, uint8 *q, uint8 *r)
-#else
-inline void MOS6569::el_mc_bitmap(uint8 *p, uint8 *q, uint8 *r)
-#endif
+void MOS6569::el_mc_bitmap(uint8 *p, uint8 *q, uint8 *r)
 {
     uint16 lookup[4];
     uint32 *wp = (uint32 *)p;
@@ -1023,11 +991,7 @@ inline void MOS6569::el_mc_bitmap(uint8 *p, uint8 *q, uint8 *r)
 }
 
 
-#ifdef GLOBAL_VARS
-static inline void el_ecm_text(uint8 *p, uint8 *q, uint8 *r)
-#else
-inline void MOS6569::el_ecm_text(uint8 *p, uint8 *q, uint8 *r)
-#endif
+void MOS6569::el_ecm_text(uint8 *p, uint8 *q, uint8 *r)
 {
     uint32 *lp = (uint32 *)p;
     uint8 *cp = color_line;
@@ -1048,11 +1012,7 @@ inline void MOS6569::el_ecm_text(uint8 *p, uint8 *q, uint8 *r)
 }
 
 
-#ifdef GLOBAL_VARS
-ITCM_CODE void el_std_idle(uint8 *p, uint8 *r)
-#else
-inline void MOS6569::el_std_idle(uint8 *p, uint8 *r)
-#endif
+__attribute__ ((noinline))  ITCM_CODE void MOS6569::el_std_idle(uint8 *p, uint8 *r)
 {
     uint8 data = *get_physical(ctrl1 & 0x40 ? 0x39ff : 0x3fff);
     uint32 *lp = (uint32 *)p;
@@ -1067,11 +1027,7 @@ inline void MOS6569::el_std_idle(uint8 *p, uint8 *r)
 }
 
 
-#ifdef GLOBAL_VARS
-ITCM_CODE void el_mc_idle(uint8 *p, uint8 *r)
-#else
-inline void MOS6569::el_mc_idle(uint8 *p, uint8 *r)
-#endif
+void MOS6569::el_mc_idle(uint8 *p, uint8 *r)
 {
     uint8 data = *get_physical(0x3fff);
     uint32 *lp = (uint32 *)p - 1;
@@ -1092,7 +1048,7 @@ inline void MOS6569::el_mc_idle(uint8 *p, uint8 *r)
 }
 
 
-ITCM_CODE void el_sprites(uint8 *chunky_ptr)
+__attribute__ ((noinline))  ITCM_CODE void MOS6569::el_sprites(uint8 *chunky_ptr)
 {
     unsigned spr_coll=0, gfx_coll=0;
 
@@ -1375,11 +1331,7 @@ ITCM_CODE void el_sprites(uint8 *chunky_ptr)
 }
 
 
-#ifdef GLOBAL_VARS
-ITCM_CODE int el_update_mc(int raster)
-#else
-inline int MOS6569::el_update_mc(int raster)
-#endif
+__attribute__ ((noinline))  ITCM_CODE int MOS6569::el_update_mc(int raster)
 {
     int i, j;
     int cycles_used = 0;

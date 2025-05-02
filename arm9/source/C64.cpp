@@ -57,6 +57,8 @@ uint8 myRAM[C64_RAM_SIZE];
 uint8 myKERNAL[KERNAL_ROM_SIZE];
 uint8 myRAM1541[DRIVE_RAM_SIZE] __attribute__((section(".dtcm")));
 
+uint8 bTurboWarp __attribute__((section(".dtcm"))) = 0;
+
 #define SNAPSHOT_VERSION 1
 
 /*
@@ -194,6 +196,8 @@ void C64::Reset(void)
     TheCIA2->Reset();
     TheIEC->Reset();
     TheVIC->Reset();
+    
+    bTurboWarp = 0;
 }
 
 
@@ -872,7 +876,7 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
     frames++;
     while (GetTicks() < (((unsigned int)TICKS_PER_SEC/(unsigned int)50) * (unsigned int)frames))
     {
-        //if (ThePrefs.TrueDrive && TheDisplay->led_state[0]) break; // If reading the drive in 'true drive' mode, just plow along...
+        if (bTurboWarp) break;
         asm("nop");
         //break;  // Uncomment this for full speed...
     }
@@ -1076,6 +1080,13 @@ uint8 C64::poll_joystick(int port)
         if (++auto_fire_dampen & 0x08) joy_fire=0;
     } else auto_fire_dampen=0;
 
+    bTurboWarp = 0;
+    if((keys & KEY_R) && (keys & KEY_L))
+    {
+        // Turbo/Warp mode!
+        bTurboWarp = 1;
+    }
+    else
     if((keys & KEY_R) && !dampen)
     {
         if (keys & KEY_UP)
@@ -1099,7 +1110,7 @@ uint8 C64::poll_joystick(int port)
             if (myConfig.offsetX > 0) myConfig.offsetX--;
         }
     }
-
+    else
     if((keys & KEY_L) && !dampen)
     {
         if (keys & KEY_UP)
@@ -1138,16 +1149,21 @@ uint8 C64::poll_joystick(int port)
         dampen = 50; // Full second - do not repeat this often!
     }
 
-    if (dampen) dampen--;
+    if (!dampen) // Handle joystick
+    {
+        // Handle the joystick input... never dampen this!
+        if(port != myConfig.joyPort) return j;
 
-    // Handle the joystick input... never dampen this!
-    if(port != myConfig.joyPort) return j;
-
-    if( joy_up )           j&=0xfe; // Up
-    if( joy_down )         j&=0xfd; // Down
-    if( joy_left )         j&=0xfb; // Left
-    if( joy_right )        j&=0xf7; // Right
-    if( joy_fire )         j&=0xef; // Fire button
+        if( joy_up )           j&=0xfe; // Up
+        if( joy_down )         j&=0xfd; // Down
+        if( joy_left )         j&=0xfb; // Left
+        if( joy_right )        j&=0xf7; // Right
+        if( joy_fire )         j&=0xef; // Fire button
+    }
+    else
+    {
+        dampen--;
+    }
 
     return j;
 }

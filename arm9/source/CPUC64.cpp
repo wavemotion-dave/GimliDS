@@ -166,6 +166,8 @@ __attribute__ ((noinline)) uint8 MOS6510::read_byte_io(uint16 adr)
             }
             else
                 return myRAM[adr];
+        case 0x8:
+        case 0x9:
         case 0xc:
             return myRAM[adr];
         case 0xd:
@@ -218,16 +220,14 @@ __attribute__ ((noinline)) uint8 MOS6510::read_byte_io(uint16 adr)
 
 inline __attribute__((always_inline)) uint8 MOS6510::read_byte(uint16 adr)
 {
-    if (adr < 0xa000)
-        return myRAM[adr];
-    else
-        return read_byte_io(adr);
+    if (adr & 0x8000) return read_byte_io(adr);
+    else return myRAM[adr];
 }
 
 /*
  *  Read a word (little-endian) from the CPU's address space
  */
-inline uint16 MOS6510::read_word(uint16 adr)
+__attribute__ ((noinline)) uint16 MOS6510::read_word(uint16 adr)
 {
     return read_byte(adr) | (read_byte(adr+1) << 8);
 }

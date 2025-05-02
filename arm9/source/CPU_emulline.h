@@ -142,11 +142,15 @@
 #else // CPU is 1541
     cpu_cycles += CycleDeltas[myConfig.cpuCycles];
     MOS6510 *localCPU = the_c64->TheCPU;
-
+    cycle_counter += last_cycles; // In case we have any initial interrupt cycles
+    
     while ((cycles_left -= last_cycles) >= 0)
     {
         // If we are 1541CPU, we want to alternate running instructions with the main CPU ...
-        while (cpu_cycles > cycles_left) cpu_cycles -= localCPU->EmulateLine(0);
+        while (cpu_cycles > cycles_left)
+        {
+            cpu_cycles -= localCPU->EmulateLine(0);
+        }
 #endif
 
         switch (read_byte_imm())
@@ -1372,10 +1376,13 @@
         }
         
 #ifdef IS_CPU_1541
-        cycle_counter += last_cycles;	// Needed for GCR timing
+        cycle_counter += last_cycles;	// Needed for GCR timing        
 #endif        
     }
 #ifdef IS_CPU_1541
-        // See if there are any straggler cycles left for the CPU
-    while (cpu_cycles > 0) cpu_cycles -= the_c64->TheCPU->EmulateLine(0);
+    // See if there are any straggler cycles left for the CPU
+    while (cpu_cycles > 0)
+    {
+        cpu_cycles -= the_c64->TheCPU->EmulateLine(0);
+    }
 #endif

@@ -112,4 +112,5 @@ private:
 };
 
 extern void floppy_soundfx(u8 type);
+
 #endif
