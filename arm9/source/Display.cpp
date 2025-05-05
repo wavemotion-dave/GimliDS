@@ -439,11 +439,11 @@ void show_cartstatus(void)
 {
     if (cart_in)
     {
-        DSPrint(21, 22, 2, (char*)"PQR");
+        DSPrint(21, 23, 2, (char*)"PQR");
     }
     else
     {
-        DSPrint(21, 22, 2, (char*)"012");
+        DSPrint(21, 23, 2, (char*)"012");
     }
 }
 
