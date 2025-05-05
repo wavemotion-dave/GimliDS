@@ -36,16 +36,18 @@
 
 char Drive8File[MAX_FILENAME_LEN];
 char Drive9File[MAX_FILENAME_LEN];
+char CartFilename[MAX_FILENAME_LEN];
 
 extern int bg0b, bg1b;
-int         countZX=0;
-int         ucGameAct=0;
-int         ucGameChoice = -1;
+int         diskCount=0;
+int         diskGameAct=0;
+int         diskGameChoice = -1;
 FIC64       gpFic[MAX_FILES];
 char        szName[256];
 char        szFile[256];
 u32         file_size = 0;
 char        strBuf[40];
+u8          bLastFileTypeLoaded = 0;
 
 #define WAITVBL swiWaitForVBlank();swiWaitForVBlank();swiWaitForVBlank();
 
@@ -61,12 +63,12 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
   u8 maxLen;
 
   DSPrint(31,5,0,(NoDebGame>0 ? (char*)"<" : (char*)" "));
-  DSPrint(31,22,0,(NoDebGame+14<countZX ? (char*)">" : (char*)" "));
+  DSPrint(31,22,0,(NoDebGame+14<diskCount ? (char*)">" : (char*)" "));
 
   for (ucBcl=0;ucBcl<18; ucBcl++)
   {
     ucGame= ucBcl+NoDebGame;
-    if (ucGame < countZX)
+    if (ucGame < diskCount)
     {
       maxLen=(int)strlen(gpFic[ucGame].szName);
       strcpy(szName,gpFic[ucGame].szName);
@@ -115,14 +117,14 @@ int Filescmp (const void *c1, const void *c2)
 /*********************************************************************************
  * Find files (TAP/TZX/Z80/SNA) available - sort them for display.
  ********************************************************************************/
-void gimliDSFindFiles(u8 bTapeOnly)
+void gimliDSFindFiles(u8 bCartOnly)
 {
   u32 uNbFile;
   DIR *dir;
   struct dirent *pent;
 
   uNbFile=0;
-  countZX=0;
+  diskCount=0;
 
   dir = opendir(".");
   while (((pent=readdir(dir))!=NULL) && (uNbFile<MAX_FILES))
@@ -139,18 +141,40 @@ void gimliDSFindFiles(u8 bTapeOnly)
             strcpy(gpFic[uNbFile].szName,szFile);
             gpFic[uNbFile].uType = DIRECTORY;
             uNbFile++;
-            countZX++;
+            diskCount++;
         }
       }
     }
     else {
       if ((strlen(szFile)>4) && (strlen(szFile)<(MAX_FILENAME_LEN-4)) && (szFile[0] != '.') && (szFile[0] != '_'))  // For MAC don't allow files starting with an underscore
       {
-        if ( (strcasecmp(strrchr(szFile, '.'), ".D64") == 0) )  {
-          strcpy(gpFic[uNbFile].szName,szFile);
-          gpFic[uNbFile].uType = NORMALFILE;
-          uNbFile++;
-          countZX++;
+        if (bCartOnly)
+        {
+            if ( (strcasecmp(strrchr(szFile, '.'), ".CRT") == 0) )  
+            {
+              strcpy(gpFic[uNbFile].szName,szFile);
+              gpFic[uNbFile].uType = NORMALFILE;
+              uNbFile++;
+              diskCount++;
+            }
+            
+            if ( (strcasecmp(strrchr(szFile, '.'), ".PRG") == 0) )
+            {
+              strcpy(gpFic[uNbFile].szName,szFile);
+              gpFic[uNbFile].uType = NORMALFILE;
+              uNbFile++;
+              diskCount++;
+            }
+        }
+        else
+        {
+            if ( (strcasecmp(strrchr(szFile, '.'), ".D64") == 0) )  
+            {
+              strcpy(gpFic[uNbFile].szName,szFile);
+              gpFic[uNbFile].uType = NORMALFILE;
+              uNbFile++;
+              diskCount++;
+            }
         }
       }
     }
@@ -160,44 +184,50 @@ void gimliDSFindFiles(u8 bTapeOnly)
   // ----------------------------------------------
   // If we found any files, go sort the list...
   // ----------------------------------------------
-  if (countZX)
+  if (diskCount)
   {
-    qsort (gpFic, countZX, sizeof(FIC64), Filescmp);
+    qsort (gpFic, diskCount, sizeof(FIC64), Filescmp);
   }
 }
 
 // ----------------------------------------------------------------
 // Let the user select a new game (rom) file and load it up!
 // ----------------------------------------------------------------
-u8 gimliDSLoadFile(u8 bTapeOnly)
+u8 gimliDSLoadFile(u8 bCartOnly)
 {
   bool bDone=false;
   u16 ucHaut=0x00, ucBas=0x00,ucSHaut=0x00, ucSBas=0x00, romSelected= 0, firstRomDisplay=0,nbRomPerPage, uNbRSPage;
   s16 uLenFic=0, ucFlip=0, ucFlop=0;
   u8 retVal = 0;
+  
+  if (bLastFileTypeLoaded != bCartOnly)
+  {
+     diskCount=0;
+     diskGameAct=0;
+  }
 
   // Show the menu...
   while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B))!=0);
 
-  gimliDSFindFiles(bTapeOnly);
+  gimliDSFindFiles(bCartOnly);
 
-  ucGameChoice = -1;
+  diskGameChoice = -1;
 
-  nbRomPerPage = (countZX>=18 ? 18 : countZX);
-  uNbRSPage = (countZX>=5 ? 5 : countZX);
+  nbRomPerPage = (diskCount>=18 ? 18 : diskCount);
+  uNbRSPage = (diskCount>=5 ? 5 : diskCount);
 
-  if (ucGameAct>countZX-nbRomPerPage)
+  if (diskGameAct>diskCount-nbRomPerPage)
   {
-    firstRomDisplay=countZX-nbRomPerPage;
-    romSelected=ucGameAct-countZX+nbRomPerPage;
+    firstRomDisplay=diskCount-nbRomPerPage;
+    romSelected=diskGameAct-diskCount+nbRomPerPage;
   }
   else
   {
-    firstRomDisplay=ucGameAct;
+    firstRomDisplay=diskGameAct;
     romSelected=0;
   }
 
-  if (romSelected >= countZX) romSelected = 0; // Just start at the top
+  if (romSelected >= diskCount) romSelected = 0; // Just start at the top
 
   dsDisplayFiles(firstRomDisplay,romSelected);
 
@@ -210,14 +240,14 @@ u8 gimliDSLoadFile(u8 bTapeOnly)
     {
       if (!ucHaut)
       {
-        ucGameAct = (ucGameAct>0 ? ucGameAct-1 : countZX-1);
+        diskGameAct = (diskGameAct>0 ? diskGameAct-1 : diskCount-1);
         if (romSelected>uNbRSPage) { romSelected -= 1; }
         else {
           if (firstRomDisplay>0) { firstRomDisplay -= 1; }
           else {
             if (romSelected>0) { romSelected -= 1; }
             else {
-              firstRomDisplay=countZX-nbRomPerPage;
+              firstRomDisplay=diskCount-nbRomPerPage;
               romSelected=nbRomPerPage-1;
             }
           }
@@ -239,10 +269,10 @@ u8 gimliDSLoadFile(u8 bTapeOnly)
     if (keysCurrent() & KEY_DOWN)
     {
       if (!ucBas) {
-        ucGameAct = (ucGameAct< countZX-1 ? ucGameAct+1 : 0);
+        diskGameAct = (diskGameAct< diskCount-1 ? diskGameAct+1 : 0);
         if (romSelected<uNbRSPage-1) { romSelected += 1; }
         else {
-          if (firstRomDisplay<countZX-nbRomPerPage) { firstRomDisplay += 1; }
+          if (firstRomDisplay<diskCount-nbRomPerPage) { firstRomDisplay += 1; }
           else {
             if (romSelected<nbRomPerPage-1) { romSelected += 1; }
             else {
@@ -272,10 +302,10 @@ u8 gimliDSLoadFile(u8 bTapeOnly)
     {
       if (!ucSBas)
       {
-        ucGameAct = (ucGameAct< countZX-nbRomPerPage ? ucGameAct+nbRomPerPage : countZX-nbRomPerPage);
-        if (firstRomDisplay<countZX-nbRomPerPage) { firstRomDisplay += nbRomPerPage; }
-        else { firstRomDisplay = countZX-nbRomPerPage; }
-        if (ucGameAct == countZX-nbRomPerPage) romSelected = 0;
+        diskGameAct = (diskGameAct< diskCount-nbRomPerPage ? diskGameAct+nbRomPerPage : diskCount-nbRomPerPage);
+        if (firstRomDisplay<diskCount-nbRomPerPage) { firstRomDisplay += nbRomPerPage; }
+        else { firstRomDisplay = diskCount-nbRomPerPage; }
+        if (diskGameAct == diskCount-nbRomPerPage) romSelected = 0;
         ucSBas=0x01;
         dsDisplayFiles(firstRomDisplay,romSelected);
       }
@@ -297,11 +327,11 @@ u8 gimliDSLoadFile(u8 bTapeOnly)
     {
       if (!ucSHaut)
       {
-        ucGameAct = (ucGameAct> nbRomPerPage ? ucGameAct-nbRomPerPage : 0);
+        diskGameAct = (diskGameAct> nbRomPerPage ? diskGameAct-nbRomPerPage : 0);
         if (firstRomDisplay>nbRomPerPage) { firstRomDisplay -= nbRomPerPage; }
         else { firstRomDisplay = 0; }
-        if (ucGameAct == 0) romSelected = 0;
-        if (romSelected > ucGameAct) romSelected = ucGameAct;
+        if (diskGameAct == 0) romSelected = 0;
+        if (romSelected > diskGameAct) romSelected = diskGameAct;
         ucSHaut=0x01;
         dsDisplayFiles(firstRomDisplay,romSelected);
       }
@@ -331,27 +361,27 @@ u8 gimliDSLoadFile(u8 bTapeOnly)
     // -------------------------------------------------------------------
     if (keysCurrent() & KEY_A || keysCurrent() & KEY_Y || keysCurrent() & KEY_X)
     {
-      if (gpFic[ucGameAct].uType != DIRECTORY)
+      if (gpFic[diskGameAct].uType != DIRECTORY)
       {
         bDone=true;
         if (keysCurrent() & KEY_X) retVal = 2; else retVal = 1;
         if (keysCurrent() & KEY_Y) bDebugDisplay = 1; else bDebugDisplay = 0;
-        ucGameChoice = ucGameAct;
+        diskGameChoice = diskGameAct;
         WAITVBL;
       }
       else
       {
-        chdir(gpFic[ucGameAct].szName);
-        gimliDSFindFiles(bTapeOnly);
-        ucGameAct = 0;
-        nbRomPerPage = (countZX>=14 ? 14 : countZX);
-        uNbRSPage = (countZX>=5 ? 5 : countZX);
-        if (ucGameAct>countZX-nbRomPerPage) {
-          firstRomDisplay=countZX-nbRomPerPage;
-          romSelected=ucGameAct-countZX+nbRomPerPage;
+        chdir(gpFic[diskGameAct].szName);
+        gimliDSFindFiles(bCartOnly);
+        diskGameAct = 0;
+        nbRomPerPage = (diskCount>=14 ? 14 : diskCount);
+        uNbRSPage = (diskCount>=5 ? 5 : diskCount);
+        if (diskGameAct>diskCount-nbRomPerPage) {
+          firstRomDisplay=diskCount-nbRomPerPage;
+          romSelected=diskGameAct-diskCount+nbRomPerPage;
         }
         else {
-          firstRomDisplay=ucGameAct;
+          firstRomDisplay=diskGameAct;
           romSelected=0;
         }
         dsDisplayFiles(firstRomDisplay,romSelected);
@@ -362,14 +392,14 @@ u8 gimliDSLoadFile(u8 bTapeOnly)
     // --------------------------------------------
     // If the filename is too long... scroll it.
     // --------------------------------------------
-    if ((int)strlen(gpFic[ucGameAct].szName) > 30)
+    if ((int)strlen(gpFic[diskGameAct].szName) > 30)
     {
       ucFlip++;
       if (ucFlip >= 25)
       {
         ucFlip = 0;
         uLenFic++;
-        if ((uLenFic+30)>(int)strlen(gpFic[ucGameAct].szName))
+        if ((uLenFic+30)>(int)strlen(gpFic[diskGameAct].szName))
         {
           ucFlop++;
           if (ucFlop >= 15)
@@ -380,7 +410,7 @@ u8 gimliDSLoadFile(u8 bTapeOnly)
           else
             uLenFic--;
         }
-        strncpy(szName,gpFic[ucGameAct].szName+uLenFic,30);
+        strncpy(szName,gpFic[diskGameAct].szName+uLenFic,30);
         szName[30] = '\0';
         DSPrint(1,5+romSelected,2,szName);
       }
@@ -398,11 +428,17 @@ u16 nds_key;
 
 void LoadGameConfig(void)
 {
-    if (strlen(Drive8File) > 1)
+    // Cart overrides disk...
+    if (strlen(CartFilename) > 1)
+    {
+        file_crc = getCRC32((u8*)CartFilename, strlen(CartFilename));
+        FindConfig();
+    }
+    else if (strlen(Drive8File) > 1)
     {
         file_crc = getCRC32((u8*)Drive8File, strlen(Drive8File));
         FindConfig();
-    }
+    }    
 }
 
 void BottomScreenDiskette(void)
@@ -475,6 +511,10 @@ void DisplayFileNameDiskette(void)
 #define MENU_ACTION_REBOOT_C64      4   // Force C64 Reboot
 #define MENU_ACTION_TRUE_DRIVE      5   // Toggle True Drive
 #define MENU_ACTION_CONFIG          6   // Configure Game
+
+#define MENU_ACTION_INSERT_CART     10
+#define MENU_ACTION_REMOVE_CART     11
+
 #define MENU_ACTION_SKIP            99  // Skip this MENU choice
 
 typedef struct
@@ -500,6 +540,17 @@ DiskMenu_t disk_menu =
         {(char *)"  TOGGLE  TRUEDRIVE ",      MENU_ACTION_TRUE_DRIVE},
         {(char *)"  CONFIG  GAME      ",      MENU_ACTION_CONFIG},
         {(char *)"  RESET   C64       ",      MENU_ACTION_REBOOT_C64},
+        {(char *)"  EXIT    MENU      ",      MENU_ACTION_EXIT},
+        {(char *)"  NULL              ",      MENU_ACTION_END},
+    },
+};
+
+DiskMenu_t cart_menu =
+{
+    (char *)" ", 10,
+    {
+        {(char *)"  INSERT  CARTRIDGE ",      MENU_ACTION_INSERT_CART},
+        {(char *)"  REMOVE  CARTRIDGE ",      MENU_ACTION_REMOVE_CART},
         {(char *)"  EXIT    MENU      ",      MENU_ACTION_EXIT},
         {(char *)"  NULL              ",      MENU_ACTION_END},
     },
@@ -601,10 +652,10 @@ u8 DisketteMenu(C64 *the_c64)
                 case MENU_ACTION_DRIVE8:
                     BottomScreenMainMenu();
                     retVal = gimliDSLoadFile(0);
-                    if (ucGameChoice >= 0)
+                    if (diskGameChoice >= 0)
                     {
                         retVal = 1;
-                        strcpy(Drive8File, gpFic[ucGameChoice].szName);
+                        strcpy(Drive8File, gpFic[diskGameChoice].szName);
                         LoadGameConfig();
                     }
                     DiskMenuShow(true, menuSelection);
@@ -613,10 +664,10 @@ u8 DisketteMenu(C64 *the_c64)
                 case MENU_ACTION_DRIVE9:
                     BottomScreenMainMenu();
                     retVal = gimliDSLoadFile(0);
-                    if (ucGameChoice >= 0)
+                    if (diskGameChoice >= 0)
                     {
                         retVal = 1;
-                        strcpy(Drive9File, gpFic[ucGameChoice].szName);
+                        strcpy(Drive9File, gpFic[diskGameChoice].szName);
                     }
                     DiskMenuShow(true, menuSelection);
                     break;
@@ -685,5 +736,140 @@ u8 mount_disk(C64 *the_c64)
     
     u8 retVal = DisketteMenu(the_c64);
     
+    if (retVal) bLastFileTypeLoaded = 0;
+    
+    return retVal;
+}
+
+// -------------------------------------------------------
+// Show the Disk Menu text - highlight the selected row.
+// -------------------------------------------------------
+void CartMenuShow(bool bClearScreen, u8 sel)
+{
+    diskette_menu_items = 0;
+
+    if (bClearScreen)
+    {
+        // -------------------------------------
+        // Put up the Diskette menu background
+        // -------------------------------------
+        BottomScreenDiskette();
+    }
+
+    // ---------------------------------------------------
+    // Pick the right context menu based on the machine
+    // ---------------------------------------------------
+    menu = &cart_menu;
+
+    // Display the menu title
+    DSPrint(15-(strlen(menu->title)/2), menu->start_row, 6, menu->title);
+
+    // And display all of the menu items
+    while (menu->menulist[diskette_menu_items].menu_action != MENU_ACTION_END)
+    {
+        DSPrint(16-(strlen(menu->menulist[diskette_menu_items].menu_string)/2), menu->start_row+2+diskette_menu_items, (diskette_menu_items == sel) ? 7:6, menu->menulist[diskette_menu_items].menu_string);
+        diskette_menu_items++;
+    }
+
+    // ----------------------------------------------------------------------------------------------
+    // And near the bottom, display the file/rom/disk that is currently loaded into memory.
+    // ----------------------------------------------------------------------------------------------
+    DisplayFileNameDiskette();
+}
+
+
+// ------------------------------------------------------------------------
+// Handle Disk mini-menu interface... Allows rewind, swap tape, etc.
+// ------------------------------------------------------------------------
+u8 CartMenu(C64 *the_c64)
+{
+  u8 menuSelection = 0;
+  u8 retVal = 0;
+
+  while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_A ))!=0);
+
+  // ------------------------------------------------------------------
+  //Show the cassette menu background - we'll draw text on top of this
+  // ------------------------------------------------------------------
+  CartMenuShow(true, menuSelection);
+
+  u8 bExitMenu = false;
+  while (true)
+  {
+    nds_key = keysCurrent();
+    if (nds_key)
+    {
+        if (nds_key & KEY_UP)
+        {
+            menuSelection = (menuSelection > 0) ? (menuSelection-1):(diskette_menu_items-1);
+            while (menu->menulist[menuSelection].menu_action == MENU_ACTION_SKIP)
+            {
+                menuSelection = (menuSelection > 0) ? (menuSelection-1):(diskette_menu_items-1);
+            }
+            CartMenuShow(false, menuSelection);
+        }
+        if (nds_key & KEY_DOWN)
+        {
+            menuSelection = (menuSelection+1) % diskette_menu_items;
+            while (menu->menulist[menuSelection].menu_action == MENU_ACTION_SKIP)
+            {
+                menuSelection = (menuSelection+1) % diskette_menu_items;
+            }
+            CartMenuShow(false, menuSelection);
+        }
+        
+        if (nds_key & KEY_B) // Treat this as selecting 'exit'
+        {
+            bExitMenu = true;
+        }
+        else
+        if (nds_key & KEY_A)    // User has picked a menu item... let's see what it is!
+        {
+            switch(menu->menulist[menuSelection].menu_action)
+            {
+                case MENU_ACTION_EXIT:
+                    bExitMenu = true;
+                    break;
+
+                case MENU_ACTION_INSERT_CART:
+                    BottomScreenMainMenu();
+                    retVal = gimliDSLoadFile(1);
+                    if (diskGameChoice >= 0)
+                    {
+                        retVal = 1;
+                        strcpy(CartFilename, gpFic[diskGameChoice].szName);
+                        if ( (strcasecmp(strrchr(CartFilename, '.'), ".PRG") == 0) ) retVal = 2;
+                        LoadGameConfig();
+                    }
+                    bExitMenu = true;
+                    break;
+                    
+                case MENU_ACTION_REMOVE_CART:
+                    BottomScreenMainMenu();
+                    retVal = 3;
+                    strcpy(CartFilename, "");
+                    bExitMenu = true;
+                    break;
+            }
+        }
+
+        if (bExitMenu) break;
+        while ((keysCurrent() & (KEY_UP | KEY_DOWN | KEY_A ))!=0);
+        WAITVBL;WAITVBL;WAITVBL;
+    }
+  }
+
+  while ((keysCurrent() & (KEY_UP | KEY_DOWN | KEY_A ))!=0);
+  WAITVBL;WAITVBL;WAITVBL;
+  
+  return retVal;
+}
+
+u8 mount_cart(C64 *the_c64)
+{
+    u8 retVal = CartMenu(the_c64);
+    
+    if (retVal) bLastFileTypeLoaded = 1;
+
     return retVal;
 }

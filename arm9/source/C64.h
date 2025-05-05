@@ -35,6 +35,12 @@ const int DRIVE_ROM_SIZE  = 0x4000;
 #define BAD_CYCLES_PER_LINE     23
 #define FLOPPY_CYCLES_PER_LINE  64
 
+#define MEM_TYPE_RAM            0x01
+#define MEM_TYPE_KERNAL         0x02
+#define MEM_TYPE_BASIC          0x03
+#define MEM_TYPE_CART           0x04
+#define MEM_TYPE_OTHER          0x05
+
 class Prefs;
 class C64Display;
 class MOS6510;
@@ -45,6 +51,7 @@ class MOS6526_2;
 class IEC;
 class MOS6502_1541;
 class Job1541;
+class Cartridge;
 class CmdPipe;
 
 class C64 {
@@ -71,12 +78,17 @@ public:
     bool SaveVICState(FILE *f);
     bool SaveSIDState(FILE *f);
     bool SaveCIAState(FILE *f);
+    bool SaveCARTState(FILE *f);
     bool LoadCPUState(FILE *f);
     bool Load1541State(FILE *f);
     bool Load1541JobState(FILE *f);
     bool LoadVICState(FILE *f);
     bool LoadSIDState(FILE *f);
     bool LoadCIAState(FILE *f);
+    bool LoadCARTState(FILE *f);
+    void InsertCart(char *filename);
+    void RemoveCart(void);
+    void LoadPRG(char *filename);
 
     uint8 *RAM, *Basic, *Kernal,
           *Char, *Color;        // C64
@@ -90,6 +102,7 @@ public:
     MOS6526_1 *TheCIA1;
     MOS6526_2 *TheCIA2;
     IEC *TheIEC;
+    Cartridge *TheCart;
 
     MOS6502_1541 *TheCPU1541;   // 1541
     Job1541 *TheJob1541;
@@ -112,5 +125,9 @@ private:
 };
 
 extern void floppy_soundfx(u8 type);
+extern uint8 cart_in;
+extern u8 cartROM[];
+
+#define WAITVBL swiWaitForVBlank();swiWaitForVBlank();swiWaitForVBlank();
 
 #endif

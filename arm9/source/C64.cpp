@@ -46,31 +46,38 @@
 #include "IEC.h"
 #include "1541gcr.h"
 #include "Display.h"
+#include "Cartridge.h"
 #include "Prefs.h"
 #include "mainmenu.h"
 #include "lzav.h"
 #include <maxmod9.h>
 #include "soundbank.h"
 
-
 uint8 myRAM[C64_RAM_SIZE];
 uint8 myKERNAL[KERNAL_ROM_SIZE];
+uint8 myBASIC[BASIC_ROM_SIZE];
 uint8 myRAM1541[DRIVE_RAM_SIZE] __attribute__((section(".dtcm")));
 
 uint8 bTurboWarp __attribute__((section(".dtcm"))) = 0;
+uint8 cart_in    __attribute__((section(".dtcm"))) = 0;
 
-#define SNAPSHOT_VERSION 1
+C64 *gTheC64 = nullptr;
+
+u8 CompressBuffer[0x20000]; //128K more than enough
+
+#define SNAPSHOT_VERSION 2
 
 /*
  *  Constructor: Allocate objects and memory
  */
-
 C64::C64()
 {
     // The thread is not yet running
     thread_running = false;
     quit_thyself = false;
     have_a_break = false;
+    
+    gTheC64 = this;
 
     // System-dependent things
     c64_ctor1();
@@ -80,7 +87,7 @@ C64::C64()
 
     // Allocate RAM/ROM memory
     RAM = myRAM;
-    Basic = new uint8[BASIC_ROM_SIZE];
+    Basic = myBASIC;
     Kernal = myKERNAL;
     Char = new uint8[CHAR_ROM_SIZE];
     Color = new uint8[COLOR_RAM_SIZE];
@@ -93,11 +100,12 @@ C64::C64()
     TheJob1541 = new Job1541(RAM1541);
     TheCPU1541 = new MOS6502_1541(this, TheJob1541, TheDisplay, RAM1541, ROM1541);
 
-    TheVIC = TheCPU->TheVIC = new MOS6569(this, TheDisplay, TheCPU, RAM, Char, Color);
-    TheSID = TheCPU->TheSID = new MOS6581(this);
+    TheVIC  = TheCPU->TheVIC  = new MOS6569(this, TheDisplay, TheCPU, RAM, Char, Color);
+    TheSID  = TheCPU->TheSID  = new MOS6581(this);
     TheCIA1 = TheCPU->TheCIA1 = new MOS6526_1(TheCPU, TheVIC);
     TheCIA2 = TheCPU->TheCIA2 = TheCPU1541->TheCIA2 = new MOS6526_2(TheCPU, TheVIC, TheCPU1541);
-    TheIEC = TheCPU->TheIEC = new IEC(TheDisplay);
+    TheIEC  = TheCPU->TheIEC  = new IEC(TheDisplay);
+    TheCart = TheCPU->TheCart = new Cartridge();
 
     InitMemory();
 
@@ -172,7 +180,6 @@ C64::~C64()
     delete TheCPU;
     delete TheDisplay;
 
-    delete[] Basic;
     delete[] Char;
     delete[] Color;
     delete[] ROM1541;
@@ -196,6 +203,7 @@ void C64::Reset(void)
     TheCIA2->Reset();
     TheIEC->Reset();
     TheVIC->Reset();
+    TheCart->Reset();
     
     bTurboWarp = 0;
 }
@@ -210,6 +218,29 @@ void C64::NMI(void)
     TheCPU->AsyncNMI();
 }
 
+void C64::LoadPRG(char *filename) 
+{
+    FILE *fp = fopen(filename, "rb");
+    if (fp)
+    {
+        int prg_size = fread(CompressBuffer, 1, sizeof(CompressBuffer), fp);
+        
+        uint8 start_hi, start_lo;
+        uint16 start;
+        int i;
+
+        u8 *prg = CompressBuffer;
+        start_lo=*prg++;
+        start_hi=*prg++;
+        start=(start_hi<<8)+start_lo;
+
+        for(i=0; i<(prg_size-2); i++) 
+        {
+            myRAM[start+i]=prg[i];
+        }
+        fclose(fp);
+    }
+}
 
 /*
  *  The preferences have changed. prefs is a pointer to the new
@@ -336,8 +367,6 @@ void C64::PatchKernal(bool fast_reset, bool true_drive)
  *  1: OK
  *  -1: Instruction not completed
  */
-
-u8 CompressBuffer[0x20000]; //128K more than enough
 
 int C64::SaveCPUState(FILE *f)
 {
@@ -535,6 +564,32 @@ bool C64::LoadCIAState(FILE *f)
     } else { iprintf("LoadCIAState2\n"); return false;}
 }
 
+/*
+ *  Save Cartridge state to snapshot
+ */
+
+bool C64::SaveCARTState(FILE *f)
+{
+    CartridgeState state;
+    TheCart->GetState(&state);
+    return fwrite((void*)&state, sizeof(state), 1, f) == 1;
+}
+
+/*
+ *  Load Cartridge state from snapshot
+ */
+
+bool C64::LoadCARTState(FILE *f)
+{
+    CartridgeState state;
+
+    if (fread((void*)&state, sizeof(state), 1, f) == 1)
+    {
+        TheCart->SetState(&state);
+        return true;
+    } else { iprintf("LoadCARTState\n"); return false;}
+}
+
 
 /*
  *  Save 1541 GCR state to snapshot
@@ -599,6 +654,7 @@ bool C64::SaveSnapshot(char *filename)
     bool bSIDSave = SaveSIDState(f);
     bool bCIASave = SaveCIAState(f);
     bool bCPUSave = SaveCPUState(f);
+    bool bCARTSave= SaveCARTState(f);
     fputc(0, f);        // No delay
 
     if (ThePrefs.TrueDrive)
@@ -610,7 +666,7 @@ bool C64::SaveSnapshot(char *filename)
     }
     fclose(f);
 
-    if (bVICSave && bSIDSave && bCIASave && bCPUSave) return true;
+    if (bVICSave && bSIDSave && bCIASave && bCPUSave && bCARTSave) return true;
     return false;
 }
 
@@ -653,6 +709,7 @@ bool C64::LoadSnapshot(char *filename)
             error |= !LoadSIDState(f);
             error |= !LoadCIAState(f);
             error |= !LoadCPUState(f);
+            error |= !LoadCARTState(f);
 
             delay = fgetc(f);   // Number of cycles the 6510 is ahead of the previous chips
             (void)delay;
@@ -843,19 +900,6 @@ void kbd_buf_update(C64 *TheC64)
     }
 }
 
-void load_prg(C64 *TheC64, uint8 *prg, int prg_size) {
-    uint8 start_hi, start_lo;
-    uint16 start;
-    int i;
-
-    start_lo=*prg++;
-    start_hi=*prg++;
-    start=(start_hi<<8)+start_lo;
-
-    for(i=0; i<(prg_size-2); i++) {
-        TheC64->RAM[start+i]=prg[i];
-    }
-}
 
 /*
  *  Vertical blank: Poll keyboard and joysticks, update window
@@ -1166,6 +1210,36 @@ uint8 C64::poll_joystick(int port)
     }
 
     return j;
+}
+
+void C64::InsertCart(char *filename)
+{
+	Cartridge * new_cart = nullptr;
+
+    char errBuffer[40];
+    new_cart = Cartridge::FromFile(filename, errBuffer);
+
+    // Swap cartridge object if successful
+	if (new_cart)
+    {
+		delete TheCart;
+		TheCart = TheCPU->TheCart = new_cart;
+	}
+    else
+    {
+        DSPrint(0, 0, 6, (char*)errBuffer);
+        WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+        WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+        DSPrint(0, 0, 6, (char*)"                              ");
+    }
+}
+
+void C64::RemoveCart(void)
+{
+    extern u8 cart_in;
+    delete TheCart;
+    TheCart = TheCPU->TheCart = new Cartridge();
+    cart_in = 0;
 }
 
 

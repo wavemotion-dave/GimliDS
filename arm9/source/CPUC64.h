@@ -61,6 +61,7 @@ class MOS6581;
 class MOS6526_1;
 class MOS6526_2;
 class IEC;
+class Cartridge;
 struct MOS6510State;
 
 // 6510 emulation (C64)
@@ -82,6 +83,7 @@ public:
     void ClearCIAIRQ(void);
     void TriggerNMI(void);
     void ClearNMI(void);
+    void setCharVsIO(void);
 
     int ExtConfig;  // Memory configuration for ExtRead/WriteByte (0..7)
 
@@ -90,11 +92,13 @@ public:
     MOS6526_1 *TheCIA1; // Pointer to CIA 1
     MOS6526_2 *TheCIA2; // Pointer to CIA 2
     IEC *TheIEC;        // Pointer to drive array
+    Cartridge *TheCart; // Pointer to cartridge object
 
 private:
     void ext_opcode(void);
     uint8 read_byte(uint16 adr);
     uint8 read_byte_io(uint16 adr);
+    uint8 read_byte_io_cart(uint16 adr);
     uint16 read_word(uint16 adr);
     uint16 read_word_slow(uint16 adr);
     void write_byte(uint16 adr, uint8 byte);
@@ -106,7 +110,6 @@ private:
 
     void new_config(void);
     void illegal_op(uint8 op, uint16 at);
-    void illegal_jump(uint16 at, uint16 to);
 
     void do_adc(uint8 byte);
     void do_sbc(uint8 byte);
@@ -119,8 +122,7 @@ private:
 
     uint8 *ram;         // Pointer to main RAM
     uint8 *basic_rom, *kernal_rom, *char_rom, *color_ram; // Pointers to ROMs and color RAM
-    uint8 *kernal_rom_offset;
-
+    
     union {             // Pending interrupts
         uint8 intr[4];  // Index: See definitions above
         unsigned long intr_any;
@@ -147,6 +149,8 @@ struct MOS6510State {
     bool nmi_state;
     uint8 dfff_byte;
     bool instruction_complete;
+    uint8 MemMap_Type[0x10];
+    int32 MemMap_Offset[0x10];
 };
 
 

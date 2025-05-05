@@ -855,7 +855,7 @@ inline void MOS6569::vblank(void)
         frame_skipped = (total_frames & 1); // Skip every other...
         if (frame_skipped)
         {
-            if ((total_frames % 3) == 0) frame_skipped = 0; // But every so often toss in an odd frame
+            if ((total_frames % 5) == 0) frame_skipped = 0; // But every so often toss in an odd frame
         }
     }
 
@@ -1012,7 +1012,7 @@ void MOS6569::el_ecm_text(uint8 *p, uint8 *q, uint8 *r)
 }
 
 
-__attribute__ ((noinline))  ITCM_CODE void MOS6569::el_std_idle(uint8 *p, uint8 *r)
+void MOS6569::el_std_idle(uint8 *p, uint8 *r)
 {
     uint8 data = *get_physical(ctrl1 & 0x40 ? 0x39ff : 0x3fff);
     uint32 *lp = (uint32 *)p;

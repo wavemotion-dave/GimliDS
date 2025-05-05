@@ -100,7 +100,6 @@ private:
 
     void jump(uint16 adr);
     void illegal_op(uint8 op, uint16 at);
-    void illegal_jump(uint16 at, uint16 to);
 
     void do_adc(uint8 byte);
     void do_sbc(uint8 byte);

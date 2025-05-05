@@ -34,8 +34,6 @@
 
 extern C64 *TheC64;
 extern int bg0b, bg1b;
-
-#define WAITVBL swiWaitForVBlank();swiWaitForVBlank();swiWaitForVBlank();
 static u16 nds_key;
 extern void BottomScreenMainMenu(void);
 
@@ -181,6 +179,7 @@ u8 MainMenu(C64 *the_c64)
                     break;
                     
                 case MENU_ACTION_RESET_EMU:
+                    the_c64->RemoveCart();
                     the_c64->PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
                     the_c64->Reset();
                     bExitMenu = true;
@@ -214,8 +213,17 @@ u8 MainMenu(C64 *the_c64)
                 case MENU_ACTION_SAVE_STATE:
                 {
                     check_and_make_sav_directory();
-                    sprintf(theDrivePath,"sav/%s", ThePrefs.DrivePath[0]);
-                    int len = strlen(theDrivePath);
+                    int len = 0;
+                    if (strlen(CartFilename) > 1) // Cart overrides disk
+                    {
+                        sprintf(theDrivePath,"sav/%s", CartFilename);
+                        len = strlen(CartFilename);
+                    }
+                    else
+                    {
+                        sprintf(theDrivePath,"sav/%s", ThePrefs.DrivePath[0]);
+                        len = strlen(theDrivePath);
+                    }
                     if (len > 4)
                     {
                         char *p=&theDrivePath[len-4];
@@ -240,8 +248,17 @@ u8 MainMenu(C64 *the_c64)
                 case MENU_ACTION_LOAD_STATE:
                 {
                     check_and_make_sav_directory();
-                    sprintf(theDrivePath,"sav/%s", ThePrefs.DrivePath[0]);
-                    int len = strlen(theDrivePath);
+                    int len = 0;
+                    if (strlen(CartFilename) > 1) // Cart overrides disk
+                    {
+                        sprintf(theDrivePath,"sav/%s", CartFilename);
+                        len = strlen(CartFilename);
+                    }
+                    else
+                    {
+                        sprintf(theDrivePath,"sav/%s", ThePrefs.DrivePath[0]);
+                        len = strlen(theDrivePath);
+                    }
                     if (len > 4)
                     {
                         char *p=&theDrivePath[len-4];

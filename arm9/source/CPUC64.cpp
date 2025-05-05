@@ -76,6 +76,7 @@
 #include "CIA.h"
 #include "IEC.h"
 #include "Display.h"
+#include "Cartridge.h"
 #include "mainmenu.h"
 
 enum {
@@ -83,6 +84,9 @@ enum {
 };
 
 extern uint8 myRAM[];
+
+uint8 *MemMap[0x10]  __attribute__((section(".dtcm"))) ;
+
 
 /*
  *  6510 constructor: Initialize registers
@@ -96,8 +100,6 @@ MOS6510::MOS6510(C64 *c64, uint8 *Ram, uint8 *Basic, uint8 *Kernal, uint8 *Char,
     n_flag = z_flag = 0;
     v_flag = d_flag = c_flag = false;
     i_flag = true;
-
-    kernal_rom_offset = Kernal - 0xe000; // For faster indexing during emulation... 
 
     interrupt.intr[INT_VICIRQ] = false;
     interrupt.intr[INT_CIAIRQ] = false;
@@ -131,6 +133,12 @@ void MOS6510::AsyncNMI(void)
         interrupt.intr[INT_NMI] = true;
 }
 
+void MOS6510::setCharVsIO(void)
+{
+    uint8 port = ~ram[0] | ram[1];
+    char_in = (port & 3) && !(port & 4);
+    io_in = (port & 3) && (port & 4);
+}
 
 /*
  *  Memory configuration has probably changed
@@ -138,7 +146,8 @@ void MOS6510::AsyncNMI(void)
 
 void MOS6510::new_config(void)
 {
-    if ((ram[0] & 0x10) == 0) {
+    if ((ram[0] & 0x10) == 0) 
+    {
         ram[1] |= 0x10; // Keep cassette sense line high
     }
 
@@ -148,69 +157,69 @@ void MOS6510::new_config(void)
     kernal_in = port & 2;
     char_in = (port & 3) && !(port & 4);
     io_in = (port & 3) && (port & 4);
+    
+    MemMap[0x0] = myRAM;
+    MemMap[0x1] = myRAM;
+    MemMap[0x2] = myRAM;
+    MemMap[0x3] = myRAM;
+    MemMap[0x4] = myRAM;
+    MemMap[0x5] = myRAM;
+    MemMap[0x6] = myRAM;
+    MemMap[0x7] = myRAM;
+    
+    MemMap[0x8] = myRAM;
+    MemMap[0x9] = myRAM;
+    MemMap[0xa] = basic_in ? (basic_rom - 0xa000) : myRAM;
+    MemMap[0xb] = basic_in ? (basic_rom - 0xa000) : myRAM;
+    MemMap[0xc] = myRAM;
+    MemMap[0xd] = myRAM; // Usually will be I/O
+    MemMap[0xe] = kernal_in ? (kernal_rom - 0xe000) : myRAM;
+    MemMap[0xf] = kernal_in ? (kernal_rom - 0xe000) : myRAM;
+    
+    // If a Cartridge is inserted, it may respond in some of these memory regions
+    TheCart->MapThyself();
 }
-
 
 /*
  *  Read a byte from I/O / ROM space
  */
-
-__attribute__ ((noinline)) uint8 MOS6510::read_byte_io(uint16 adr)
-{
-    switch (adr >> 12) {
-        case 0xa:
-        case 0xb:
-            if (basic_in)
-            {
-                return basic_rom[adr & 0x1fff];
-            }
-            else
-                return myRAM[adr];
-        case 0x8:
-        case 0x9:
-        case 0xc:
-            return myRAM[adr];
-        case 0xd:
-            if (io_in)
-                switch ((adr >> 8) & 0x0f) {
-                    case 0x0:   // VIC
-                    case 0x1:
-                    case 0x2:
-                    case 0x3:
-                        return TheVIC->ReadRegister(adr & 0x3f);
-                    case 0x4:   // SID
-                    case 0x5:
-                    case 0x6:
-                    case 0x7:
-                        return TheSID->ReadRegister(adr & 0x1f);
-                    case 0x8:   // Color RAM
-                    case 0x9:
-                    case 0xa:
-                    case 0xb:
-                        return color_ram[adr & 0x03ff] | (rand() & 0xf0);
-                    case 0xc:   // CIA 1
-                        return TheCIA1->ReadRegister(adr & 0x0f);
-                    case 0xd:   // CIA 2
-                        return TheCIA2->ReadRegister(adr & 0x0f);
-                    case 0xe:   // REU/Open I/O
-                    case 0xf:
-                            return rand();
-                }
-            else if (char_in)
-                return char_rom[adr & 0x0fff];
-            else
-                return myRAM[adr];
-        case 0xe:
-        case 0xf:
-            if (kernal_in)
-            {
-                return kernal_rom_offset[adr];
-            }
-            else
-                return myRAM[adr];
-        default:    // Can't happen
-            return 0;
+__attribute__ ((noinline)) uint8_t  MOS6510::read_byte_io(uint16 adr)
+{    
+    if (io_in)
+    {
+        switch ((adr >> 8) & 0x0f) 
+        {
+            case 0x0:   // VIC
+            case 0x1:
+            case 0x2:
+            case 0x3:
+                return TheVIC->ReadRegister(adr & 0x3f);
+            case 0x4:   // SID
+            case 0x5:
+            case 0x6:
+            case 0x7:
+                return TheSID->ReadRegister(adr & 0x1f);
+            case 0x8:   // Color RAM
+            case 0x9:
+            case 0xa:
+            case 0xb:
+                return color_ram[adr & 0x03ff] | (rand() & 0xf0);
+            case 0xc:   // CIA 1
+                return TheCIA1->ReadRegister(adr & 0x0f);
+            case 0xd:   // CIA 2
+                return TheCIA2->ReadRegister(adr & 0x0f);
+            case 0xe:   // Cartridge I/O 1 (or open)
+                return TheCart->ReadIO1(adr & 0xff, rand());
+            case 0xf:   // Cartridge I/O 2 (or open)
+                return TheCart->ReadIO2(adr & 0xff, rand());
+        }
     }
+    else if (char_in) 
+    {
+         return char_rom[adr & 0x0fff];
+    }
+
+    return myRAM[adr];
 }
 
 
@@ -220,8 +229,8 @@ __attribute__ ((noinline)) uint8 MOS6510::read_byte_io(uint16 adr)
 
 inline __attribute__((always_inline)) uint8 MOS6510::read_byte(uint16 adr)
 {
-    if (adr & 0x8000) return read_byte_io(adr);
-    else return myRAM[adr];
+    if ((adr>>12) == 0xd) return read_byte_io(adr);
+    else return MemMap[adr>>12][adr];
 }
 
 /*
@@ -239,11 +248,10 @@ __attribute__ ((noinline)) uint16 MOS6510::read_word(uint16 adr)
 
 __attribute__ ((noinline)) void MOS6510::write_byte_io(uint16 adr, uint8 byte)
 {
-    if (adr >= 0xe000)
+    if (io_in)
     {
-        myRAM[adr] = byte;
-    } else if (io_in)
-        switch ((adr >> 8) & 0x0f) {
+        switch ((adr >> 8) & 0x0f) 
+        {
             case 0x0:   // VIC
             case 0x1:
             case 0x2:
@@ -268,11 +276,15 @@ __attribute__ ((noinline)) void MOS6510::write_byte_io(uint16 adr, uint8 byte)
             case 0xd:   // CIA 2
                 TheCIA2->WriteRegister(adr & 0x0f, byte);
                 return;
-            case 0xe:   // REU/Open I/O
-            case 0xf:
+            case 0xe:   // Cartridge I/O 1 (or open)
+                TheCart->WriteIO1(adr & 0xff, byte);
+                return;
+            case 0xf:   // Cartridge I/O 2 (or open)
+                TheCart->WriteIO2(adr & 0xff, byte);
                 return;
         }
-    else
+    }
+    else // Write through even if char_in is enabled
     {
         myRAM[adr] = byte;
     }
@@ -285,11 +297,12 @@ __attribute__ ((noinline)) void MOS6510::write_byte_io(uint16 adr, uint8 byte)
 
 inline void MOS6510::write_byte(uint16 adr, uint8 byte)
 {
-    if (adr < 0xd000)
+    if ((adr >> 12) == 0xd) write_byte_io(adr, byte);
+    else
     {
         myRAM[adr] = byte;
-        if (!(adr & 0xFFFE)) new_config(); // First two bytes are special...
-    } else write_byte_io(adr, byte);
+        if (adr < 2) new_config(); // First two bytes are special...
+    }
 }
 
 
@@ -323,8 +336,7 @@ inline void MOS6510::write_zp(uint16 adr, uint8 byte)
     myRAM[adr] = byte;
 
     // Check if memory configuration may have changed.
-    if (adr < 2)
-        new_config();
+    if (adr < 2) new_config(); // First two bytes are special...
 }
 
 
@@ -338,7 +350,7 @@ inline void MOS6510::write_zp(uint16 adr, uint8 byte)
  *  Adc instruction
  */
 
-void MOS6510::do_adc(uint8 byte)
+ITCM_CODE void MOS6510::do_adc(uint8 byte)
 {
     if (!d_flag) {
         uint16 tmp = a + (byte) + (c_flag ? 1 : 0);
@@ -419,6 +431,40 @@ void MOS6510::GetState(MOS6510State *s)
     s->nmi_state = nmi_state;
     s->dfff_byte = dfff_byte;
     s->instruction_complete = true;
+    
+    // ----------------------------------------------------------------
+    // Now the tricky part... we use MemMap[] as our CPU memory mapper 
+    // so we can quickly index into RAM, Kernal, Basic or Cart ROM and
+    // it's possible that from build-to-build that this memory moves...
+    // So we must determine the memory type and save the offset so we
+    // can properly restore it when loading save states.
+    // ----------------------------------------------------------------
+    for (u8 i=0; i<16; i++) 
+    {
+        if ((MemMap[i] >= myRAM) && (MemMap[i] <= (myRAM+0x10000)))
+        {
+            s->MemMap_Type[i] = MEM_TYPE_RAM;
+            s->MemMap_Offset[i] = MemMap[i] - myRAM;
+        }
+        else 
+        if ((MemMap[i] >= (kernal_rom-0xe000)) && (MemMap[i] <= (kernal_rom+0x2000)))
+        {
+            s->MemMap_Type[i] = MEM_TYPE_KERNAL;
+            s->MemMap_Offset[i] = MemMap[i] - kernal_rom;
+        }
+        else 
+        if ((MemMap[i] >= (basic_rom-0xa000)) && (MemMap[i] <= (basic_rom+0x2000)))
+        {
+            s->MemMap_Type[i] = MEM_TYPE_BASIC;
+            s->MemMap_Offset[i] = MemMap[i] - basic_rom;
+        }
+        else 
+        if ((MemMap[i] >= (cartROM-0xe000)) && (MemMap[i] <= (cartROM+(1024*1024))))
+        {
+            s->MemMap_Type[i] = MEM_TYPE_CART;
+            s->MemMap_Offset[i] = MemMap[i] - cartROM;
+        }
+    }
 }
 
 
@@ -452,6 +498,30 @@ void MOS6510::SetState(MOS6510State *s)
     interrupt.intr[INT_RESET] = s->intr[INT_RESET];
     nmi_state = s->nmi_state;
     dfff_byte = s->dfff_byte;
+    
+    for (u8 i=0; i<16; i++) 
+    {
+        if (s->MemMap_Type[i] == MEM_TYPE_RAM)
+        {
+            MemMap[i] = myRAM + s->MemMap_Offset[i];
+        }
+        else if (s->MemMap_Type[i] == MEM_TYPE_KERNAL)
+        {
+            MemMap[i] = kernal_rom + s->MemMap_Offset[i];
+        }
+        else if (s->MemMap_Type[i] == MEM_TYPE_BASIC)
+        {
+            MemMap[i] = basic_rom + s->MemMap_Offset[i];
+        }
+        else if (s->MemMap_Type[i] == MEM_TYPE_CART)
+        {
+            MemMap[i] = cartROM + s->MemMap_Offset[i];
+        }
+        else
+        {
+            MemMap[i] = (uint8_t *)s->MemMap_Offset[i];
+        }
+    }    
 }
 
 
@@ -479,7 +549,6 @@ void MOS6510::Reset(void)
     interrupt.intr[INT_NMI] = false;
     interrupt.intr[INT_RESET] = false;
 
-
     // Read reset vector
     jump(read_word(0xfffc));
 }
@@ -491,28 +560,14 @@ void MOS6510::Reset(void)
 
 void MOS6510::illegal_op(uint8 op, uint16 at)
 {
-    char illop_msg[80];
+    char illop_msg[40];
 
-    sprintf(illop_msg, "Illegal opcode %02x at %04x.", op, at);
+    sprintf(illop_msg, "Illegal opcode %02x at %04x", op, at);
     ShowRequester(illop_msg, "Reset");
     the_c64->Reset();
     Reset();
 }
 
-
-/*
- *  Jump to illegal address space (PC_IS_POINTER only)
- */
-
-void MOS6510::illegal_jump(uint16 at, uint16 to)
-{
-    char illop_msg[80];
-
-    sprintf(illop_msg, "Jump to I/O space at %04x to %04x.", at, to);
-    ShowRequester(illop_msg, "Reset");
-    the_c64->Reset();
-    Reset();
-}
 
 
 /*

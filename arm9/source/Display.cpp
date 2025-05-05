@@ -3,12 +3,12 @@
 //
 // As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 // any copying or distribution of this emulator, its source code and associated
-// readme files, with or without modification, are permitted per the original 
+// readme files, with or without modification, are permitted per the original
 // Frodo emulator license shown below.  Hugest thanks to Christian Bauer for his
 // efforts to provide a clean open-source emulation base for the C64.
 //
-// Numerous hacks and 'unsafe' optimizations have been performed on the original 
-// Frodo emulator codebase to get it running on the small handheld system. You 
+// Numerous hacks and 'unsafe' optimizations have been performed on the original
+// Frodo emulator codebase to get it running on the small handheld system. You
 // are strongly encouraged to seek out the official Frodo sources if you're at
 // all interested in this emulator code.
 //
@@ -42,6 +42,7 @@
 #include "IEC.h"
 #include "C64.h"
 #include "Prefs.h"
+#include "Cartridge.h"
 #include "mainmenu.h"
 #include <maxmod9.h>
 #include "soundbank.h"
@@ -151,8 +152,9 @@ void C64Display::UpdateLEDs(int l0, int l1)
 #define F_7 0x7
 #define F_8 0x18
 
-#define MOUNT_DISK 0xFE
-#define MAIN_MENU  0xFF
+#define INSERT_CART 0xFD
+#define MOUNT_DISK  0xFE
+#define MAIN_MENU   0xFF
 
 #define LFA 0x095 //Left arrow
 #define CLR 0x147 // Home/clear
@@ -181,6 +183,7 @@ static int keystate[256];
 
 extern u8 MainMenu(C64 *the_c64);
 void show_joysticks(void);
+void show_cartstatus(void);
 void show_shift_key(void);
 
 char str[300];
@@ -201,12 +204,12 @@ void ShowKeyboard(void)
     dmaCopy((void*) keyboardPal,(void*) BG_PALETTE_SUB,256*2);
     unsigned  short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
     dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
-    
+
     show_joysticks();
     show_shift_key();
+    show_cartstatus();
 }
 
-void WaitForVblank();
 
 /*
   C64 keyboard matrix:
@@ -319,14 +322,14 @@ int init_graphics(void)
     //D is not used..if you need a bigger background then you will need to map
     //more vram banks consecutivly (VRAM A-D are all 0x20000 bytes in size)
     vramSetPrimaryBanks(VRAM_A_MAIN_BG_0x06000000, VRAM_B_MAIN_BG_0x06020000, VRAM_C_SUB_BG , VRAM_D_LCD);
-    
+
     vramSetBankD(VRAM_D_LCD);        // Not using this for video but 128K of faster RAM always useful!  Mapped at 0x06860000 -   256K Used for tape patch look-up
     vramSetBankE(VRAM_E_LCD);        // Not using this for video but 64K of faster RAM always useful!   Mapped at 0x06880000 -   ..
     vramSetBankF(VRAM_F_LCD);        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06890000 -   ..
     vramSetBankG(VRAM_G_LCD);        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06894000 -   ..
     vramSetBankH(VRAM_H_LCD);        // Not using this for video but 32K of faster RAM always useful!   Mapped at 0x06898000 -   ..
     vramSetBankI(VRAM_I_LCD);        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x068A0000 -   Unused - reserved for future use
-    
+
 
     videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE); //sub bg 0 will be used to print text
     REG_BG0CNT_SUB = BG_MAP_BASE(31);
@@ -432,6 +435,18 @@ void show_joysticks(void)
     }
 }
 
+void show_cartstatus(void)
+{
+    if (cart_in)
+    {
+        DSPrint(21, 22, 2, (char*)"PQR");
+    }
+    else
+    {
+        DSPrint(21, 22, 2, (char*)"012");
+    }
+}
+
 void show_shift_key(void)
 {
     if (m_Mode == KB_SHIFT)
@@ -472,9 +487,6 @@ void C64Display::Speedometer(int speed)
 
     if (bDebugDisplay)
     {
-        debug[0] = getMemUsed();
-        debug[1] = getMemFree();
-        
         sprintf(tmp, "%-8d", speed);
         DSPrint(19, 1, 6, tmp);
 
@@ -484,6 +496,7 @@ void C64Display::Speedometer(int speed)
 
     show_joysticks();
     show_shift_key();
+    show_cartstatus();
 }
 
 
@@ -538,10 +551,42 @@ void C64Display::IssueKeypress(uint8 row, uint8 col, uint8 *key_matrix, uint8 *r
     lastc64key=c64_key;
 }
 
+int bDelayLoadPRG = 0;
+int bDelayLoadCRT = 0;
 void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joystick)
 {
+        // For PRG files, we wait about half-a-sec before loading in the program...
+        if (bDelayLoadPRG)
+        {
+            if (--bDelayLoadPRG)
+            {
+                TheC64->LoadPRG(CartFilename);
+            }
+        }
+
+        // For PRG files, we wait about half-a-sec before loading in the program...
+        if (bDelayLoadCRT)
+        {
+            if (--bDelayLoadCRT)
+            {
+                TheC64->InsertCart(CartFilename);
+                
+                // Magic Desk requires TRUE DRIVE emulation
+                Prefs *prefs = new Prefs(ThePrefs);
+                strcpy(prefs->DrivePath[0], Drive8File);
+                strcpy(prefs->DrivePath[1], Drive9File);
+                myConfig.trueDrive = TheC64->TheCart->isTrueDriveRequired();
+                prefs->TrueDrive = myConfig.trueDrive;
+                TheC64->NewPrefs(prefs);
+                ThePrefs = *prefs;
+                delete prefs;
+                
+                TheC64->Reset();
+            }
+        }
+
         scanKeys();
-        
+
         if (issue_commodore_key)
         {
             issue_commodore_key = 0;
@@ -657,8 +702,9 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
                         else if (tilex < 42)  c = F_3;
                         else if (tilex < 61)  c = F_5;
                         else if (tilex < 80)  c = F_7;
-                        else if (tilex < 190) c = ' ';
-                        else if (tilex < 222) c = MOUNT_DISK;
+                        else if (tilex < 164) c = ' ';
+                        else if (tilex < 193) c = INSERT_CART;
+                        else if (tilex < 223) c = MOUNT_DISK;
                         else if (tilex < 256) c = MAIN_MENU;
                     }
 
@@ -667,6 +713,44 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
                         TheC64->Pause();
                         MainMenu(TheC64);
                         ShowKeyboard();
+                        TheC64->Resume();
+                    }
+                    else if (c==INSERT_CART)
+                    {
+                        TheC64->Pause();
+                        u8 reload = mount_cart(TheC64);
+                        ShowKeyboard();
+                        if ((reload == 1) || (reload == 2))
+                        {
+                            // Remove any disks...
+                            Prefs *prefs = new Prefs(ThePrefs);
+                            strcpy(prefs->DrivePath[0], "");
+                            strcpy(prefs->DrivePath[1], "");
+                            prefs->TrueDrive = myConfig.trueDrive;
+                            TheC64->NewPrefs(prefs);
+                            ThePrefs = *prefs;
+                            delete prefs;
+
+                            if (reload == 1) // load cart THEN reset
+                            {
+                                TheC64->PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
+                                bDelayLoadCRT = 3; // 3 frames and load the CRT file
+                           }
+                            else // reload is 2 - PRG file reset FIRST
+                            {
+                                TheC64->PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
+                                TheC64->Reset();
+                                bDelayLoadPRG = 10; // 10 frames and load the PRG file
+                            }
+                            cart_in = 1;
+                        }
+                        else if (reload == 3)
+                        {
+                            TheC64->RemoveCart();
+                            TheC64->PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
+                            TheC64->Reset();
+                            cart_in = 0;
+                        }
                         TheC64->Resume();
                     }
                     else if (c==MOUNT_DISK)
@@ -691,6 +775,7 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
                             // See if we should issue a system-wide RESET
                             if (reload == 2)
                             {
+                                TheC64->RemoveCart();
                                 TheC64->PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
                                 TheC64->Reset();
                             }
@@ -797,7 +882,8 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
                                 case '-': c64_key = MATRIX(5,3); break;
 
                                 case CTL: c64_key = MATRIX(7,2); break;
-                                case RST: c64_key = MATRIX(7,7); break;
+                                case RST: c64_key = MATRIX(7,7); TheC64->NMI(); break;
+
                                 case CLR: c64_key = MATRIX(6,3); break;
                                 case LFA: c64_key = MATRIX(7,1); break;
                                 case UPA: c64_key = MATRIX(6,6); break;
@@ -834,7 +920,7 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
 /*
  *  Allocate C64 colors
  */
- 
+
 typedef struct {
     int r;
     int g;

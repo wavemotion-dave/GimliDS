@@ -14,8 +14,10 @@ typedef struct {
 
 extern char Drive8File[MAX_FILENAME_LEN];
 extern char Drive9File[MAX_FILENAME_LEN];
+extern char CartFilename[MAX_FILENAME_LEN];
 
 extern FIC64 gpFic[MAX_FILES];
 extern int   ucGameChoice;
 
 extern u8  mount_disk(C64 *the_c64);
+extern u8  mount_cart(C64 *the_c64);
