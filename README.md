@@ -79,11 +79,11 @@ Although primarily a disk-based emulator, GimliDS does support the more common C
   * Standard 8K
   * Standard 16K
   * Super Game Carts up to 64K
-  * C64 Games System up to 512K
   * Dinamic up to 128K
+  * C64 Games System up to 512K
   * Ocean up to 512K
   * Magic Desk up to 1MB
-  * Easy Flash up to 1MB 
+  * Easy Flash up to 1MB with 256b RAM
 
 This should cover a wide number of carts - recommend you seek out the OneLoad64 cart archive.
 
