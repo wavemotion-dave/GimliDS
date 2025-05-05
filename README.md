@@ -72,6 +72,19 @@ Lastly, a few games use custom loaders that require you to enable 'True Drive'. 
 a speed that is comparable to the original Commodore 1541 floppy drive - that is: extremely slow. It could take 2-5 minutes to load a game
 this way. But if the game requires it, that's your only option. Recommended to snap out a Save State so you don't have to repeat the loading.
 
+## Cartridge Support
+
+Although primarily a disk-based emulator, GimliDS does support the more common Cart Types up to 1MB. Included here is:
+
+  * Standard 8K
+  * Standard 16K
+  * Ocean up to 512K
+  * Dinamax up to 512K
+  * Magic Desk up to 1MB
+  * Easy Flash up to 1MB 
+
+This should cover a wide number of carts - recommend you seek out the OneLoad64 cart archive.
+
 ## Acknowledgements
 
   * The opening jingle was done by DeNL and comes courtesy of the roalty free jingles at pixabay.
