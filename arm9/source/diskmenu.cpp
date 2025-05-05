@@ -31,6 +31,7 @@
 #include "keyboard.h"
 #include "mainmenu_bg.h"
 #include "diskmenu_bg.h"
+#include "cartmenu_bg.h"
 #include "Prefs.h"
 #include "C64.h"
 
@@ -451,6 +452,16 @@ void BottomScreenDiskette(void)
     dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
 }
 
+void BottomScreenCartridge(void)
+{
+    decompress(cartmenu_bgTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+    decompress(cartmenu_bgMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+    dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+    dmaCopy((void*) cartmenu_bgPal,(void*) BG_PALETTE_SUB,256*2);
+    unsigned  short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
+    dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
+}
+
 void BottomScreenMainMenu(void)
 {
     decompress(mainmenu_bgTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
@@ -496,6 +507,24 @@ void DisplayFileNameDiskette(void)
     else
     {
         DSPrint(0,22,6, (char *)" TRUE DRIVE IS DISABLED (FAST) ");
+    }
+}
+
+void DisplayFileNameCartridge(void)
+{
+    char tmp[34];
+
+    DSPrint(7,5,6, (char*)"                         ");
+    DSPrint(7,7,6, (char*)"                         ");
+    if (strlen(CartFilename) > 1)
+    {
+        DSPrint(7,5,6, (char *)"CARTRIDGE IS MOUNTED AS:");
+        strncpy(tmp, CartFilename, 25); tmp[24]=0;
+        DSPrint(7,7,6, tmp);
+    }
+    else
+    {
+        DSPrint(7,5,6, (char *)"CARTRIDGE IS NOT MOUNTED");
     }
 }
 
@@ -547,7 +576,7 @@ DiskMenu_t disk_menu =
 
 DiskMenu_t cart_menu =
 {
-    (char *)" ", 10,
+    (char *)" ", 12,
     {
         {(char *)"  INSERT  CARTRIDGE ",      MENU_ACTION_INSERT_CART},
         {(char *)"  REMOVE  CARTRIDGE ",      MENU_ACTION_REMOVE_CART},
@@ -751,9 +780,9 @@ void CartMenuShow(bool bClearScreen, u8 sel)
     if (bClearScreen)
     {
         // -------------------------------------
-        // Put up the Diskette menu background
+        // Put up the Cartridge menu background
         // -------------------------------------
-        BottomScreenDiskette();
+        BottomScreenCartridge();
     }
 
     // ---------------------------------------------------
@@ -774,7 +803,7 @@ void CartMenuShow(bool bClearScreen, u8 sel)
     // ----------------------------------------------------------------------------------------------
     // And near the bottom, display the file/rom/disk that is currently loaded into memory.
     // ----------------------------------------------------------------------------------------------
-    DisplayFileNameDiskette();
+    DisplayFileNameCartridge();
 }
 
 

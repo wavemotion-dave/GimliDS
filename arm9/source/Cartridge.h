@@ -1,3 +1,20 @@
+// =====================================================================================
+// GimliDS Copyright (c) 2025 Dave Bernazzani (wavemotion-dave)
+//
+// As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
+// any copying or distribution of this emulator, its source code and associated
+// readme files, with or without modification, are permitted per the original
+// Frodo emulator license shown below.  Hugest thanks to Christian Bauer for his
+// efforts to provide a clean open-source emulation base for the C64.
+//
+// Numerous hacks and 'unsafe' optimizations have been performed on the original
+// Frodo emulator codebase to get it running on the small handheld system. You
+// are strongly encouraged to seek out the official Frodo sources if you're at
+// all interested in this emulator code.
+//
+// The GimliDS emulator is offered as-is, without any warranty. Please see readme.md
+// =====================================================================================
+
 /*
  *  Cartridge.h - Cartridge emulation
  *
@@ -29,7 +46,7 @@ struct CartridgeState {
     u8 notEXROM;
     u8 notGAME;
     u8 bank;
-    uint8_t  ram[256];
+    uint8_t ram[256];
 };
 
 
@@ -45,7 +62,7 @@ public:
     static Cartridge * FromFile(char *filename, char *errBuffer);
 
     virtual void Reset() { }
-    
+
     bool isTrueDriveRequired(void);
 
     // Map cart into the CPU memory map...

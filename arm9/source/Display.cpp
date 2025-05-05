@@ -48,8 +48,8 @@
 #include "soundbank.h"
 
 
-u8 floppy_sound_counter = 0;
-u8 bDebugDisplay = 0;
+u8 floppy_sound_counter __attribute__((section(".dtcm"))) = 0;
+u8 bDebugDisplay  __attribute__((section(".dtcm"))) = 0;
 
 // "Colodore" palette
 uint8_t palette_red[16] = {
@@ -256,13 +256,11 @@ void C64Display::NewPrefs(Prefs *prefs)
     floppy_sound_counter = 50; // One seconds of no floppy sound...
 }
 
-uint8* frontBuffer;
-
-u8 JITTER[] = {0, 64, 128};
-s16 temp_offset = 0;
-u16 slide_dampen=0;
-u16 vBlanks;
-void vblankIntr(void)
+u8 JITTER[]  __attribute__((section(".dtcm"))) = {0, 64, 128};
+s16 temp_offset __attribute__((section(".dtcm"))) = 0;
+u16 slide_dampen __attribute__((section(".dtcm"))) =0;
+u16 vBlanks __attribute__((section(".dtcm"))) = 0;
+ITCM_CODE void vblankIntr(void)
 {
     vBlanks++;
     int cxBG = ((s16)myConfig.offsetX << 8);
@@ -336,8 +334,6 @@ int init_graphics(void)
     BG_PALETTE_SUB[255] = RGB15(31,31,31);
     //consoleInit(NULL, 0, BgType_Text4bpp, BgSize_T_256x256, 31, 0, false, true);
 
-    frontBuffer = (uint8*)(0x06000000);
-
     if (!fatInitDefault())
     {
         iprintf("Unable to initialize media device!");
@@ -374,13 +370,14 @@ int init_graphics(void)
 /*
  *  Redraw one raster line of the bitmap to the LCD
  */
-ITCM_CODE void C64Display::UpdateRasterLine(int raster, u8 *src)
+__attribute__ ((noinline)) ITCM_CODE void C64Display::UpdateRasterLine(int raster, u8 *src)
 {
     // Output the raster line to the LCD...
     u32 *dest = (uint32*)((u32)0x06000000 + (512*(raster-FIRST_DISP_LINE)));
     u32 *source = (u32*) src;
-    for (int i=0; i<(DISPLAY_X-0x10)/4; i++)
+    for (int i=0; i<(DISPLAY_X-0x10)/8; i++)
     {
+        *dest++ = *source++;
         *dest++ = *source++;
     }
 }

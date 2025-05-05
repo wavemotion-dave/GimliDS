@@ -1,3 +1,20 @@
+// =====================================================================================
+// GimliDS Copyright (c) 2025 Dave Bernazzani (wavemotion-dave)
+//
+// As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
+// any copying or distribution of this emulator, its source code and associated
+// readme files, with or without modification, are permitted per the original
+// Frodo emulator license shown below.  Hugest thanks to Christian Bauer for his
+// efforts to provide a clean open-source emulation base for the C64.
+//
+// Numerous hacks and 'unsafe' optimizations have been performed on the original
+// Frodo emulator codebase to get it running on the small handheld system. You
+// are strongly encouraged to seek out the official Frodo sources if you're at
+// all interested in this emulator code.
+//
+// The GimliDS emulator is offered as-is, without any warranty. Please see readme.md
+// =====================================================================================
+
 /*
  *  Cartridge.cpp - Cartridge emulation
  *
@@ -33,13 +50,13 @@ extern u8 myBASIC[];
 extern u8 myKERNAL[];
 
 u8 cartROM[1024*1024]; // 1MB max supported cart size (not including .crt and chip headers)
-extern C64 *gTheC64;
+extern C64 *gTheC64;   // Easy access to the main C64 object
 
 
 // Base class for cartridge with ROM
 ROMCartridge::ROMCartridge(unsigned num_banks, unsigned bank_size) : numBanks(num_banks), bankSize(bank_size)
 {
-    // Allocate ROM
+    // We always re-use the same 1MB cart ROM buffer...
     rom = cartROM;
     memset(rom, 0xff, num_banks * bank_size);
 }
@@ -334,7 +351,7 @@ uint8_t CartridgeDinamic::ReadIO1(uint16_t adr, uint8_t bus_byte)
 // Magic Desk / Marina64 cartridge (banked 8K ROM cartridge)
 CartridgeMagicDesk::CartridgeMagicDesk() : ROMCartridge(128, 0x2000)
 {
-    bTrueDriveRequired = true;
+    bTrueDriveRequired = true; // Magic Desk won't load properly without the true drive infrastructure
 
     notEXROM = false;
     bank = 0;
