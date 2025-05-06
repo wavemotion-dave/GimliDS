@@ -44,6 +44,8 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
+u8 cart_led = 0; // Used to briefly 'light up' the cart icon for Easy Flash 'disk' access
+
 extern uint8 *MemMap[0x10];
 extern u8 myRAM[];
 extern u8 myBASIC[];
@@ -52,13 +54,13 @@ extern u8 myKERNAL[];
 u8 cartROM[1024*1024]; // 1MB max supported cart size (not including .crt and chip headers)
 extern C64 *gTheC64;   // Easy access to the main C64 object
 
-
 // Base class for cartridge with ROM
 ROMCartridge::ROMCartridge(unsigned num_banks, unsigned bank_size) : numBanks(num_banks), bankSize(bank_size)
 {
     // We always re-use the same 1MB cart ROM buffer...
     rom = cartROM;
     memset(rom, 0xff, num_banks * bank_size);
+    cart_led = 0;
 }
 
 ROMCartridge::~ROMCartridge()
@@ -310,7 +312,7 @@ void CartridgeC64GS::MapThyself(void)
 
 uint8_t CartridgeC64GS::ReadIO1(uint16_t adr, uint8_t bus_byte)
 {
-    notEXROM = true; // Disable ROM
+    bank = 0;
     MapThyself();
     return bus_byte;
 }
@@ -408,6 +410,7 @@ void CartridgeEasyFlash::WriteIO1(uint16_t adr, uint8_t byte)
     {
         notEXROM = (byte & 2) ? false:true;
         notGAME  = (byte & 4) ? ((byte & 1) ? false:true) : false;
+        if (byte & 0x80) cart_led=2;
     }
     MapThyself();
 }

@@ -13,7 +13,7 @@ struct __attribute__((__packed__)) Config_t
     u8  diskSFX;
     u8  joyPort;
     u8  joyMode;
-    u8  reserved2;
+    u8  poundKey;
     u8  reserved3;
     u8  reserved4;
     u8  reserved5;

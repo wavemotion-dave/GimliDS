@@ -72,7 +72,6 @@ MainMenu_t main_menu =
         {(char *)"  SAVE     STATE  ",      MENU_ACTION_SAVE_STATE},
         {(char *)"  LOAD     STATE  ",      MENU_ACTION_LOAD_STATE},
         {(char *)"  RESET    C64    ",      MENU_ACTION_RESET_EMU},
-        {(char *)"  PRESS    @ KEY  ",      MENU_ACTION_PRESS_C64},
         {(char *)"  QUIT     GIMLIDS",      MENU_ACTION_QUIT_EMU},        
         {(char *)"  EXIT     MENU   ",      MENU_ACTION_EXIT},
         {(char *)"  NULL            ",      MENU_ACTION_END},
@@ -379,7 +378,7 @@ void SetDefaultGameConfig(void)
     myConfig.diskSFX     = 1;                // Disk sound effects on
     myConfig.joyPort     = 0;                // Default to Joy1
     myConfig.joyMode     = 0;                // Default is normal joypad / dpad
-    myConfig.reserved2   = 0;
+    myConfig.poundKey    = 0;                // Default is Pound Key!
     myConfig.reserved3   = 0;
     myConfig.reserved4   = 0;
     myConfig.reserved5   = 0;
@@ -593,6 +592,7 @@ const struct options_t Option_Table[1][20] =
         {"DISK SOUND",     {"SFX OFF", "SFX ON"},                                                       &myConfig.diskSFX,     2},
         {"CPU CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.cpuCycles,   19},
         {"1541 CYCLES",    {CYCLE_DELTA_STR},                                                           &myConfig.flopCycles,  19},
+        {"POUND KEY",      {"POUND", "LEFT ARROW", "UP ARROW", "C= COMMODORE"},                         &myConfig.poundKey,    4},        
 
         {"D-PAD UP",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[0],  64},
         {"D-PAD DOWN",     {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[1],  64},
@@ -603,6 +603,7 @@ const struct options_t Option_Table[1][20] =
         {"B BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[5],  64},
         {"X BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[6],  64},
         {"Y BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[7],  64},
+        
         
         {NULL,             {"",      ""},                                                               NULL,                  1},
     }

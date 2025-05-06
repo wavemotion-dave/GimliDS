@@ -855,7 +855,7 @@ inline void MOS6569::vblank(void)
         frame_skipped = (total_frames & 1); // Skip every other...
         if (frame_skipped)
         {
-            if ((total_frames % 5) == 0) frame_skipped = 0; // But every so often toss in an odd frame
+            if ((total_frames % 3) == 0) frame_skipped = 0; // But every so often toss in an odd frame
         }
     }
 
@@ -952,7 +952,7 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_std_bitmap(uint8 *p, uint
 }
 
 
-void MOS6569::el_mc_bitmap(uint8 *p, uint8 *q, uint8 *r)
+__attribute__ ((noinline))  ITCM_CODE void MOS6569::el_mc_bitmap(uint8 *p, uint8 *q, uint8 *r)
 {
     uint16 lookup[4];
     uint32 *wp = (uint32 *)p;
@@ -991,7 +991,7 @@ void MOS6569::el_mc_bitmap(uint8 *p, uint8 *q, uint8 *r)
 }
 
 
-void MOS6569::el_ecm_text(uint8 *p, uint8 *q, uint8 *r)
+__attribute__ ((noinline))  ITCM_CODE void MOS6569::el_ecm_text(uint8 *p, uint8 *q, uint8 *r)
 {
     uint32 *lp = (uint32 *)p;
     uint8 *cp = color_line;
@@ -1213,7 +1213,6 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_sprites(uint8 *chunky_ptr
                         }
                     }
                 }
-
             }
             else   // Unexpanded
             {
@@ -1680,8 +1679,7 @@ int MOS6569::EmulateLine(void)
         if (raster >= FIRST_DMA_LINE-1 && raster <= LAST_DMA_LINE-1 && (((raster+1) & 7) == y_scroll) && bad_lines_enabled)
             rc = 0;
 
-        // Not end of screen... output the next scanline as it will be 'stale' and not cached...
-        // This also helps with tearing as we'll be outputting the 'stale' (last frame) line while the new frame is drawing.
+        // Not end of screen... output scanline we just rendered directly to the NDS LCD Screen buffer...
         if (!frame_skipped)
         {
             if (!bSkipDraw)
@@ -1694,7 +1692,9 @@ int MOS6569::EmulateLine(void)
 VIC_nop:
     // Skip this if all sprites are off
     if (me | sprite_on)
+    {
         cycles_left -= el_update_mc(raster);
+    }
 
     return cycles_left;
 }

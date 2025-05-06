@@ -156,24 +156,22 @@ void C64Display::UpdateLEDs(int l0, int l1)
 #define MOUNT_DISK  0xFE
 #define MAIN_MENU   0xFF
 
-#define LFA 0x095 //Left arrow
+#define LFA 0x095 // Left arrow
 #define CLR 0x147 // Home/clear
-#define PND 0x92
-
-#define RST 0x13 // Restore
-#define RET '\n' // Enter
-#define BSP 0x08 // Backspace
-#define CTL 0x21 // Ctrl
-#define SPC 0x20 // Space
-#define ATT 0x22 // At@
-#define UPA 0x23 //uparrow symbol
-#define RUN 0x00 // RunStop
-#define SLK 0x25 // Shift Lock
-#define CMD 0x26 // Commodore key
-#define SHF 0x27 // Shift Key
-
-#define CUP 0x14 // Cursor up
-#define CDL 0x15 // Cursor left
+#define PND 0x92  // Pound 
+#define RST 0x13  // Restore
+#define RET '\n'  // Enter
+#define BSP 0x08  // Backspace
+#define CTL 0x21  // Ctrl
+#define SPC 0x20  // Space
+#define ATT 0x22  // At@
+#define UPA 0x23  // UP arrow symbol
+#define RUN 0x00  // RunStop
+#define SLK 0x25  // Shift Lock
+#define CMD 0x26  // Commodore key
+#define SHF 0x27  // Shift Key
+#define CUP 0x14  // Cursor up
+#define CDL 0x15  // Cursor left
 
 static int m_Mode=KB_SHIFT;
 
@@ -375,9 +373,8 @@ __attribute__ ((noinline)) ITCM_CODE void C64Display::UpdateRasterLine(int raste
     // Output the raster line to the LCD...
     u32 *dest = (uint32*)((u32)0x06000000 + (512*(raster-FIRST_DISP_LINE)));
     u32 *source = (u32*) src;
-    for (int i=0; i<(DISPLAY_X-0x10)/8; i++)
+    for (int i=0; i<(DISPLAY_X-0x14)/4; i++)
     {
-        *dest++ = *source++;
         *dest++ = *source++;
     }
 }
@@ -441,6 +438,17 @@ void show_cartstatus(void)
     else
     {
         DSPrint(21, 23, 2, (char*)"012");
+    }
+
+    extern u8 cart_led;
+    if (cart_led)
+    {
+        DSPrint(22, 21, 2, (char*)"3");
+        cart_led--;
+    }
+    else
+    {
+        DSPrint(22, 21, 6, (char*)" ");
     }
 }
 
@@ -731,8 +739,9 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
                             if (reload == 1) // load cart THEN reset
                             {
                                 TheC64->PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
-                                bDelayLoadCRT = 3; // 3 frames and load the CRT file
-                           }
+                                TheC64->Reset();
+                                bDelayLoadCRT = 5; // 5 frames and load the CRT file
+                            }
                             else // reload is 2 - PRG file reset FIRST
                             {
                                 TheC64->PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
@@ -822,6 +831,7 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
                     }
                     else
                     {
+                        u8 left_arrow = 0;
                         if(c!=0x0)
                         {
                             switch (c)
@@ -884,7 +894,12 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
                                 case CLR: c64_key = MATRIX(6,3); break;
                                 case LFA: c64_key = MATRIX(7,1); break;
                                 case UPA: c64_key = MATRIX(6,6); break;
-                                case PND: c64_key = MATRIX(6,0); break;
+                                case PND:
+                                    if (myConfig.poundKey == 0) c64_key = MATRIX(6,0);  // Pound
+                                    if (myConfig.poundKey == 1) c64_key = MATRIX(7,1);  // Right Arrow
+                                    if (myConfig.poundKey == 2) c64_key = MATRIX(0,7);  // Up Arrow
+                                    if (myConfig.poundKey == 3) c64_key = MATRIX(7,5);  // Commodore Command
+                                    break;
                                 case CMD: c64_key = MATRIX(7,5); break;
 
                                 case CUP: c64_key = MATRIX(0,7); break;
@@ -902,10 +917,15 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
                                 return;
                             if(m_Mode==KB_NORMAL)
                             {
-                                c64_key= c64_key| 0x80;
+                                c64_key = c64_key | 0x80;
                             }
                             KeyPress(c64_key, key_matrix, rev_matrix);
                             lastc64key=c64_key;
+                            
+                            if (left_arrow)
+                            {
+                                KeyPress(MATRIX(7,1) | 0x80, key_matrix, rev_matrix);
+                            }
                         }
                     }
                 }

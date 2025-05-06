@@ -88,7 +88,7 @@
 #if PRECISE_CPU_CYCLES
 // Account for cyles due to crossing page boundaries
 #define page_plus(exp, reg) \
-    (adr = exp, last_cycles -= (((adr & 0xff) + reg) & 0x100 ? 1:0), adr + reg)
+    (adr = exp, /*last_cycles -= (((adr & 0xff) + reg) & 0x100 ? 1:0),*/ adr + reg) // TODO: Fix last_cycles here... 
 
 // Read absolute x-indexed operand
 #define read_byte_abs_x() read_byte(page_plus(read_adr_abs(), x))

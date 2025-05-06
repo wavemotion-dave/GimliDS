@@ -218,6 +218,10 @@ void C64::NMI(void)
     TheCPU->AsyncNMI();
 }
 
+/*
+ *  Load PRG file directly into memory
+ */
+ 
 void C64::LoadPRG(char *filename) 
 {
     FILE *fp = fopen(filename, "rb");
@@ -775,14 +779,6 @@ bool C64::LoadSnapshot(char *filename)
 
 #include "Prefs.h"
 #include "main.h"
-extern "C" {
-
-//#include "menu.h"
-//#include "ui.h"
-//#include "input.h"
-//#include "gpmisc.h"
-}
-
 #include <nds.h>
 #include "nds/arm9/console.h"
 #include <stdio.h>
@@ -921,8 +917,6 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
     while (GetTicks() < (((unsigned int)TICKS_PER_SEC/(unsigned int)50) * (unsigned int)frames))
     {
         if (bTurboWarp) break;
-        asm("nop");
-        //break;  // Uncomment this for full speed...
     }
 
     frames_per_sec++;

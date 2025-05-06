@@ -576,7 +576,7 @@ DiskMenu_t disk_menu =
 
 DiskMenu_t cart_menu =
 {
-    (char *)" ", 12,
+    (char *)" ", 11,
     {
         {(char *)"  INSERT  CARTRIDGE ",      MENU_ACTION_INSERT_CART},
         {(char *)"  REMOVE  CARTRIDGE ",      MENU_ACTION_REMOVE_CART},

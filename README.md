@@ -124,11 +124,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
 
-Version 0.9b release 05-May-2025 by wavemotion-dave
+Version 0.9d release 06-May-2025 by wavemotion-dave
+  * Added ability to remap the British Pound (£) symbol to one of the other rare missing keys (left arrow, up arrow, C=)
+  * Fix for CPU jump commands not handling the extra cycle it takes.
+  * All carts insertions do a proper reset so that we don't lock up when switching carts.
+  * Minor cartridge accuracy improvements - new LED added to cart icon for EasyFlash loading.
+
+Version 0.9b/c release 05-May-2025 by wavemotion-dave
   * Pressing L+R shoulder buttons together is WARP mode (run emulator fast while the buttons are held)
   * Improved L/R + DPAD scale/offset (so it doesn't also produce joystick input at the same time)
   * Minor tweaks to TrueDrive mode for improved cycle accuracy
   * CRT and PRG Cartridge support. Most popular game-based formats are supported. Use the new CART icon.
+  * 0.9c hot-fix release fixes the Cartridge Menu graphic and adds a bit more speed for the DS-Lite.
 
 Version 0.9a release 02-May-2025 by wavemotion-dave
   * Fixed TrueDrive loading so it doesn't alter the CPU speed (for games like Pang which were playing quite 'uneven').
