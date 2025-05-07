@@ -79,7 +79,8 @@
 #include "Cartridge.h"
 #include "mainmenu.h"
 
-enum {
+enum 
+{
     INT_RESET = 3
 };
 
@@ -600,7 +601,7 @@ void MOS6510::illegal_op(uint8 op, uint16 at)
     if (c_flag) tmp |= 0x01; \
     push_byte(tmp);
 
-void MOS6510::ext_opcode(void)
+void MOS6510::extended_opcode(void)
 {
     if (pc < 0xe000) {
         illegal_op(0xf2, pc-1);
@@ -673,6 +674,7 @@ ITCM_CODE int MOS6510::EmulateLine(int cycles_left)
     uint8 tmp, tmp2;
     uint16 adr;     // Used by read_adr_abs()!
     int last_cycles = 0;
+    uint16 page_plus_cyc = 0;
 
     // Any pending interrupts?
     if (interrupt.intr_any)

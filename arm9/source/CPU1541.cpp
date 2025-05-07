@@ -703,7 +703,7 @@ void MOS6502_1541::illegal_op(uint8 op, uint16 at)
     push_byte(tmp);
 
 
-void MOS6502_1541::ext_opcode(void)
+void MOS6502_1541::extended_opcode(void)
 {
     if (pc < 0xc000) {
         illegal_op(0xf2, pc-1);
@@ -737,6 +737,7 @@ int MOS6502_1541::EmulateLine(int cycles_left, int cpu_cycles)
     uint8 tmp, tmp2;
     uint16 adr;
     int last_cycles = 0;
+    uint16 page_plus_cyc = 0;
 
     // Any pending interrupts?
     if (interrupt.intr_any) {

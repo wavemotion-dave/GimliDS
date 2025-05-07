@@ -90,8 +90,7 @@ public:
     void RemoveCart(void);
     void LoadPRG(char *filename);
 
-    uint8 *RAM, *Basic, *Kernal,
-          *Char, *Color;        // C64
+    uint8 *RAM, *Basic, *Kernal, *Char, *Color; // C64
     uint8 *RAM1541, *ROM1541;   // 1541
 
     C64Display *TheDisplay;
@@ -114,7 +113,6 @@ private:
     uint8 poll_joystick(int port);
     void main_loop(void);
 
-    bool thread_running;    // Emulation thread is running
     bool quit_thyself;      // Emulation thread shall quit
     bool have_a_break;      // Emulation thread shall pause
 

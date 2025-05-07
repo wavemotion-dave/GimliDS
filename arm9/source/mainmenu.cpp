@@ -565,7 +565,7 @@ void FindConfig(void)
 struct options_t
 {
     const char  *label;
-    const char  *option[64];
+    const char  *option[65];
     u8          *option_val;
     u8           option_max;
 };
@@ -578,7 +578,7 @@ struct options_t
                         "KEY A", "KEY B", "KEY C", "KEY D", "KEY E", "KEY F", "KEY G", "KEY H", "KEY I", "KEY J", "KEY K", "KEY L",\
                         "KEY M", "KEY N", "KEY O", "KEY P", "KEY Q", "KEY R", "KEY S", "KEY T", "KEY U", "KEY V", "KEY W", "KEY X",\
                         "KEY Y", "KEY Z", "KEY 1", "KEY 2", "KEY 3", "KEY 4", "KEY 5", "KEY 6", "KEY 7", "KEY 8", "KEY 9", "KEY 0",\
-                        "PAN-UP 16", "PAN-UP 24", "PAN-DOWN 16", "PAN-DOWN 24"
+                        "PAN-UP 16", "PAN-UP 24", "PAN-DOWN 16", "PAN-DOWN 24", "ZOOM TOGGLE"
                         
 
 const struct options_t Option_Table[1][20] =
@@ -594,16 +594,15 @@ const struct options_t Option_Table[1][20] =
         {"1541 CYCLES",    {CYCLE_DELTA_STR},                                                           &myConfig.flopCycles,  19},
         {"POUND KEY",      {"POUND", "LEFT ARROW", "UP ARROW", "C= COMMODORE"},                         &myConfig.poundKey,    4},        
 
-        {"D-PAD UP",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[0],  64},
-        {"D-PAD DOWN",     {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[1],  64},
-        {"D-PAD LEFT",     {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[2],  64},
-        {"D-PAD RIGHT",    {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[3],  64},
+        {"D-PAD UP",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[0],  65},
+        {"D-PAD DOWN",     {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[1],  65},
+        {"D-PAD LEFT",     {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[2],  65},
+        {"D-PAD RIGHT",    {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[3],  65},
 
-        {"A BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[4],  64},
-        {"B BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[5],  64},
-        {"X BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[6],  64},
-        {"Y BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[7],  64},
-        
+        {"A BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[4],  65},
+        {"B BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[5],  65},
+        {"X BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[6],  65},
+        {"Y BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[7],  65},
         
         {NULL,             {"",      ""},                                                               NULL,                  1},
     }

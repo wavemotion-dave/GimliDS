@@ -124,6 +124,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
 
+Version 1.0 release 08-May-2025 by wavemotion-dave
+  * Added TOGGLE ZOOM button map to scale screen 1:1 temporarily (to make text games readable)
+  * Another proper fix for CPU jump commands not handling the extra cycle it takes.
+  * A bit of polish and cleanup for the big first release!
+
 Version 0.9d release 06-May-2025 by wavemotion-dave
   * Added ability to remap the British Pound (£) symbol to one of the other rare missing keys (left arrow, up arrow, C=)
   * Fix for CPU jump commands not handling the extra cycle it takes.

@@ -40,12 +40,10 @@
 
 #include "C64.h"
 
-
 // Set this to 1 for more precise CPU cycle calculation
 #ifndef PRECISE_CPU_CYCLES
 #define PRECISE_CPU_CYCLES 0
 #endif
-
 
 // Interrupt types
 enum {
@@ -54,7 +52,6 @@ enum {
     INT_NMI
     // INT_RESET (private)
 };
-
 
 class MOS6569;
 class MOS6581;
@@ -85,8 +82,6 @@ public:
     void ClearNMI(void);
     void setCharVsIO(void);
 
-    int ExtConfig;  // Memory configuration for ExtRead/WriteByte (0..7)
-
     MOS6569 *TheVIC;    // Pointer to VIC
     MOS6581 *TheSID;    // Pointer to SID
     MOS6526_1 *TheCIA1; // Pointer to CIA 1
@@ -95,7 +90,7 @@ public:
     Cartridge *TheCart; // Pointer to cartridge object
 
 private:
-    void ext_opcode(void);
+    void extended_opcode(void);
     uint8 read_byte(uint16 adr);
     uint8 read_byte_io(uint16 adr);
     uint8 read_byte_io_cart(uint16 adr);

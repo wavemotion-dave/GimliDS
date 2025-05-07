@@ -68,7 +68,7 @@ public:
     MOS6502_1541(C64 *c64, Job1541 *job, C64Display *disp, uint8 *Ram, uint8 *Rom);
 
     int EmulateLine(int cycles_left, int cpu_cycles);   // Emulate until cycles_left underflows
-    void ext_opcode(void);
+    void extended_opcode(void);
     void Reset(void);
     void AsyncReset(void);              // Reset the CPU asynchronously
     void GetState(MOS6502State *s);
@@ -84,7 +84,7 @@ public:
     MOS6526_2 *TheCIA2;     // Pointer to C64 CIA 2
 
     uint8 IECLines;         // State of IEC lines (bit 7 - DATA, bit 6 - CLK)
-    bool Idle;              // true: 1541 is idle
+    uint8 Idle;             // true: 1541 is idle
 
 private:
     uint8 read_byte(uint16 adr);
@@ -120,8 +120,8 @@ private:
     uint8 a, x, y, sp;
     uint16_t pc;
 
-    uint32 cycle_counter;
-    int borrowed_cycles;    // Borrowed cycles from next line
+    uint32 cycle_counter;// Track total cycles of 1541 emulation
+    int borrowed_cycles; // Borrowed cycles from next line
 
     uint8 via1_pra;     // PRA of VIA 1
     uint8 via1_ddra;    // DDRA of VIA 1

@@ -88,7 +88,7 @@
 #if PRECISE_CPU_CYCLES
 // Account for cyles due to crossing page boundaries
 #define page_plus(exp, reg) \
-    (adr = exp, /*last_cycles -= (((adr & 0xff) + reg) & 0x100 ? 1:0),*/ adr + reg) // TODO: Fix last_cycles here... 
+    (adr = exp, page_plus_cyc = ((adr & 0xff) + reg) & 0x100, adr + reg)
 
 // Read absolute x-indexed operand
 #define read_byte_abs_x() read_byte(page_plus(read_adr_abs(), x))
@@ -134,6 +134,7 @@
 
     while (true)
     {
+        if (page_plus_cyc) {last_cycles++; page_plus_cyc=0;}
         if ((cycles_left -= last_cycles) < 0) 
         {
             borrowed_cycles = -cycles_left;
@@ -142,6 +143,8 @@
 #else // CPU is 1541
     cpu_cycles += CycleDeltas[myConfig.cpuCycles];
     MOS6510 *localCPU = the_c64->TheCPU;
+    
+    if (page_plus_cyc) {last_cycles++; page_plus_cyc=0;}
     cycle_counter += last_cycles; // In case we have any initial interrupt cycles
     
     while ((cycles_left -= last_cycles) >= 0)
@@ -1371,8 +1374,8 @@
             illegal_op(read_byte(pc-1), pc-1);
             break;
 
-        // Extension opcode
-        case 0xf2: ext_opcode(); break;
+        // Extension opcode - mostly for Kernal / 1541 hooks
+        case 0xf2: extended_opcode(); break;
         }
         
 #ifdef IS_CPU_1541

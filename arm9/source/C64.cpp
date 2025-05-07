@@ -72,8 +72,6 @@ u8 CompressBuffer[0x20000]; //128K more than enough
  */
 C64::C64()
 {
-    // The thread is not yet running
-    thread_running = false;
     quit_thyself = false;
     have_a_break = false;
     
@@ -258,11 +256,14 @@ void C64::NewPrefs(Prefs *prefs)
     TheDisplay->NewPrefs(prefs);
 
     // Changed order of calls. If 1541 mode hasn't changed the order is insignificant.
-    if (prefs->TrueDrive) {
+    if (prefs->TrueDrive) 
+    {
         // New prefs have 1541 enabled ==> if old prefs had disabled free drives FIRST
         TheIEC->NewPrefs(prefs);
         TheJob1541->NewPrefs(prefs);
-    } else {
+    }
+    else 
+    {
         // New prefs has 1541 disabled ==> if old prefs had enabled free job FIRST
         TheJob1541->NewPrefs(prefs);
         TheIEC->NewPrefs(prefs);
@@ -271,7 +272,8 @@ void C64::NewPrefs(Prefs *prefs)
     TheSID->NewPrefs(prefs);
 
     // Reset 1541 processor if turned on or off (to bring IEC lines back to sane state)
-    if (ThePrefs.TrueDrive != prefs->TrueDrive) {
+    if (ThePrefs.TrueDrive != prefs->TrueDrive) 
+    {
         TheCPU1541->AsyncReset();
     }
 }
@@ -1102,6 +1104,13 @@ uint8 C64::poll_joystick(int port)
                 case KEY_MAP_PAN_DN24:
                     temp_offset = 24;
                     slide_dampen = 15;
+                    break;
+                case KEY_MAP_ZOOM_SCR:
+                    if (keysCurrent() & KEY_X)
+                    {
+                        toggle_zoom();
+                        WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+                    }
                     break;
                     
                 // Handle all other keypresses... mark the key as pressed for the PollKeyboard() routine

@@ -98,8 +98,9 @@ extern struct Config_t  myConfig;
 #define KEY_MAP_PAN_UP24   61
 #define KEY_MAP_PAN_DN16   62
 #define KEY_MAP_PAN_DN24   63
+#define KEY_MAP_ZOOM_SCR   64
 
-#define KEY_MAP_MAX        64
+#define KEY_MAP_MAX        65
 
 #define JOYMODE_NORMAL          0
 #define JOYMODE_SLIDE_N_GLIDE   1

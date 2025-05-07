@@ -55,12 +55,11 @@
 #include "SID.h"
 #include "Prefs.h"
 
-#define FIXPOINT_PREC 16    // number of fractional bits used in fixpoint representation
-#define PRECOMPUTE_RESONANCE
-#define ldSINTAB 9          // size of sinus table (0 to 90 degrees)
+#define FIXPOINT_PREC           16    // number of fractional bits used in fixpoint representation
+#define PRECOMPUTE_RESONANCE          // For a bit of added speed
+#define ldSINTAB                9     // size of sinus table (0 to 90 degrees)
 
 #include "FixPoint.h"
-
 
 uint8 regs[32]                __attribute__((section(".dtcm")));  // Copies of the 32 write-only SID registers
 uint8 last_sid_byte           __attribute__((section(".dtcm")));  // Last value written to SID
@@ -117,14 +116,18 @@ MOS6581::~MOS6581()
 void MOS6581::Reset(void)
 {
     for (int i=0; i<32; i++)
+    {
         regs[i] = 0;
+    }
     last_sid_byte = 0;
     fake_v3_count = 0x555555;
     sid_random_seed = 1;
 
     // Reset the renderer
     if (the_renderer != NULL)
+    {
         the_renderer->Reset();
+    }
 }
 
 
@@ -136,7 +139,9 @@ void MOS6581::NewPrefs(Prefs *prefs)
 {
     open_close_renderer(ThePrefs.SIDType, prefs->SIDType);
     if (the_renderer != NULL)
+    {
         the_renderer->NewPrefs(prefs);
+    }
 }
 
 
@@ -147,7 +152,9 @@ void MOS6581::NewPrefs(Prefs *prefs)
 void MOS6581::PauseSound(void)
 {
     if (the_renderer != NULL)
+    {
         the_renderer->Pause();
+    }
 }
 
 
@@ -158,7 +165,9 @@ void MOS6581::PauseSound(void)
 void MOS6581::ResumeSound(void)
 {
     if (the_renderer != NULL)
+    {
         the_renderer->Resume();
+    }
 }
 
 
@@ -260,11 +269,11 @@ void MOS6581::SetState(MOS6581State *ss)
  **  Renderer for digital SID emulation (SIDTYPE_DIGITAL)
  **/
 
-const uint32 SAMPLE_FREQ    = 15600;        // NDS Sample Rate - 50 frames x 312 scanlines = 15600 samples per second
-const uint32 SID_FREQ       = 985248;       // SID frequency in Hz
-const uint32 SID_CYCLES_FIX = ((SID_FREQ << 11)/SAMPLE_FREQ)<<5;    // # of SID clocks per sample frame * 65536
-const uint32 SID_CYCLES = SID_CYCLES_FIX << 16; // # of SID clocks per sample frame
-const int SAMPLE_BUF_SIZE = 0x138*2;// Size of buffer for sampled voice (double buffered)
+const uint32 SAMPLE_FREQ    = 15600;                             // NDS Sample Rate - 50 frames x 312 scanlines = 15600 samples per second
+const uint32 SID_FREQ       = 985248;                            // SID frequency in Hz
+const uint32 SID_CYCLES_FIX = ((SID_FREQ << 11)/SAMPLE_FREQ)<<5; // # of SID clocks per sample frame * 65536
+const uint32 SID_CYCLES     = SID_CYCLES_FIX << 16;              // # of SID clocks per sample frame
+const int SAMPLE_BUF_SIZE   = 0x138*2;                           // Size of buffer for sampled voice (double buffered)
 
 uint8 sample_vol_filt[SAMPLE_BUF_SIZE] __attribute__((section(".dtcm"))); // Buffer for sampled volumes and filter bits shifted up
 int sample_in_ptr                      __attribute__((section(".dtcm"))); // Index in sample_vol_filt[] for writing
@@ -297,8 +306,8 @@ enum {
 
 // Structure for one voice
 struct DRVoice {
-    int wave;       // Selected waveform
-    int eg_state;   // Current state of EG
+    int wave;        // Selected waveform
+    int eg_state;    // Current state of EG
     DRVoice *mod_by; // Voice that modulates this one
     DRVoice *mod_to; // Voice that is modulated by this one
 

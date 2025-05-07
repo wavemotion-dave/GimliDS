@@ -1413,7 +1413,8 @@ int MOS6569::EmulateLine(void)
     // Skip frame? Only calculate Bad Lines then
     if (frame_skipped)
     {
-        if (raster >= FIRST_DMA_LINE && raster <= LAST_DMA_LINE && ((raster & 7) == y_scroll) && bad_lines_enabled) {
+        if (raster >= FIRST_DMA_LINE && raster <= LAST_DMA_LINE && ((raster & 7) == y_scroll) && bad_lines_enabled) 
+        {
             is_bad_line = true;
             cycles_left = BAD_CYCLES_PER_LINE;
         }

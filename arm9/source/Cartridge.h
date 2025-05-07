@@ -80,13 +80,14 @@ public:
     u32 total_cart_size = 0;
     u8  last_bank = 0;
     u8  cart_type = 0;
+
     // Memory mapping control lines
-    u8 notEXROM = true;
-    u8 notGAME = true;
-    u8 bank = 0;          // Selected bank
-    u8 bTrueDriveRequired = false;
-    uint8 ram[256];             // Mostly for EasyFlash but can be used for any cart that maps some RAM
-    uint8_t * rom = nullptr;    // Pointer to ROM contents
+    u8 notEXROM = true;             // Cartridge /GAME control line
+    u8 notGAME = true;              // Cartridge /GAME control line
+    u8 bank = 0;                    // Selected bank - only for cart types that support banking
+    u8 bTrueDriveRequired = false;  // Magic Desk disk conversions need the scaffolding of True Drive to load the 'virtual disk'
+    uint8 ram[256];                 // Mostly for EasyFlash but can be used for any cart that maps some RAM
+    uint8_t * rom = nullptr;        // Pointer to ROM contents
 };
 
 
@@ -189,7 +190,7 @@ public:
 };
 
 
-// Ocean cartridge (banked 8K/16K ROM cartridge)
+// Easy Flash cartridge (banked 16K ROM cartridge)
 class CartridgeEasyFlash : public ROMCartridge {
 public:
     CartridgeEasyFlash(bool not_game, bool not_exrom);

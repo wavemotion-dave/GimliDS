@@ -299,6 +299,35 @@ ITCM_CODE void vblankIntr(void)
     }
 }
 
+// Toggle full 320x256
+static s16 last_xScale = 0;
+static s16 last_yScale = 0;
+static s16 last_xOffset = 0;
+static s16 last_yOffset = 0;
+__attribute__ ((noinline)) void toggle_zoom(void)
+{
+  if (last_xScale == 0)
+  {
+      last_xScale  = myConfig.scaleX;
+      last_yScale  = myConfig.scaleY;
+      last_xOffset = myConfig.offsetX;
+      last_yOffset = myConfig.offsetY;
+      myConfig.scaleX  = 320;
+      myConfig.scaleY  = 200;
+      myConfig.offsetX = 60;
+      myConfig.offsetY = 24;
+  }
+  else
+  {
+      myConfig.scaleX = last_xScale;
+      myConfig.scaleY = last_yScale;
+      myConfig.offsetX = last_xOffset;
+      myConfig.offsetY = last_yOffset;
+      last_xScale = last_yScale = 0;
+      last_xOffset = last_yOffset = 0;
+  }
+}
+
 extern void InterruptHandler(void);
 int init_graphics(void)
 {
@@ -312,7 +341,6 @@ int init_graphics(void)
 
     REG_BLDCNT = BLEND_ALPHA | BLEND_SRC_BG2 | BLEND_DST_BG3;
     REG_BLDALPHA = (8 << 8) | 8; // 50% / 50%
-
 
     //set the first two banks as background memory and the third as sub background memory
     //D is not used..if you need a bigger background then you will need to map
@@ -621,7 +649,7 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
 
                 tilex = m_tp.px;
                 tiley = m_tp.py;
-
+                
                 if (tiley > 20) // We're in the keyboard area...
                 {
                     if (tiley < 44) // Big Key Row
