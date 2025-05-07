@@ -68,6 +68,10 @@ smooth scroll that back into place. That works really well for games that have a
 of the screen... you can enjoy nearly full resolution output and just occasionally hit a PAN UP/DN button to see your score. Experiment and
 have fun - just like we did in 1982!
 
+There is also a mechanism to temporarily zoom the sceren to a 1:1 ratio. Assign "TOGGLE ZOOM" to any key in configuration and when you press 
+that key, the screen will shift into zoomed 1:1 mode for easy text reading. Of course, some of the top/sides will be cut-off but you can use
+the L/R shoulder buttons to pan around if needed. Press the same TOGGLE ZOOM button again and the screen will snap back to the pre-zoom settings.
+
 Lastly, a few games use custom loaders that require you to enable 'True Drive'. Be warned that True Drive will render the floppy driver at 
 a speed that is comparable to the original Commodore 1541 floppy drive - that is: extremely slow. It could take 2-5 minutes to load a game
 this way. But if the game requires it, that's your only option. Recommended to snap out a Save State so you don't have to repeat the loading.
