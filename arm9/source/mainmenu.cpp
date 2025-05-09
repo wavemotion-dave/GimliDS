@@ -379,7 +379,7 @@ void SetDefaultGameConfig(void)
     myConfig.joyPort     = 0;                // Default to Joy1
     myConfig.joyMode     = 0;                // Default is normal joypad / dpad
     myConfig.poundKey    = 0;                // Default is Pound Key!
-    myConfig.reserved3   = 0;
+    myConfig.reuType     = 0;                // No REU by default
     myConfig.reserved4   = 0;
     myConfig.reserved5   = 0;
     myConfig.reserved6   = 0;
@@ -448,7 +448,7 @@ void SaveConfig(bool bShow)
     FILE *fp;
     int slot = 0;
 
-    if (bShow) DSPrint(6,23,0, (char*)"SAVING CONFIGURATION");
+    if (bShow) DSPrint(5,3,0, (char*)" SAVING CONFIGURATION ");
 
     // If there is a game loaded, save that into a slot... re-use the same slot if it exists
     myConfig.game_crc = file_crc;
@@ -493,12 +493,12 @@ void SaveConfig(bool bShow)
         fwrite(&ver, sizeof(ver), 1, fp);                   // Write the config version
         fwrite(&AllConfigs, sizeof(AllConfigs), 1, fp);     // Write the array of all configurations
         fclose(fp);
-    } else DSPrint(4,23,0, (char*)"ERROR SAVING CONFIG FILE");
+    } else DSPrint(4,3,0, (char*)"ERROR SAVING CONFIG FILE");
 
     if (bShow)
     {
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-        DSPrint(4,23,0, (char*)"                        ");
+        DSPrint(4,3,0, (char*)"                        ");
     }
 }
 // ----------------------------------------------------------
@@ -586,6 +586,7 @@ const struct options_t Option_Table[1][20] =
     // Game Specific Configuration
     {
         {"TRUE DRIVE",     {"DISABLE (FAST)", "ENABLED (SLOW)"},                                        &myConfig.trueDrive,   2},
+        {"REU TYPE",       {"NONE", "REU-1764 256K"},                                                   &myConfig.reuType,     2},        
         {"JOY PORT",       {"PORT 1", "PORT 2"},                                                        &myConfig.joyPort,     2},
         {"JOY MODE",       {"NORMAL", "SLIDE-N-GLIDE"},                                                 &myConfig.joyMode,     2},        
         {"LCD JITTER",     {"NONE", "LIGHT", "HEAVY"},                                                  &myConfig.jitter,      3},
@@ -633,7 +634,7 @@ u8 display_options_list(bool bFullDisplay)
         }
     }
 
-    DSPrint(1,22, 0, (char *)"  A or B=EXIT,   START=SAVE    ");
+    DSPrint(1,23, 0, (char *)"  A or B=EXIT,   START=SAVE    ");
     return len;
 }
 

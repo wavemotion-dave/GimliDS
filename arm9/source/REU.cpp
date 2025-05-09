@@ -51,6 +51,8 @@
 
 extern u8 myRAM[];
 
+u8 REU_RAM[256 * 1024];
+
 /*
  *  REU constructor
  */
@@ -61,7 +63,7 @@ REU::REU(MOS6510 * cpu) : the_cpu(cpu)
     ram_size = 0x40000; // 256K only
     ram_mask = ram_size - 1;
     
-    ex_ram = new uint8_t[ram_size];
+    ex_ram = REU_RAM;
 
     // Clear expansion RAM
     memset(ex_ram, 0, ram_size);
@@ -77,8 +79,6 @@ REU::REU(MOS6510 * cpu) : the_cpu(cpu)
 
 REU::~REU()
 {
-    // Free expansion RAM
-    delete[] ex_ram;
 }
 
 
@@ -313,3 +313,42 @@ void REU::execute_dma()
         regs[8] = (length >> 8) & 0xff;
     }
 }
+
+
+/*
+ *  Ret REU state 
+ */
+
+void REU::GetState(REUState *rs)
+{
+    rs->ram_size              = ram_size;
+    rs->ram_mask              = ram_mask;
+    rs->autoload_c64_adr_lo   = autoload_c64_adr_lo;
+    rs->autoload_c64_adr_hi   = autoload_c64_adr_hi;
+    rs->autoload_reu_adr_lo   = autoload_reu_adr_lo;
+    rs->autoload_reu_adr_hi   = autoload_reu_adr_hi;
+    rs->autoload_reu_adr_bank = autoload_reu_adr_bank;
+    rs->autoload_length_lo    = autoload_length_lo;
+    rs->autoload_length_hi    = autoload_length_hi;
+    memcpy(rs->regs, regs, sizeof(regs));
+}
+
+
+/*
+ *  Set REU state 
+ */
+
+void REU::SetState(REUState *rs)
+{
+    ram_size              = rs->ram_size;
+    ram_size              = rs->ram_mask;
+    autoload_c64_adr_lo   = rs->autoload_c64_adr_lo;
+    autoload_c64_adr_hi   = rs->autoload_c64_adr_hi;
+    autoload_reu_adr_lo   = rs->autoload_reu_adr_lo;
+    autoload_reu_adr_hi   = rs->autoload_reu_adr_hi;
+    autoload_reu_adr_bank = rs->autoload_reu_adr_bank;
+    autoload_length_lo    = rs->autoload_length_lo;
+    autoload_length_hi    = rs->autoload_length_hi;
+    memcpy(regs, rs->regs, sizeof(regs));
+}
+

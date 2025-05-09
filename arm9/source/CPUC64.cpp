@@ -75,6 +75,7 @@
 #include "SID.h"
 #include "CIA.h"
 #include "IEC.h"
+#include "REU.h"
 #include "Display.h"
 #include "Cartridge.h"
 #include "mainmenu.h"
@@ -222,6 +223,7 @@ __attribute__ ((noinline)) uint8_t  MOS6510::read_byte_io(uint16 adr)
             case 0xe:   // Cartridge I/O 1 (or open)
                 return TheCart->ReadIO1(adr & 0xff, rand());
             case 0xf:   // Cartridge I/O 2 (or open)
+                if (myConfig.reuType) return TheREU->ReadIO2(adr & 0xff, rand());
                 return TheCart->ReadIO2(adr & 0xff, rand());
         }
     }
@@ -292,6 +294,7 @@ __attribute__ ((noinline)) void MOS6510::write_byte_io(uint16 adr, uint8 byte)
                 return;
             case 0xf:   // Cartridge I/O 2 (or open)
                 TheCart->WriteIO2(adr & 0xff, byte);
+                if (myConfig.reuType) TheREU->WriteIO2(adr & 0xff, byte);
                 return;
         }
     }
@@ -476,6 +479,11 @@ void MOS6510::GetState(MOS6510State *s)
             s->MemMap_Offset[i] = MemMap[i] - cartROM;
         }
     }
+    
+    s->spare1 = 0;
+    s->spare2 = 0;
+    s->spare3 = 0;
+    s->spare4 = 0;
 }
 
 

@@ -451,6 +451,11 @@ void MOS6569::GetState(MOS6569State *vd)
     vd->last_vic_byte = 0;
     vd->ud_border_on = border_on;
     vd->total_frames = total_frames;
+    
+    vd->spare1 = 0;
+    vd->spare2 = 0;
+    vd->spare3 = 0;
+    vd->spare4 = 0;    
 }
 
 

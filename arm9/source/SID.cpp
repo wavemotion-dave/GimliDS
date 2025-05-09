@@ -215,6 +215,11 @@ void MOS6581::GetState(MOS6581State *ss)
     ss->v3_eg_level = fake_v3_eg_level;
     ss->v3_eg_state = fake_v3_eg_state;
     ss->sid_seed    = sid_random_seed;
+    
+    ss->spare1 = 0;
+    ss->spare2 = 0;
+    ss->spare3 = 0;
+    ss->spare4 = 0;
 }
 
 

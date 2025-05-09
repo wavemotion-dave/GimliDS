@@ -40,10 +40,25 @@
 
 #include "Cartridge.h"
 
-
 class MOS6510;
-class Prefs;
 
+struct REUState 
+{
+    uint32_t ram_size;  // Size of expansion RAM
+    uint32_t ram_mask;  // Expansion RAM address bit mask
+
+    uint8_t regs[16];   // REU registers
+
+    uint8_t autoload_c64_adr_lo;    // Autoload registers
+    uint8_t autoload_c64_adr_hi;
+    uint8_t autoload_reu_adr_lo;
+    uint8_t autoload_reu_adr_hi;
+    uint8_t autoload_reu_adr_bank;
+    uint8_t autoload_length_lo;
+    uint8_t autoload_length_hi;
+};
+
+extern u8 REU_RAM[256 * 1024];
 
 // REU cartridge object
 class REU : public Cartridge {
@@ -55,6 +70,9 @@ public:
 
     uint8_t ReadIO2(uint16_t adr, uint8_t bus_byte) override;
     void WriteIO2(uint16_t adr, uint8_t byte) override;
+    
+    void GetState(REUState *rs);
+    void SetState(REUState *rs);
 
 private:
     void execute_dma();

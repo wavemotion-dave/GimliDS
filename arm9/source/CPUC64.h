@@ -89,6 +89,7 @@ public:
     MOS6526_2 *TheCIA2; // Pointer to CIA 2
     IEC *TheIEC;        // Pointer to drive array
     Cartridge *TheCart; // Pointer to cartridge object
+    REU *TheREU;        // Pointer to REU object
 
 private:
     void extended_opcode(void);
@@ -147,6 +148,10 @@ struct MOS6510State {
     bool instruction_complete;
     uint8 MemMap_Type[0x10];
     int32 MemMap_Offset[0x10];
+    uint8 spare1;
+    uint8 spare2;
+    uint16 spare3;
+    uint32 spare4;
 };
 
 

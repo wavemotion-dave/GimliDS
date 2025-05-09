@@ -44,6 +44,7 @@
 #include "SID.h"
 #include "CIA.h"
 #include "IEC.h"
+#include "REU.h"
 #include "1541gcr.h"
 #include "Display.h"
 #include "Cartridge.h"
@@ -65,9 +66,9 @@ MOS6510 myCPU     __attribute__((section(".dtcm")));  // Put the entire CPU obje
 
 C64 *gTheC64 = nullptr;
 
-u8 CompressBuffer[0x20000]; //128K more than enough
+u8 CompressBuffer[300*1024]; //300K more than enough (might need to compress RDU at 256K)
 
-#define SNAPSHOT_VERSION 2
+#define SNAPSHOT_VERSION 3
 
 /*
  *  Constructor: Allocate objects and memory
@@ -107,6 +108,7 @@ C64::C64()
     TheCIA2 = TheCPU->TheCIA2 = TheCPU1541->TheCIA2 = new MOS6526_2(TheCPU, TheVIC, TheCPU1541);
     TheIEC  = TheCPU->TheIEC  = new IEC(TheDisplay);
     TheCart = TheCPU->TheCart = new Cartridge();
+    TheREU  = TheCPU->TheREU  = new REU(TheCPU);
 
     InitMemory();
 
@@ -178,8 +180,8 @@ C64::~C64()
     delete TheSID;
     delete TheVIC;
     delete TheCPU1541;
-    //delete TheCPU; -- this is now in 'fast memory' and reused
     delete TheDisplay;
+    delete TheREU;
 
     delete[] Char;
     delete[] Color;
@@ -205,6 +207,7 @@ void C64::Reset(void)
     TheIEC->Reset();
     TheVIC->Reset();
     TheCart->Reset();
+    if (myConfig.reuType) TheREU->Reset();
     
     bTurboWarp = 0;
 }
@@ -601,6 +604,73 @@ bool C64::LoadCARTState(FILE *f)
 
 
 /*
+ *  Save REU state to snapshot
+ */
+
+bool C64::SaveREUState(FILE *f)
+{
+    if (myConfig.reuType)
+    {
+        REUState state;
+        TheREU->GetState(&state);
+        
+        // ---------------------------------------------------------
+        // Compress the REU RAM data using 'high' compression ratio...
+        // ---------------------------------------------------------
+        int max_len = lzav_compress_bound_hi(256*1024);
+        int comp_len = lzav_compress_hi(REU_RAM, CompressBuffer, 256*1024, max_len);
+
+        int i = 0;
+        i += fwrite(&comp_len,        sizeof(comp_len), 1, f);
+        i += fwrite(&CompressBuffer,  comp_len,         1, f);
+        i += fwrite((void*)&state,    sizeof(state),    1, f);
+        
+        return (i == 3) ? true:false;
+    }
+    else
+    {
+        return true;
+    }
+}
+
+/*
+ *  Load REU state from snapshot
+ */
+
+bool C64::LoadREUState(FILE *f)
+{
+    REUState state;
+
+    if (myConfig.reuType)
+    {
+        int comp_len = 0;
+        int i = 0;
+        i += fread(&comp_len,       sizeof(comp_len), 1, f);
+        i += fread(CompressBuffer,  comp_len,         1, f);
+        i += fread((void*)&state,   sizeof(state),    1, f);
+
+        if (i == 3)
+        {
+            // ---------------------------------------------------------------------
+            // Decompress the previously compressed REU_RAM and put it back into the
+            // right memory location... this is quite fast all things considered.
+            // ---------------------------------------------------------------------
+            (void)lzav_decompress( CompressBuffer, REU_RAM, comp_len, 256*1024 );
+
+            TheREU->SetState(&state);
+            return true;
+        }
+        else
+        { iprintf("LoadREUState Failed"); return false;}
+    }
+    else
+    {
+        return true;
+    }
+}
+
+
+/*
  *  Save 1541 GCR state to snapshot
  */
 
@@ -659,11 +729,12 @@ bool C64::SaveSnapshot(char *filename)
     flags = 0;
     if (ThePrefs.TrueDrive) flags |= SNAPSHOT_1541;
     fputc(flags, f);
-    bool bVICSave = SaveVICState(f);
-    bool bSIDSave = SaveSIDState(f);
-    bool bCIASave = SaveCIAState(f);
-    bool bCPUSave = SaveCPUState(f);
-    bool bCARTSave= SaveCARTState(f);
+    bool bVICSave  = SaveVICState(f);
+    bool bSIDSave  = SaveSIDState(f);
+    bool bCIASave  = SaveCIAState(f);
+    bool bCPUSave  = SaveCPUState(f);
+    bool bCARTSave = SaveCARTState(f);
+    bool bREUSave  = SaveREUState(f);
     fputc(0, f);        // No delay
 
     if (ThePrefs.TrueDrive)
@@ -675,7 +746,7 @@ bool C64::SaveSnapshot(char *filename)
     }
     fclose(f);
 
-    if (bVICSave && bSIDSave && bCIASave && bCPUSave && bCARTSave) return true;
+    if (bVICSave && bSIDSave && bCIASave && bCPUSave && bCARTSave && bREUSave) return true;
     return false;
 }
 
@@ -719,6 +790,7 @@ bool C64::LoadSnapshot(char *filename)
             error |= !LoadCIAState(f);
             error |= !LoadCPUState(f);
             error |= !LoadCARTState(f);
+            error |= !LoadREUState(f);
 
             delay = fgetc(f);   // Number of cycles the 6510 is ahead of the previous chips
             (void)delay;
