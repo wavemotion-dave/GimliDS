@@ -61,6 +61,8 @@ uint8 myRAM1541[DRIVE_RAM_SIZE] __attribute__((section(".dtcm")));
 uint8 bTurboWarp __attribute__((section(".dtcm"))) = 0;
 uint8 cart_in    __attribute__((section(".dtcm"))) = 0;
 
+MOS6510 myCPU     __attribute__((section(".dtcm")));  // Put the entire CPU object into fast memory...
+
 C64 *gTheC64 = nullptr;
 
 u8 CompressBuffer[0x20000]; //128K more than enough
@@ -93,7 +95,8 @@ C64::C64()
     ROM1541 = new uint8[DRIVE_ROM_SIZE];
 
     // Create the chips
-    TheCPU = new MOS6510(this, RAM, Basic, Kernal, Char, Color);
+    TheCPU = &myCPU;
+    TheCPU->Init(this, RAM, Basic, Kernal, Char, Color);
 
     TheJob1541 = new Job1541(RAM1541);
     TheCPU1541 = new MOS6502_1541(this, TheJob1541, TheDisplay, RAM1541, ROM1541);
@@ -175,7 +178,7 @@ C64::~C64()
     delete TheSID;
     delete TheVIC;
     delete TheCPU1541;
-    delete TheCPU;
+    //delete TheCPU; -- this is now in 'fast memory' and reused
     delete TheDisplay;
 
     delete[] Char;

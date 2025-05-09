@@ -93,9 +93,20 @@ uint8 *MemMap[0x10]  __attribute__((section(".dtcm"))) ;
  *  6510 constructor: Initialize registers
  */
 
-MOS6510::MOS6510(C64 *c64, uint8 *Ram, uint8 *Basic, uint8 *Kernal, uint8 *Char, uint8 *Color)
- : the_c64(c64), ram(Ram), basic_rom(Basic), kernal_rom(Kernal), char_rom(Char), color_ram(Color)
+MOS6510::MOS6510()
 {
+  // Most of init done in Init() so we can keep the constructor simple and allocate the object in the 'fast memory'
+}
+
+void MOS6510::Init(C64 *c64, uint8 *Ram, uint8 *Basic, uint8 *Kernal, uint8 *Char, uint8 *Color)
+{
+    the_c64 = c64;
+    ram = Ram;
+    basic_rom = Basic;
+    kernal_rom = Kernal;
+    char_rom = Char;
+    color_ram = Color;
+
     a = x = y = 0;
     sp = 0xff;
     n_flag = z_flag = 0;
@@ -112,7 +123,6 @@ MOS6510::MOS6510(C64 *c64, uint8 *Ram, uint8 *Basic, uint8 *Kernal, uint8 *Char,
     borrowed_cycles = 0;
     dfff_byte = 0x55;
 }
-
 
 /*
  *  Reset CPU asynchronously
@@ -351,7 +361,7 @@ inline void MOS6510::write_zp(uint16 adr, uint8 byte)
  *  Adc instruction
  */
 
-ITCM_CODE void MOS6510::do_adc(uint8 byte)
+void MOS6510::do_adc(uint8 byte)
 {
     if (!d_flag) {
         uint16 tmp = a + (byte) + (c_flag ? 1 : 0);

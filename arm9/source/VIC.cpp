@@ -1019,7 +1019,8 @@ void MOS6569::el_std_idle(uint8 *p, uint8 *r)
     uint32 conv0 = TextColorTable[0][b0c][data>>4].b;
     uint32 conv1 = TextColorTable[0][b0c][data&0xf].b;
 
-    for (int i=0; i<40; i++) {
+    for (int i=0; i<40; i++) 
+    {
         *lp++ = conv0;
         *lp++ = conv1;
         *r++ = data;
@@ -1040,7 +1041,8 @@ void MOS6569::el_mc_idle(uint8 *p, uint8 *r)
     uint16 conv0 = (lookup[(data >> 6) & 3] << 16) | lookup[(data >> 4) & 3];
     uint16 conv1 = (lookup[(data >> 2) & 3] << 16) | lookup[(data >> 0) & 3];
 
-    for (int i=0; i<40; i++) {
+    for (int i=0; i<40; i++) 
+    {
         *++lp = conv0;
         *++lp = conv1;
         *++r = data;
@@ -1385,7 +1387,7 @@ spr_off:
 
 int MOS6569::EmulateLine(void)
 {
-    int cycles_left = 63 + CycleDeltas[myConfig.cpuCycles];    // Cycles left for CPU
+    int cycles_left = CPU_CYCLES_PER_LINE + CycleDeltas[myConfig.cpuCycles];    // Cycles left for CPU
     bool is_bad_line = false;
 
     // Get raster counter into local variable for faster access and increment
@@ -1416,7 +1418,7 @@ int MOS6569::EmulateLine(void)
         if (raster >= FIRST_DMA_LINE && raster <= LAST_DMA_LINE && ((raster & 7) == y_scroll) && bad_lines_enabled) 
         {
             is_bad_line = true;
-            cycles_left = BAD_CYCLES_PER_LINE;
+            cycles_left = BAD_CYCLES_PER_LINE + CycleDeltas[myConfig.cpuCycles];
         }
         goto VIC_nop;
     }
@@ -1437,19 +1439,18 @@ int MOS6569::EmulateLine(void)
         {
             // Turn on display
             display_state = is_bad_line = true;
-            cycles_left = BAD_CYCLES_PER_LINE;
+            cycles_left = BAD_CYCLES_PER_LINE + CycleDeltas[myConfig.cpuCycles];
             rc = 0;
 
             // Read and latch 40 bytes from video matrix and color RAM
-            uint8 *mp = matrix_line - 1;
-            uint8 *cp = color_line - 1;
-            int vc1 = vc - 1;
-            uint8 *mbp = matrix_base + vc1;
-            uint8 *crp = color_ram + vc1;
+            uint8 *mp = matrix_line;
+            uint8 *cp = color_line;
+            uint8 *mbp = matrix_base + vc;
+            uint8 *crp = color_ram + vc;
             for (int i=0; i<40; i++)
             {
-                *++mp = *++mbp;
-                *++cp = *++crp;
+                *mp++ = *mbp++;
+                *cp++ = *crp++;
             }
         }
 
@@ -1464,9 +1465,6 @@ int MOS6569::EmulateLine(void)
             // Display window contents
             uint8 *p = chunky_ptr + COL40_XSTART;       // Pointer in chunky display buffer
             uint8 *r = fore_mask_buf + COL40_XSTART/8;  // Pointer in foreground mask buffer
-#ifdef ALIGNMENT_CHECK
-            uint8 *use_p = ((((int)p) & 3) == 0) ? p : text_chunky_buf;
-#endif
             {
                 p--;
                 uint8 b0cc = b0c_color;
@@ -1560,39 +1558,29 @@ int MOS6569::EmulateLine(void)
                     case 0:     // Standard text
                     case 1:     // Multicolor text
                     case 4:     // ECM text
-#ifndef CAN_ACCESS_UNALIGNED
-#ifdef ALIGNMENT_CHECK
-                        el_std_idle(use_p, r);
-                        if (use_p != p) {memcpy(p, use_p, 8*40);}
-#else
-                        if (x_scroll & 3) {
+                        if (x_scroll & 3) 
+                        {
                             el_std_idle(text_chunky_buf, r);
                             // Experimentally, this is slightly faster than memcpy()
                             u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
-                        } else
+                        } 
+                        else
+                        {
                             el_std_idle(p, r);
-#endif
-#else
-                        el_std_idle(p, r);
-#endif
+                        }
                         break;
 
                     case 3:     // Multicolor bitmap
-#ifndef CAN_ACCESS_UNALIGNED
-#ifdef ALIGNMENT_CHECK
-                        el_mc_idle(use_p, r);
-                        if (use_p != p) {memcpy(p, use_p, 8*40);}
-#else
-                        if (x_scroll & 3) {
+                        if (x_scroll & 3) 
+                        {
                             el_mc_idle(text_chunky_buf, r);
                             // Experimentally, this is slightly faster than memcpy()
                             u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
-                        } else
+                        }
+                        else
+                        {
                             el_mc_idle(p, r);
-#endif
-#else
-                        el_mc_idle(p, r);
-#endif
+                        }
                         break;
 
                     default:    // Invalid mode (all black)

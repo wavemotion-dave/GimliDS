@@ -1325,35 +1325,51 @@
             set_nz(a = read_byte_imm() & x & (a | 0xee));
             ENDOP(2);
 
-        case 0x93:  // SHA (ind),Y
-            tmp2 = read_zp(read_byte(pc) + 1);
-            write_byte(read_adr_ind_y(), a & x & (tmp2+1));
-            ENDOP(6);
+		case 0x93:	// SHA (ind),Y
+			tmp2 = read_zp(read_byte(pc) + 1);
+			adr = read_adr_ind_y();
+ 			if ((adr & 0xff) < y) {	// Page crossed?
+				adr &= ((a & x) << 8) | 0xff;
+			}
+			write_byte(adr, a & x & (tmp2 + 1));
+			ENDOP(6);
 
-        case 0x9b:  // SHS abs,Y
-            tmp2 = read_byte(pc+1);
-            adr = read_adr_abs_y();
-            if ((adr & 0xff) < y) { // Page crossed?
-                adr &= ((a & x) << 8) | 0xff;
-            }
-            write_byte(adr, a & x & (tmp2 + 1));
-            sp = a & x;
-            ENDOP(5);
+		case 0x9b:	// SHS abs,Y
+			tmp2 = read_byte(pc + 1);
+			adr = read_adr_abs_y();
+ 			if ((adr & 0xff) < y) {	// Page crossed?
+				adr &= ((a & x) << 8) | 0xff;
+			}
+			write_byte(adr, a & x & (tmp2 + 1));
+			sp = a & x;
+			ENDOP(5);
 
-        case 0x9c:  // SHY abs,X
-            tmp2 = read_byte(pc+1);
-            write_byte(read_adr_abs_x(), y & (tmp2+1));
-            ENDOP(5);
+		case 0x9c:	// SHY abs,X
+			tmp2 = read_byte(pc + 1);
+			adr = read_adr_abs_x();
+ 			if ((adr & 0xff) < x) {	// Page crossed?
+				adr &= (y << 8) | 0xff;
+			}
+			write_byte(adr, y & (tmp2 + 1));
+			ENDOP(5);
 
-        case 0x9e:  // SHX abs,Y
-            tmp2 = read_byte(pc+1);
-            write_byte(read_adr_abs_y(), x & (tmp2+1));
-            ENDOP(5);
+		case 0x9e:	// SHX abs,Y
+			tmp2 = read_byte(pc + 1);
+			adr = read_adr_abs_y();
+ 			if ((adr & 0xff) < y) {	// Page crossed?
+				adr &= (x << 8) | 0xff;
+			}
+			write_byte(adr, x & (tmp2 + 1));
+			ENDOP(5);
 
-        case 0x9f:  // SHA abs,Y
-            tmp2 = read_byte(pc+1);
-            write_byte(read_adr_abs_y(), a & x & (tmp2+1));
-            ENDOP(5);
+		case 0x9f:	// SHA abs,Y
+			tmp2 = read_byte(pc + 1);
+			adr = read_adr_abs_y();
+ 			if ((adr & 0xff) < y) {	// Page crossed?
+				adr &= ((a & x) << 8) | 0xff;
+			}
+			write_byte(adr, a & x & (tmp2+1));
+			ENDOP(5);
 
         case 0xab:  // LXA #imm
             set_nz(a = x = (a | 0xee) & read_byte_imm());

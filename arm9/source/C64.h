@@ -34,6 +34,7 @@ const int DRIVE_ROM_SIZE  = 0x4000;
 #define CIA_CYCLES_PER_LINE     63
 #define BAD_CYCLES_PER_LINE     23
 #define FLOPPY_CYCLES_PER_LINE  64
+#define CPU_CYCLES_PER_LINE     63
 
 #define MEM_TYPE_RAM            0x01
 #define MEM_TYPE_KERNAL         0x02
