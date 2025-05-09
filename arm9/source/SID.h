@@ -139,6 +139,11 @@ struct MOS6581State {
     int32_t v3_eg_level;
     int16 v3_eg_state;
     uint32 sid_seed;
+    
+    uint8 spare1;
+    uint8 spare2;
+    uint16 spare3;
+    uint32 spare4;    
 };
 
 

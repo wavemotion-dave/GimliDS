@@ -147,9 +147,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
 
-Version 1.0 release 08-May-2025 by wavemotion-dave
+Version 1.0 release 09-May-2025 by wavemotion-dave
   * Added TOGGLE ZOOM button map to scale screen 1:1 temporarily (to make text games readable)
   * Another proper fix for CPU jump commands not handling the extra cycle it takes.
+  * Fixed CPU zero-page wrap so it's accurate.
+  * Added 256K REU-1764 support. Still quite preliminary.
   * A bit of polish and cleanup for the big first release!
 
 Version 0.9d release 06-May-2025 by wavemotion-dave

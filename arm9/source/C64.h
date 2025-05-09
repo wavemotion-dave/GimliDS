@@ -54,6 +54,7 @@ class MOS6502_1541;
 class Job1541;
 class Cartridge;
 class CmdPipe;
+class REU;
 
 class C64 {
 public:
@@ -80,6 +81,7 @@ public:
     bool SaveSIDState(FILE *f);
     bool SaveCIAState(FILE *f);
     bool SaveCARTState(FILE *f);
+    bool SaveREUState(FILE *f);
     bool LoadCPUState(FILE *f);
     bool Load1541State(FILE *f);
     bool Load1541JobState(FILE *f);
@@ -87,6 +89,7 @@ public:
     bool LoadSIDState(FILE *f);
     bool LoadCIAState(FILE *f);
     bool LoadCARTState(FILE *f);
+    bool LoadREUState(FILE *f);
     void InsertCart(char *filename);
     void RemoveCart(void);
     void LoadPRG(char *filename);
@@ -103,6 +106,7 @@ public:
     MOS6526_2 *TheCIA2;
     IEC *TheIEC;
     Cartridge *TheCart;
+    REU *TheREU;
 
     MOS6502_1541 *TheCPU1541;   // 1541
     Job1541 *TheJob1541;

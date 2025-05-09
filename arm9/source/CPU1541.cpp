@@ -571,6 +571,11 @@ void MOS6502_1541::GetState(MOS6502State *s)
     s->via2_ifr = via2_ifr; s->via2_ier = via2_ier;
     
     s->cycle_counter = cycle_counter;
+    
+    s->spare1 = 0;
+    s->spare2 = 0;
+    s->spare3 = 0;
+    s->spare4 = 0;   
 }
 
 

@@ -82,6 +82,8 @@ public:
     void TriggerNMI(void);
     void ClearNMI(void);
     void setCharVsIO(void);
+    uint8_t REUReadByte(uint16_t adr);
+    void REUWriteByte(uint16_t adr, uint8_t byte);
 
     MOS6569 *TheVIC;    // Pointer to VIC
     MOS6581 *TheSID;    // Pointer to SID
@@ -89,6 +91,7 @@ public:
     MOS6526_2 *TheCIA2; // Pointer to CIA 2
     IEC *TheIEC;        // Pointer to drive array
     Cartridge *TheCart; // Pointer to cartridge object
+    REU *TheREU;        // Pointer to REU object
 
 private:
     void extended_opcode(void);
@@ -147,6 +150,10 @@ struct MOS6510State {
     bool instruction_complete;
     uint8 MemMap_Type[0x10];
     int32 MemMap_Offset[0x10];
+    uint8 spare1;
+    uint8 spare2;
+    uint16 spare3;
+    uint32 spare4;
 };
 
 

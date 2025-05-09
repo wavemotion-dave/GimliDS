@@ -191,6 +191,11 @@ struct MOS6502State {
     uint8 via2_ier;
     
     uint32 cycle_counter;
+    
+    uint8 spare1;
+    uint8 spare2;
+    uint16 spare3;
+    uint32 spare4;        
 };
 
 

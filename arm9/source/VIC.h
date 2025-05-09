@@ -249,6 +249,11 @@ struct MOS6569State {
     uint8 ref_cnt;          // Refresh counter
     uint8 last_vic_byte;    // Last byte read by VIC
     bool ud_border_on;      // Flag: Upper/lower border on
+    
+    uint8 spare1;
+    uint8 spare2;
+    uint16 spare3;
+    uint32 spare4;    
 };
 
 #endif
