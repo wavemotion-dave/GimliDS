@@ -989,6 +989,9 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
 
     TheCIA1->Joystick1 = poll_joystick(0);
     TheCIA1->Joystick2 = poll_joystick(1);
+    
+    TheCIA1->CountTOD();
+    TheCIA2->CountTOD();    
 
     frames++;
     while (GetTicks() < (((unsigned int)TICKS_PER_SEC/(unsigned int)50) * (unsigned int)frames))

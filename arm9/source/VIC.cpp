@@ -80,6 +80,7 @@
 #include "Display.h"
 #include "mainmenu.h"
 #include "Prefs.h"
+#include "CIA.h"
 
 // First and last displayed line
 const unsigned FIRST_DISP_LINE = 0x20;
@@ -863,7 +864,7 @@ inline void MOS6569::vblank(void)
             if ((total_frames % 3) == 0) frame_skipped = 0; // But every so often toss in an odd frame
         }
     }
-
+    
     the_c64->VBlank(!frame_skipped);
 }
 
@@ -1023,13 +1024,17 @@ void MOS6569::el_std_idle(uint8 *p, uint8 *r)
     uint32 *lp = (uint32 *)p;
     uint32 conv0 = TextColorTable[0][b0c][data>>4].b;
     uint32 conv1 = TextColorTable[0][b0c][data&0xf].b;
+    uint32 data32 = (data << 24) | (data << 16) | (data << 8) | data;
 
     for (int i=0; i<40; i++) 
     {
         *lp++ = conv0;
         *lp++ = conv1;
-        *r++ = data;
     }
+    
+    u32 *r32 = (uint32 *)r;
+    *r32++ = data32; *r32++ = data32; *r32++ = data32; *r32++ = data32; *r32++ = data32;
+    *r32++ = data32; *r32++ = data32; *r32++ = data32; *r32++ = data32; *r32   = data32;
 }
 
 
@@ -1037,7 +1042,7 @@ void MOS6569::el_mc_idle(uint8 *p, uint8 *r)
 {
     uint8 data = *get_physical(0x3fff);
     uint32 *lp = (uint32 *)p - 1;
-    r--;
+    uint32 data32 = (data << 24) | (data << 16) | (data << 8) | data;
 
     uint16 lookup[4];
     lookup[0] = (b0c_color << 8) | b0c_color;
@@ -1050,8 +1055,11 @@ void MOS6569::el_mc_idle(uint8 *p, uint8 *r)
     {
         *++lp = conv0;
         *++lp = conv1;
-        *++r = data;
     }
+
+    u32 *r32 = (uint32 *)r;
+    *r32++ = data32; *r32++ = data32; *r32++ = data32; *r32++ = data32; *r32++ = data32;
+    *r32++ = data32; *r32++ = data32; *r32++ = data32; *r32++ = data32; *r32   = data32;
 }
 
 
@@ -1073,6 +1081,8 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_sprites(uint8 *chunky_ptr
             // Fetch sprite data and mask
             uint8_t *sdatap = get_physical(matrix_base[0x3f8 + snum] << 6 | (mc[snum]*3));
             uint32_t sdata = (*sdatap << 24) | (*(sdatap+1) << 16) | (*(sdatap+2) << 8);
+            
+            if (!sdata) continue; // No data... no draw... no collision...
 
             uint8_t color = spr_color[snum];
 
@@ -1242,7 +1252,6 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_sprites(uint8 *chunky_ptr
                     }
 
                     // Paint sprite
-                    if (plane0 || plane1)
                     for (unsigned i = 0; i < 24; ++i, plane0 <<= 1, plane1 <<= 1, fore_mask <<= 1)
                     {
                         uint8_t col;
@@ -1289,7 +1298,6 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_sprites(uint8 *chunky_ptr
                     }
 
                     // Paint sprite
-                    if (sdata)
                     for (unsigned i = 0; i < 24; ++i, sdata <<= 1, fore_mask <<= 1)
                     {
                         if (sdata & 0x80000000)
@@ -1452,10 +1460,27 @@ int MOS6569::EmulateLine(void)
             uint8 *cp = color_line;
             uint8 *mbp = matrix_base + vc;
             uint8 *crp = color_ram + vc;
-            for (int i=0; i<40; i++)
+            
+            // If we're on a 32-bit boundary, copy faster...
+            if ((((u32)mbp & 3) == 0) && (((u32)crp & 3) == 0))
             {
-                *mp++ = *mbp++;
-                *cp++ = *crp++;
+                uint32 *mp32 = (uint32 *) mp;
+                uint32 *cp32 = (uint32 *) cp;
+                uint32 *mbp32 = (uint32 *) mbp;
+                uint32 *crp32 = (uint32 *) crp;
+                for (int i=0; i<10; i++)
+                {
+                    *mp32++ = *mbp32++;
+                    *cp32++ = *crp32++;
+                }
+            }
+            else // Copy slower...
+            {
+                for (int i=0; i<40; i++)
+                {
+                    *mp++ = *mbp++;
+                    *cp++ = *crp++;
+                }
             }
         }
 
@@ -1470,6 +1495,7 @@ int MOS6569::EmulateLine(void)
             // Display window contents
             uint8 *p = chunky_ptr + COL40_XSTART;       // Pointer in chunky display buffer
             uint8 *r = fore_mask_buf + COL40_XSTART/8;  // Pointer in foreground mask buffer
+            if (x_scroll)
             {
                 p--;
                 uint8 b0cc = b0c_color;
@@ -1664,11 +1690,15 @@ int MOS6569::EmulateLine(void)
         }
 
         // Increment row counter, go to idle state on overflow
-        if (rc == 7) {
+        if (rc == 7) 
+        {
             display_state = false;
             vc_base = vc;
-        } else
+        }
+        else
+        {
             rc++;
+        }
 
         if (raster >= FIRST_DMA_LINE-1 && raster <= LAST_DMA_LINE-1 && (((raster+1) & 7) == y_scroll) && bad_lines_enabled)
             rc = 0;

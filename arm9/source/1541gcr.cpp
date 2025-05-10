@@ -835,13 +835,13 @@ uint8_t Job1541::ReadGCRByte(uint32_t cycle_counter)
 bool Job1541::WPSensorClosed(uint32_t cycle_counter)
 {
 	advance_disk_change_seq(cycle_counter);
-
+#if 0 //TODO: figure out why this isn't working...
 	if (disk_change_seq == 3 || disk_change_seq == 1) {
 		return true;
 	} else if (disk_change_seq == 2) {
 		return false;
 	}
-
+#endif
 	// Default behavior
 	return write_protected;
 }
