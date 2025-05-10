@@ -86,13 +86,15 @@ void MOS6526::Reset(void)
     ta = tb = 0xffff;
     latcha = latchb = 1;
 
-    tod_10ths = tod_sec = tod_min = tod_hr = 0;
+    tod_10ths = tod_sec = tod_min = 0; tod_hr = 1;
     alm_10ths = alm_sec = alm_min = alm_hr = 0;
 
     sdr = icr = cra = crb = int_mask = 0;
 
-    tod_halt = ta_cnt_phi2 = tb_cnt_phi2 = tb_cnt_ta = false;
+    ta_cnt_phi2 = tb_cnt_phi2 = tb_cnt_ta = false;
     tod_divider = 0;
+    tod_alarm = false;
+    tod_halt = true;
 }
 
 void MOS6526_1::Reset(void)
@@ -231,12 +233,13 @@ uint8 MOS6526_1::ReadRegister(uint16 adr)
         case 0x05: return ta >> 8;
         case 0x06: return tb;
         case 0x07: return tb >> 8;
-        case 0x08: tod_halt = false; return tod_10ths;
+        case 0x08: return tod_10ths;    // TODO: unlatch
         case 0x09: return tod_sec;
         case 0x0a: return tod_min;
-        case 0x0b: tod_halt = true; return tod_hr;
+        case 0x0b: return tod_hr;       // TODO: latch
         case 0x0c: return sdr;
-        case 0x0d: {
+        case 0x0d: 
+        {
             uint8 ret = icr;        // Read and clear ICR
             icr = 0;
             the_cpu->ClearCIAIRQ(); // Clear IRQ
@@ -265,12 +268,13 @@ uint8 MOS6526_2::ReadRegister(uint16 adr)
         case 0x05: return ta >> 8;
         case 0x06: return tb;
         case 0x07: return tb >> 8;
-        case 0x08: tod_halt = false; return tod_10ths;
+        case 0x08: return tod_10ths;    // TODO: unlatch
         case 0x09: return tod_sec;
         case 0x0a: return tod_min;
-        case 0x0b: tod_halt = true; return tod_hr;
+        case 0x0b: return tod_hr;       // TODO: latch
         case 0x0c: return sdr;
-        case 0x0d: {
+        case 0x0d: 
+        {
             uint8 ret = icr;        // Read and clear ICR
             icr = 0;
             the_cpu->ClearNMI();    // Clear NMI
@@ -324,28 +328,49 @@ void MOS6526_1::WriteRegister(uint16 adr, uint8 byte)
             break;
 
         case 0x8:
-            if (crb & 0x80)
-                alm_10ths = byte & 0x0f;
-            else
-                tod_10ths = byte & 0x0f;
+			byte &= 0x0f;
+			if (crb & 0x80) 
+            {
+				if (alm_10ths != byte) 
+                {
+					check_tod_alarm();
+				}
+				alm_10ths = byte;
+			} 
+            else 
+            {
+				if (tod_10ths != byte) 
+                {
+					check_tod_alarm();
+				}
+				tod_10ths = byte;
+				tod_halt = false;
+			}
+            check_tod_alarm();
             break;
         case 0x9:
             if (crb & 0x80)
                 alm_sec = byte & 0x7f;
             else
                 tod_sec = byte & 0x7f;
+            check_tod_alarm();
             break;
         case 0xa:
             if (crb & 0x80)
                 alm_min = byte & 0x7f;
             else
                 tod_min = byte & 0x7f;
+            check_tod_alarm();
             break;
         case 0xb:
             if (crb & 0x80)
                 alm_hr = byte & 0x9f;
             else
+            {
                 tod_hr = byte & 0x9f;
+                tod_halt = true;
+            }
+            check_tod_alarm();
             break;
 
         case 0xc:
@@ -357,8 +382,8 @@ void MOS6526_1::WriteRegister(uint16 adr, uint8 byte)
             if (ThePrefs.CIAIRQHack)    // Hack for addressing modes that read from the address
                 icr = 0;
             if (byte & 0x80) {
-                int_mask |= byte & 0x7f;
-                if (icr & int_mask & 0x1f) { // Trigger IRQ if pending
+				int_mask |= byte & 0x1f;
+				if (icr & int_mask) {	// Trigger IRQ if pending
                     icr |= 0x80;
                     the_cpu->TriggerCIAIRQ();
                 }
@@ -393,7 +418,8 @@ inline void MOS6526_2::write_pa(uint8_t byte)
         | ((byte << 2) & 0x40)      // CLK
         | ((byte << 1) & 0x10);     // ATN
 
-    if ((IECLines ^ old_lines) & 0x10) {    // ATN changed
+    if ((IECLines ^ old_lines) & 0x10)      // ATN changed
+    {
         the_cpu_1541->NewATNState();
         if (old_lines & 0x10)               // ATN 1->0
             the_cpu_1541->TriggerIECInterrupt();
@@ -438,28 +464,48 @@ void MOS6526_2::WriteRegister(uint16 adr, uint8 byte)
             break;
 
         case 0x8:
-            if (crb & 0x80)
-                alm_10ths = byte & 0x0f;
-            else
-                tod_10ths = byte & 0x0f;
-            break;
+			byte &= 0x0f;
+			if (crb & 0x80) 
+            {
+				if (alm_10ths != byte) 
+                {
+					check_tod_alarm();
+				}
+				alm_10ths = byte;
+			} 
+            else 
+            {
+				if (tod_10ths != byte) 
+                {
+					check_tod_alarm();
+				}
+				tod_10ths = byte;
+				tod_halt = false;
+			}
+            check_tod_alarm();
         case 0x9:
             if (crb & 0x80)
                 alm_sec = byte & 0x7f;
             else
                 tod_sec = byte & 0x7f;
+            check_tod_alarm();
             break;
         case 0xa:
             if (crb & 0x80)
                 alm_min = byte & 0x7f;
             else
                 tod_min = byte & 0x7f;
+            check_tod_alarm();
             break;
         case 0xb:
             if (crb & 0x80)
                 alm_hr = byte & 0x9f;
             else
+            {
                 tod_hr = byte & 0x9f;
+                tod_halt = true;
+            }
+            check_tod_alarm();
             break;
 
         case 0xc:
@@ -505,11 +551,14 @@ void MOS6526_2::WriteRegister(uint16 adr, uint8 byte)
 void MOS6526::CountTOD(void)
 {
     uint8 lo, hi;
+    
+   	if (tod_halt)  return;  // Clock halted - skip clocking
 
     // Decrement frequency divider
     if (tod_divider)
         tod_divider--;
-    else {
+    else
+    {
 
         // Reload divider according to 50/60 Hz flag
         if (cra & 0x80)
@@ -519,27 +568,32 @@ void MOS6526::CountTOD(void)
 
         // 1/10 seconds
         tod_10ths++;
-        if (tod_10ths > 9) {
+        if (tod_10ths > 9) 
+        {
             tod_10ths = 0;
 
             // Seconds
             lo = (tod_sec & 0x0f) + 1;
             hi = tod_sec >> 4;
-            if (lo > 9) {
+            if (lo > 9) 
+            {
                 lo = 0;
                 hi++;
             }
-            if (hi > 5) {
+            if (hi > 5) 
+            {
                 tod_sec = 0;
 
                 // Minutes
                 lo = (tod_min & 0x0f) + 1;
                 hi = tod_min >> 4;
-                if (lo > 9) {
+                if (lo > 9) 
+                {
                     lo = 0;
                     hi++;
                 }
-                if (hi > 5) {
+                if (hi > 5) 
+                {
                     tod_min = 0;
 
                     // Hours
@@ -559,10 +613,7 @@ void MOS6526::CountTOD(void)
                 tod_sec = (hi << 4) | lo;
         }
 
-        // Alarm time reached? Trigger interrupt if enabled
-        if (tod_10ths == alm_10ths && tod_sec == alm_sec &&
-            tod_min == alm_min && tod_hr == alm_hr)
-            TriggerInterrupt(4);
+        check_tod_alarm();
     }
 }
 
@@ -574,7 +625,8 @@ void MOS6526::CountTOD(void)
 void MOS6526_1::TriggerInterrupt(int bit)
 {
     icr |= bit;
-    if (int_mask & bit) {
+    if (int_mask & bit) 
+    {
         icr |= 0x80;
         the_cpu->TriggerCIAIRQ();
     }
@@ -588,7 +640,8 @@ void MOS6526_1::TriggerInterrupt(int bit)
 void MOS6526_2::TriggerInterrupt(int bit)
 {
     icr |= bit;
-    if (int_mask & bit) {
+    if (int_mask & bit) 
+    {
         icr |= 0x80;
         the_cpu->TriggerNMI();
     }

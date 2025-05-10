@@ -72,11 +72,14 @@ protected:
     uint8 int_mask;
 
     int tod_divider;    // TOD frequency divider
-
+    
     bool tod_halt,      // Flag: TOD halted
          ta_cnt_phi2,   // Flag: Timer A is counting Phi 2
          tb_cnt_phi2,   // Flag: Timer B is counting Phi 2
          tb_cnt_ta;     // Flag: Timer B is counting underflows of Timer A
+         
+    bool tod_alarm;			// Flag: TOD in alarm state
+    void check_tod_alarm();
 };
 
 
@@ -150,6 +153,24 @@ struct MOS6526State {
     uint8 alm_hr;
     uint8 int_mask;     // Enabled interrupts
 };
+
+/*
+ *  Check for TOD alarm
+ */
+
+inline void MOS6526::check_tod_alarm()
+{
+	bool alarm_match = (tod_10ths == alm_10ths && tod_sec == alm_sec &&
+	                    tod_min == alm_min && tod_hr == alm_hr);
+                        
+	// Raise interrupt on positive edge of alarm match
+	if (alarm_match && !tod_alarm) 
+    {
+		TriggerInterrupt(4);
+	}
+
+	tod_alarm = alarm_match;
+}
 
 
 /*
