@@ -109,6 +109,16 @@ How would this work... well, if you're not experiencing any weird graphical glit
 
 In general, if you have a scanline instability/flicker near the top of the screen, use slightly negative CPU adjustment values. If the glitch is towards the bottom of the screen... use a slightly positive adjustment value.
 
+## Specific Game Hacks
+
+To get some of the more popular games running as good as possible on the venerable DS, here is a list of things you might try.
+
+  * Gauntlet - set the CPU CYCLES to +5 to eliminate graphical glitches on 'G' font.
+  * Bruce Lee - set the CPU CYCLES to +4 to minimize graphical line-based glitches.
+  * Turrican I - set the BAD CYCLES to -6 (you will have some corruption on the title screen but the game will look and play fine - most importantly you can actually start the game!).
+  * Turrican II - requires True Drive enabled (or load from cart).
+  * Lode Runner - requires True Drive enabled (or load from cart).
+  * LED Storm - set CPU CYCLES to +4 to eliminate top line graphical glitch.
 
 ## Acknowledgements
 

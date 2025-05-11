@@ -182,7 +182,8 @@ inline void MOS6526::EmulateLine(int cycles)
     unsigned long tmp;
 
     // Timer A
-    if (ta_cnt_phi2) {
+    if (ta_cnt_phi2) 
+    {
         ta = tmp = ta - cycles;     // Decrement timer
 
         if (tmp > 0xffff) {         // Underflow?
@@ -201,7 +202,8 @@ inline void MOS6526::EmulateLine(int cycles)
     }
 
     // Timer B
-    if (tb_cnt_phi2) {
+    if (tb_cnt_phi2) 
+    {
         tb = tmp = tb - cycles;     // Decrement timer
 
         if (tmp > 0xffff) {         // Underflow?

@@ -580,6 +580,8 @@ void MOS6510::Reset(void)
     // Clear all interrupt lines
     interrupt.intr_any = 0;
     nmi_state = false;
+    
+    borrowed_cycles = 0;
 
     interrupt.intr[INT_VICIRQ] = false;
     interrupt.intr[INT_CIAIRQ] = false;

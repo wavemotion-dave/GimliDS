@@ -347,18 +347,17 @@ int init_graphics(void)
     //more vram banks consecutivly (VRAM A-D are all 0x20000 bytes in size)
     vramSetPrimaryBanks(VRAM_A_MAIN_BG_0x06000000, VRAM_B_MAIN_BG_0x06020000, VRAM_C_SUB_BG , VRAM_D_LCD);
 
-    vramSetBankD(VRAM_D_LCD);        // Not using this for video but 128K of faster RAM always useful!  Mapped at 0x06860000 -   256K Used for tape patch look-up
+    vramSetBankD(VRAM_D_LCD);        // Not using this for video but 128K of faster RAM always useful!  Mapped at 0x06860000 -   Unused - reserved for future use
     vramSetBankE(VRAM_E_LCD);        // Not using this for video but 64K of faster RAM always useful!   Mapped at 0x06880000 -   ..
     vramSetBankF(VRAM_F_LCD);        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06890000 -   ..
     vramSetBankG(VRAM_G_LCD);        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06894000 -   ..
     vramSetBankH(VRAM_H_LCD);        // Not using this for video but 32K of faster RAM always useful!   Mapped at 0x06898000 -   ..
-    vramSetBankI(VRAM_I_LCD);        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x068A0000 -   Unused - reserved for future use
+    vramSetBankI(VRAM_I_LCD);        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x068A0000 -   16K used for SID waveform table cache
 
 
     videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE); //sub bg 0 will be used to print text
     REG_BG0CNT_SUB = BG_MAP_BASE(31);
     BG_PALETTE_SUB[255] = RGB15(31,31,31);
-    //consoleInit(NULL, 0, BgType_Text4bpp, BgSize_T_256x256, 31, 0, false, true);
 
     if (!fatInitDefault())
     {
@@ -399,9 +398,10 @@ int init_graphics(void)
 __attribute__ ((noinline)) ITCM_CODE void C64Display::UpdateRasterLine(int raster, u8 *src)
 {
     // Output the raster line to the LCD...
-    u32 *dest = (uint32*)((u32)0x06000000 + (512*(raster-FIRST_DISP_LINE)));
-    u32 *source = (u32*) src;
-    for (int i=0; i<(DISPLAY_X-0x14)/4; i++)
+    u32 *dest = (uint32*)((u32)0x06000010 + (512*(raster-FIRST_DISP_LINE)));
+    u32 *source = (u32*) (src+16);
+
+    for (int i=0; i<88; i++) // 352 pixels is 320 main pixels and 16 pixel borders. Good enough for DS since we can't really show much of the border anyway.
     {
         *dest++ = *source++;
     }

@@ -135,7 +135,7 @@
     while (true)
     {
         if (page_plus_cyc) {last_cycles++; page_plus_cyc=0;}
-        if ((cycles_left -= last_cycles) < 0) 
+        if ((cycles_left -= last_cycles) <= 0) 
         {
             borrowed_cycles = -cycles_left;
             break;
@@ -147,7 +147,7 @@
     if (page_plus_cyc) {last_cycles++; page_plus_cyc=0;}
     cycle_counter += last_cycles; // In case we have any initial interrupt cycles
     
-    while ((cycles_left -= last_cycles) >= 0)
+    while ((cycles_left -= last_cycles) > 0)
     {
         // If we are 1541CPU, we want to alternate running instructions with the main CPU ...
         while (cpu_cycles > cycles_left)
