@@ -21,7 +21,7 @@ struct __attribute__((__packed__)) Config_t
     u8  reserved7;
     u8  reserved8;
     u8  cpuCycles;
-    u8  flopCycles;
+    u8  badCycles;
     s8  offsetX;
     s8  offsetY;
     s16 scaleX;

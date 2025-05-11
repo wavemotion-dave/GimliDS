@@ -147,6 +147,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
 
+Version 1.1 release 11-May-2025 by wavemotion-dave
+  * Fix to CIA vars initialization so games like Chuckie Egg start properly.
+  * Fix to TOD clock counters (previous versions would not clock at all... fixes some utilities mostly).
+  * Improved REU handling for a bit more speed (gain of 1-2 frames on REU games)
+  * Improved VIC handling for a bit more speed (gain of 1-2 frames across the board)
+
 Version 1.0 release 09-May-2025 by wavemotion-dave
   * Added TOGGLE ZOOM button map to scale screen 1:1 temporarily (to make text games readable)
   * Another proper fix for CPU jump commands not handling the extra cycle it takes.

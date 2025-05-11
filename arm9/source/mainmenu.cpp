@@ -386,7 +386,7 @@ void SetDefaultGameConfig(void)
     myConfig.reserved7   = 0;
     myConfig.reserved8   = 0xA5;             // So it's easy to spot on an "upgrade" and we can re-default it
     myConfig.cpuCycles   = 0;                // Normal 63 - this is the delta adjustment to that
-    myConfig.flopCycles  = 0;                // Normal 64 - this is the delta adjustment to that
+    myConfig.badCycles   = 0;                // Normal 23 - this is the delta adjustment to that
     
     myConfig.offsetX     = 32;              // Push the side border off the main display
     myConfig.offsetY     = 19;              // Push the top border off the main display
@@ -394,7 +394,7 @@ void SetDefaultGameConfig(void)
     myConfig.scaleY      = 200;             // Scale the 200 pixels of C64 display to the DS 200 (yes, there is only 192 so this will cut... use PAN UP/DN)
 }
 
-s16 CycleDeltas[] = {0,1,2,3,4,5,6,7,8,9,-9,-8,-7,-6,-5,-4,-3,-2,-1};  // Used with myConfig.cpuCycles and myConfig.flopCycles
+s16 CycleDeltas[] = {0,1,2,3,4,5,6,7,8,9,-9,-8,-7,-6,-5,-4,-3,-2,-1};  // Used with myConfig.cpuCycles and myConfig.badCycles
 
 // ----------------------------------------------------------------------
 // Read file twice and ensure we get the same CRC... if not, do it again
@@ -592,7 +592,7 @@ const struct options_t Option_Table[1][20] =
         {"LCD JITTER",     {"NONE", "LIGHT", "HEAVY"},                                                  &myConfig.jitter,      3},
         {"DISK SOUND",     {"SFX OFF", "SFX ON"},                                                       &myConfig.diskSFX,     2},
         {"CPU CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.cpuCycles,   19},
-        {"1541 CYCLES",    {CYCLE_DELTA_STR},                                                           &myConfig.flopCycles,  19},
+        {"BAD CYCLES" ,    {CYCLE_DELTA_STR},                                                           &myConfig.badCycles,   19},
         {"POUND KEY",      {"POUND", "LEFT ARROW", "UP ARROW", "C= COMMODORE"},                         &myConfig.poundKey,    4},        
 
         {"D-PAD UP",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[0],  65},

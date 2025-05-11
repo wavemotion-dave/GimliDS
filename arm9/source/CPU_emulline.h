@@ -947,7 +947,7 @@
         case 0x7c:
         case 0xdc:
         case 0xfc:
-#if PRECISE_CPU_CYCLES
+#if PRECISE_CPU_CYCLES_NO // Save the effort and we need the ITCM_CODE space
             read_byte_abs_x();
 #else
             pc+=2;

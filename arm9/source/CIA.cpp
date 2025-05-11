@@ -84,7 +84,7 @@ void MOS6526::Reset(void)
     pra = prb = ddra = ddrb = 0;
 
     ta = tb = 0xffff;
-    latcha = latchb = 1;
+    latcha = latchb = 0xffff;
 
     tod_10ths = tod_sec = tod_min = 0; tod_hr = 1;
     alm_10ths = alm_sec = alm_min = alm_hr = 0;
@@ -559,7 +559,6 @@ void MOS6526::CountTOD(void)
         tod_divider--;
     else
     {
-
         // Reload divider according to 50/60 Hz flag
         if (cra & 0x80)
             tod_divider = 4;

@@ -1351,7 +1351,7 @@ void C64::main_loop(void)
         // -----------------------------------------------------------------
         if (ThePrefs.TrueDrive)
         {
-            int cycles_1541 = FLOPPY_CYCLES_PER_LINE + CycleDeltas[myConfig.flopCycles];
+            int cycles_1541 = FLOPPY_CYCLES_PER_LINE;
             TheCPU1541->CountVIATimers(cycles_1541);
 
             if (!TheCPU1541->Idle)

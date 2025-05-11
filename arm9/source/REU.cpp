@@ -51,7 +51,10 @@
 
 extern u8 myRAM[];
 
+// We are emulating the REU-1764 (256K) only
 u8 REU_RAM[256 * 1024];
+
+#define RAM_MASK    0x3FFFF
 
 /*
  *  REU constructor
@@ -61,7 +64,6 @@ REU::REU(MOS6510 * cpu) : the_cpu(cpu)
 {
     // Allocate expansion RAM
     ram_size = 0x40000; // 256K only
-    ram_mask = ram_size - 1;
     
     ex_ram = REU_RAM;
 
@@ -207,6 +209,11 @@ void REU::WriteIO2(uint16_t adr, uint8_t byte)
             if ((byte & 0x90) == 0x90) 
             {
                 execute_dma();
+            } 
+            if ((byte & 0x90) == 0x80) 
+            {
+                // This would normally be the 'delayed' write... not fully handled by GimliDS as we can't afford the trigger check on FF00
+                execute_dma();
             }
             break;
         default:
@@ -236,45 +243,44 @@ void REU::execute_dma()
     // Get transfer length
     uint16_t length = regs[7] | (regs[8] << 8);
 
-    // Calculate address increments
-    unsigned c64_inc = (regs[10] & 0x80) ? 0 : 1;
-    unsigned reu_inc = (regs[10] & 0x40) ? 0 : 1;
+    // We are skipping the memory increment of regs[10] as there
+    // are no known practical uses of it... and we need the speed.
     
-    // Do transfer
-    bool verify_error = false;
-    while (!verify_error) 
+    if ((regs[1] & 3) == 0)
     {
-        switch (regs[1] & 3) 
+        while (length--)
         {
-            case 0:     // C64 -> REU
-                ex_ram[reu_adr & ram_mask] = the_cpu->REUReadByte(c64_adr);
-                break;
-            case 1:     // C64 <- REU
-                the_cpu->REUWriteByte(c64_adr, ex_ram[reu_adr & ram_mask]);
-                break;
-            case 2: {   // C64 <-> REU
-                uint8_t tmp = the_cpu->REUReadByte(c64_adr);
-                the_cpu->REUWriteByte(c64_adr, ex_ram[reu_adr & ram_mask]);
-                ex_ram[reu_adr & ram_mask] = tmp;
-                break;
-            }
-            case 3:     // Compare
-                if (ex_ram[reu_adr & ram_mask] != the_cpu->REUReadByte(c64_adr)) 
-                {
-                    regs[0] |= 0x20;    // Verify error
-                    verify_error = true;
-                }
-                break;
-        }
-
-        c64_adr += c64_inc;
-        reu_adr += reu_inc;
-        if (--length == 0)
-        {
-            regs[0] |= 0x40;    // Transfer finished
-            break;
+            REU_RAM[reu_adr++ & RAM_MASK] = the_cpu->REUReadByte(c64_adr++);
         }
     }
+    else if ((regs[1] & 3) == 1)
+    {
+        while (length--)
+        {
+            the_cpu->REUWriteByte(c64_adr++, REU_RAM[reu_adr++ & RAM_MASK]);
+        }
+    }
+    else if ((regs[1] & 3) == 2)
+    {
+        while (length--)
+        {
+            uint8_t tmp = the_cpu->REUReadByte(c64_adr);
+            the_cpu->REUWriteByte(c64_adr++, REU_RAM[reu_adr & RAM_MASK]);
+            REU_RAM[reu_adr++ & RAM_MASK] = tmp;
+        }
+    }
+    else // Compare
+    {
+        while (length--) 
+        {
+            if (REU_RAM[reu_adr++ & RAM_MASK] != the_cpu->REUReadByte(c64_adr++)) 
+            {
+                regs[0] |= 0x20;    // Verify error
+                break;
+            }
+        }
+    }
+    regs[0] |= 0x40;    // Transfer finished
 
     // Update address and length registers
     if (regs[1] & 0x20)
@@ -289,7 +295,7 @@ void REU::execute_dma()
     }
     else 
     {
-        reu_adr &= ram_mask;
+        reu_adr &= RAM_MASK;
         regs[2] = c64_adr & 0xff;
         regs[3] = c64_adr >> 8;
         regs[4] = reu_adr & 0xff;
@@ -308,7 +314,7 @@ void REU::execute_dma()
 void REU::GetState(REUState *rs)
 {
     rs->ram_size              = ram_size;
-    rs->ram_mask              = ram_mask;
+    rs->ram_mask              = RAM_MASK;
     rs->autoload_c64_adr_lo   = autoload_c64_adr_lo;
     rs->autoload_c64_adr_hi   = autoload_c64_adr_hi;
     rs->autoload_reu_adr_lo   = autoload_reu_adr_lo;
@@ -327,7 +333,7 @@ void REU::GetState(REUState *rs)
 void REU::SetState(REUState *rs)
 {
     ram_size              = rs->ram_size;
-    ram_size              = rs->ram_mask;
+    ram_mask              = RAM_MASK;
     autoload_c64_adr_lo   = rs->autoload_c64_adr_lo;
     autoload_c64_adr_hi   = rs->autoload_c64_adr_hi;
     autoload_reu_adr_lo   = rs->autoload_reu_adr_lo;

@@ -1018,7 +1018,7 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_ecm_text(uint8 *p, uint8 
 }
 
 
-void MOS6569::el_std_idle(uint8 *p, uint8 *r)
+__attribute__ ((noinline))  ITCM_CODE void MOS6569::el_std_idle(uint8 *p, uint8 *r)
 {
     uint8 data = *get_physical(ctrl1 & 0x40 ? 0x39ff : 0x3fff);
     uint32 *lp = (uint32 *)p;
@@ -1431,7 +1431,7 @@ int MOS6569::EmulateLine(void)
         if (raster >= FIRST_DMA_LINE && raster <= LAST_DMA_LINE && ((raster & 7) == y_scroll) && bad_lines_enabled) 
         {
             is_bad_line = true;
-            cycles_left = BAD_CYCLES_PER_LINE + CycleDeltas[myConfig.cpuCycles];
+            cycles_left = BAD_CYCLES_PER_LINE + CycleDeltas[myConfig.cpuCycles] + CycleDeltas[myConfig.badCycles];
         }
         goto VIC_nop;
     }
@@ -1452,7 +1452,7 @@ int MOS6569::EmulateLine(void)
         {
             // Turn on display
             display_state = is_bad_line = true;
-            cycles_left = BAD_CYCLES_PER_LINE + CycleDeltas[myConfig.cpuCycles];
+            cycles_left = BAD_CYCLES_PER_LINE + CycleDeltas[myConfig.cpuCycles] + CycleDeltas[myConfig.badCycles];
             rc = 0;
 
             // Read and latch 40 bytes from video matrix and color RAM
