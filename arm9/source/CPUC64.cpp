@@ -601,7 +601,7 @@ void MOS6510::illegal_op(uint8 op, uint16 at)
 {
     char illop_msg[40];
 
-    sprintf(illop_msg, "Illegal opcode %02x at %04x", op, at);
+    sprintf(illop_msg, "Illegal opcode %02X at %04X", op, at);
     ShowRequester(illop_msg, "Reset");
     the_c64->Reset();
     Reset();

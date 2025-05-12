@@ -1442,7 +1442,7 @@ int MOS6569::EmulateLine(void)
         u8 bSkipDraw = 0;
         // Our output goes here
         uint8 *chunky_ptr = fast_line_buffer;
-        uint32 *direct_scr_ptr = (uint32*)((u32)0x06000000 + (512*(raster-FIRST_DISP_LINE)));
+        uint32 *direct_scr_ptr = (uint32*)((u32)0x06000014 + (512*(raster-FIRST_DISP_LINE)));
 
         // Set video counter
         vc = vc_base;
@@ -1683,10 +1683,10 @@ int MOS6569::EmulateLine(void)
         {
             // Display border - directly to screen!
             bSkipDraw = 1;
-            direct_scr_ptr+=4;
-            uint32 c = ec_color_long;
-            for (int i=4; i<(DISPLAY_X/4)-5; i++)
-                *++direct_scr_ptr = c;
+            for (int i=0; i<87; i++) // 352 pixels is 320 main pixels and 16 pixel borders. Good enough for DS since we can't really show much of the border anyway.
+            {
+                *direct_scr_ptr++ = ec_color_long;
+            }
         }
 
         // Increment row counter, go to idle state on overflow

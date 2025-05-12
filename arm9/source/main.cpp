@@ -136,7 +136,6 @@ extern "C" {
 int main(int argc, char **argv)
 {
     Frodo *the_app;
-    char *args[]={ (char*)"Gimli", NULL };
 
     defaultExceptionHandler();
 
@@ -149,11 +148,12 @@ int main(int argc, char **argv)
 
     the_app = new Frodo();
 
-    the_app->ArgvReceived(1, args);
+    the_app->ArgvReceived(argc, argv);
 
     keysSetRepeat(15, 6);
 
     the_app->ReadyToRun();
+    
     delete the_app;
 
     return (1);
@@ -173,9 +173,30 @@ Frodo::Frodo()
 /*
  *  Process command line arguments
  */
-
+char cmd_line_file[256];
 void Frodo::ArgvReceived(int argc, char **argv)
 {
+    if (argc > 1)
+    {
+        //  We want to start in the directory where the file is being launched...
+        if  (strchr(argv[1], '/') != NULL)
+        {
+            static char  path[128];
+            strcpy(path,  argv[1]);
+            char  *ptr = &path[strlen(path)-1];
+            while (*ptr !=  '/') ptr--;
+            ptr++;
+            strcpy(cmd_line_file,  ptr);
+            *ptr=0;
+            chdir(path);
+        }
+        else
+        {
+            strcpy(cmd_line_file,  argv[1]);
+        }
+        
+        ///TODO: Unsure what do do here... we could auto-load and auto-launch the disk/CRT file I guess...
+    }
 }
 
 
@@ -214,7 +235,8 @@ void vblankIntro()
 /******************************************************************************
 * Routine FadeToColor :  Fade from background to black or white
 ******************************************************************************/
-void FadeToColor(unsigned char ucSens, unsigned short ucBG, unsigned char ucScr, unsigned char valEnd, unsigned char uWait) {
+void FadeToColor(unsigned char ucSens, unsigned short ucBG, unsigned char ucScr, unsigned char valEnd, unsigned char uWait)
+{
   unsigned short ucFade;
   unsigned char ucBcl;
 
@@ -244,7 +266,7 @@ void FadeToColor(unsigned char ucSens, unsigned short ucBG, unsigned char ucScr,
 
 
 // --------------------------------------------------------------
-// Intro with portabledev logo and new PHEONIX-EDITION version
+// Intro with GimliDS logo and wavemotion github banner...
 // --------------------------------------------------------------
 void intro_logo(void)
 {
@@ -265,7 +287,7 @@ void intro_logo(void)
   init_maxmod();
   mmEffect(SFX_MUS_INTRO);
 
-  // Show portabledev
+  // Show intro logo...
   decompress(introTiles, bgGetGfxPtr(bg1), LZ77Vram);
   decompress(introMap, (void*) bgGetMapPtr(bg1), LZ77Vram);
   dmaCopy((void *) introPal,(u16*) BG_PALETTE,256*2);
