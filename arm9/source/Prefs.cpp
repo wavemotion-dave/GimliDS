@@ -39,10 +39,7 @@ Prefs::Prefs()
     strcpy(DrivePath[0], "");
     strcpy(DrivePath[1], "");
 
-    SIDType = SIDTYPE_DIGITAL;
-
     FastReset = true;
-    CIAIRQHack = false;
     TrueDrive = false; // True Drive Emulation when TRUE (slower emulation)
 }
 

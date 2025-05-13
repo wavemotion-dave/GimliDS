@@ -232,21 +232,20 @@ void C64::LoadPRG(char *filename)
     if (fp)
     {
         int prg_size = fread(CompressBuffer, 1, sizeof(CompressBuffer), fp);
+        fclose(fp);
 
         uint8 start_hi, start_lo;
         uint16 start;
-        int i;
 
         u8 *prg = CompressBuffer;
         start_lo=*prg++;
         start_hi=*prg++;
         start=(start_hi<<8)+start_lo;
 
-        for(i=0; i<(prg_size-2); i++)
+        for(int i=0; i<(prg_size-2); i++)
         {
             myRAM[start+i]=prg[i];
-        }
-        fclose(fp);
+        }        
     }
 }
 
@@ -849,7 +848,7 @@ bool C64::LoadSnapshot(char *filename)
 /*
  *  C64_GP32.i by Mike Dawson, adapted from:
  *  C64_x.i - Put the pieces together, X specific stuff
- *f
+ *
  *  Frodo (C) 1994-1997,2002 Christian Bauer
  *  Unix stuff by Bernd Schmidt/Lutz Vieweg
  */
@@ -994,7 +993,7 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
     TheCIA2->CountTOD();
 
     frames++;
-    while (GetTicks() < (((unsigned int)TICKS_PER_SEC/(unsigned int)50) * (unsigned int)frames))
+    while (GetTicks() < (((unsigned int)TICKS_PER_SEC/(unsigned int)SCREEN_FREQ) * (unsigned int)frames))
     {
         if (bTurboWarp) break;
     }
@@ -1009,7 +1008,7 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
         frames_per_sec = 0;
     }
 
-    if (frames == 50)
+    if (frames == SCREEN_FREQ)
     {
         frames = 0;
         StartTimers();
@@ -1330,8 +1329,6 @@ void C64::RemoveCart(void)
 
 void C64::main_loop(void)
 {
-    int linecnt = 0;
-
     while (!quit_thyself)
     {
         if(have_a_break)
@@ -1374,8 +1371,6 @@ void C64::main_loop(void)
             // 1541 processor disabled, only emulate 6510
             TheCPU->EmulateLine(cpu_cycles_to_execute);
         }
-
-        linecnt++;
     }
 }
 

@@ -484,7 +484,6 @@ Cartridge * Cartridge::FromFile(char *filename, char *errBuffer)
         uint8_t exrom = header[0x18];
         uint8_t game = header[0x19];
 
-        debug[3] = type;
         switch (type) {
             case 0:
                 if (exrom != 0)     // Ultimax or not a ROM cartridge

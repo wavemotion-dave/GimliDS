@@ -513,18 +513,27 @@ int getMemFree() { // returns the amount of free memory in bytes
 
 
 int i = 0;
-int debug[8]={0,0,0,0,0,0,0,0};
+int debug[16]={0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0};
 void C64Display::Speedometer(int speed)
 {
     char tmp[34];
 
     if (bDebugDisplay)
     {
-        sprintf(tmp, "%-8d", speed);
-        DSPrint(19, 1, 6, tmp);
-
         sprintf(tmp, "%-8d %-8d %-6d %-6d", debug[0],debug[1],debug[2],debug[3]);
         DSPrint(0, 0, 6, tmp);
+
+        sprintf(tmp, "%-8d %-8d %-6d %-6d", debug[4],debug[5],debug[6],debug[7]);
+        DSPrint(0, 1, 6, tmp);
+
+        sprintf(tmp, "%-8d %-8d %-6d %-6d", debug[8],debug[9],debug[10],debug[11]);
+        DSPrint(0, 2, 6, tmp);
+
+        sprintf(tmp, "%-8d %-8d %-6d %-3d", debug[12],debug[13],debug[14],debug[15]);
+        DSPrint(0, 3, 6, tmp);
+
+        sprintf(tmp, "%3d", speed);
+        DSPrint(29, 3, 6, tmp);
     }
 
     show_joysticks();

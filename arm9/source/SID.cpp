@@ -94,7 +94,7 @@ MOS6581::MOS6581(C64 *c64) : the_c64(c64)
         regs[i] = 0;
 
     // Open the renderer
-    open_close_renderer(SIDTYPE_NONE, ThePrefs.SIDType);
+    open_close_renderer(SIDTYPE_NONE, SIDTYPE_DIGITAL);
 }
 
 
@@ -105,7 +105,7 @@ MOS6581::MOS6581(C64 *c64) : the_c64(c64)
 MOS6581::~MOS6581()
 {
     // Close the renderer
-    open_close_renderer(ThePrefs.SIDType, SIDTYPE_NONE);
+    open_close_renderer(SIDTYPE_DIGITAL, SIDTYPE_NONE);
 }
 
 
@@ -137,7 +137,7 @@ void MOS6581::Reset(void)
 
 void MOS6581::NewPrefs(Prefs *prefs)
 {
-    open_close_renderer(ThePrefs.SIDType, prefs->SIDType);
+    open_close_renderer(SIDTYPE_DIGITAL, SIDTYPE_DIGITAL);
     if (the_renderer != NULL)
     {
         the_renderer->NewPrefs(prefs);

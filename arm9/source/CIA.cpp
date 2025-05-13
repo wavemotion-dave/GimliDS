@@ -202,8 +202,10 @@ void MOS6526::SetState(MOS6526State *cs)
 
 uint8 MOS6526_1::ReadRegister(uint16 adr)
 {
-    switch (adr) {
-        case 0x00: {
+    switch (adr) 
+    {
+        case 0x00: 
+        {
             uint8 ret = pra | ~ddra, tst = (prb | ~ddrb) & Joystick1;
             if (!(tst & 0x01)) ret &= RevMatrix[0]; // AND all active columns
             if (!(tst & 0x02)) ret &= RevMatrix[1];
@@ -215,7 +217,8 @@ uint8 MOS6526_1::ReadRegister(uint16 adr)
             if (!(tst & 0x80)) ret &= RevMatrix[7];
             return ret & Joystick2;
         }
-        case 0x01: {
+        case 0x01: 
+        {
             uint8 ret = ~ddrb, tst = (pra | ~ddra) & Joystick2;
             if (!(tst & 0x01)) ret &= KeyMatrix[0]; // AND all active rows
             if (!(tst & 0x02)) ret &= KeyMatrix[1];
@@ -258,7 +261,8 @@ uint8 MOS6526_1::ReadRegister(uint16 adr)
 
 uint8 MOS6526_2::ReadRegister(uint16 adr)
 {
-    switch (adr) {
+    switch (adr) 
+    {
         case 0x00:
             return ((pra | ~ddra) & 0x3f) | (IECLines & the_cpu_1541->IECLines);
         case 0x01: return prb | ~ddrb;
@@ -379,8 +383,6 @@ void MOS6526_1::WriteRegister(uint16 adr, uint8 byte)
             break;
 
         case 0xd:
-            if (ThePrefs.CIAIRQHack)    // Hack for addressing modes that read from the address
-                icr = 0;
             if (byte & 0x80) {
 				int_mask |= byte & 0x1f;
 				if (icr & int_mask) {	// Trigger IRQ if pending
@@ -514,8 +516,6 @@ void MOS6526_2::WriteRegister(uint16 adr, uint8 byte)
             break;
 
         case 0xd:
-            if (ThePrefs.CIAIRQHack)
-                icr = 0;
             if (byte & 0x80) {
                 int_mask |= byte & 0x7f;
                 if (icr & int_mask & 0x1f) { // Trigger NMI if pending
