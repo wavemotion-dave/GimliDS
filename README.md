@@ -38,6 +38,7 @@ and be sure they are named exactly as follows:
   * B is normally SPACE but can be remapped in Configuration
   * Y is normally mapped to RETURN but can be remapped in Configuration
   * X is normally mapped to Joy Up to help with games in which you jump but can be remapped
+  * Pressing and holding both shoulder buttons together will 'Turbo Warp' the emulator (runs as fast as it can until you release).
 
 ## Emulator Use
 
