@@ -86,6 +86,7 @@ enum
 };
 
 extern uint8 myRAM[];
+extern uint8 myCOLOR[];
 
 uint8 *MemMap[0x10]  __attribute__((section(".dtcm"))) ;
 
@@ -215,7 +216,7 @@ __attribute__ ((noinline)) uint8_t  MOS6510::read_byte_io(uint16 adr)
             case 0x9:
             case 0xa:
             case 0xb:
-                return color_ram[adr & 0x03ff] | (rand() & 0xf0);
+                return myCOLOR[adr & 0x03ff] | (rand() & 0xf0);
             case 0xc:   // CIA 1
                 return TheCIA1->ReadRegister(adr & 0x0f);
             case 0xd:   // CIA 2
@@ -299,7 +300,7 @@ __attribute__ ((noinline)) void MOS6510::write_byte_io(uint16 adr, uint8 byte)
             case 0x9:
             case 0xa:
             case 0xb:
-                color_ram[adr & 0x03ff] = byte & 0x0f;
+                myCOLOR[adr & 0x03ff] = byte & 0x0f;
                 return;
             case 0xc:   // CIA 1
                 TheCIA1->WriteRegister(adr & 0x0f, byte);
@@ -701,6 +702,12 @@ __attribute__((noinline)) void MOS6510::IntNMI(void)
     i_flag = true;
     adr = read_word(0xfffa);
     jump(adr);
+}
+
+// Called whenever a vblank occurs - resync the borrowed cycles so every frame starts fresh
+void MOS6510::VBlank(void)
+{
+    borrowed_cycles = 0;
 }
 
 /*

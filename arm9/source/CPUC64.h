@@ -72,6 +72,7 @@ public:
     void Reset(void);
     void AsyncReset(void);              // Reset the CPU asynchronously
     void AsyncNMI(void);                // Raise NMI asynchronously (NMI pulse)
+    void VBlank(void);
     void GetState(MOS6510State *s);
     void SetState(MOS6510State *s);
 

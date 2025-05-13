@@ -130,12 +130,12 @@
 
 #ifndef IS_CPU_1541 // If main C64 CPU we handle borrowed cycles
     // Main opcode fetch/execute loop
-    if (cycles_left) cycles_left -= borrowed_cycles;
+    if (cycles_left != 1) cycles_left -= borrowed_cycles;
 
     while (true)
     {
         if (page_plus_cyc) {last_cycles++; page_plus_cyc=0;}
-        if ((cycles_left -= last_cycles) < 0) 
+        if ((cycles_left -= last_cycles) <= 0) 
         {
             borrowed_cycles = -cycles_left;
             break;
@@ -147,12 +147,12 @@
     if (page_plus_cyc) {last_cycles++; page_plus_cyc=0;}
     cycle_counter += last_cycles; // In case we have any initial interrupt cycles
     
-    while ((cycles_left -= last_cycles) >= 0)
+    while ((cycles_left -= last_cycles) > 0)
     {
         // If we are 1541CPU, we want to alternate running instructions with the main CPU ...
         while (cpu_cycles > cycles_left)
         {
-            cpu_cycles -= localCPU->EmulateLine(0);
+            cpu_cycles -= localCPU->EmulateLine(1);
         }
 #endif
 
@@ -1390,7 +1390,7 @@
             illegal_op(read_byte(pc-1), pc-1);
             break;
 
-        // Extension opcode - mostly for Kernal / 1541 hooks
+        // Extension opcode - for Kernal / 1541 hooks
         case 0xf2: extended_opcode(); break;
         }
         
@@ -1402,6 +1402,6 @@
     // See if there are any straggler cycles left for the CPU
     while (cpu_cycles > 0)
     {
-        cpu_cycles -= the_c64->TheCPU->EmulateLine(0);
+        cpu_cycles -= the_c64->TheCPU->EmulateLine(1);
     }
 #endif

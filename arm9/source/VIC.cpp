@@ -452,11 +452,11 @@ void MOS6569::GetState(MOS6569State *vd)
     vd->last_vic_byte = 0;
     vd->ud_border_on = border_on;
     vd->total_frames = total_frames;
-    
+
     vd->spare1 = 0;
     vd->spare2 = 0;
     vd->spare3 = 0;
-    vd->spare4 = 0;    
+    vd->spare4 = 0;
 }
 
 
@@ -861,11 +861,12 @@ inline void MOS6569::vblank(void)
         frame_skipped = (total_frames & 1); // Skip every other...
         if (frame_skipped)
         {
-            if ((total_frames % 3) == 0) frame_skipped = 0; // But every so often toss in an odd frame
+            if ((total_frames % 3) == 0) frame_skipped = 0; // But every so often toss in an odd frame to smooth out the display
         }
     }
-    
+
     the_c64->VBlank(!frame_skipped);
+    the_c64->TheCPU->VBlank();
 }
 
 
@@ -1026,12 +1027,12 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_std_idle(uint8 *p, uint8 
     uint32 conv1 = TextColorTable[0][b0c][data&0xf].b;
     uint32 data32 = (data << 24) | (data << 16) | (data << 8) | data;
 
-    for (int i=0; i<40; i++) 
+    for (int i=0; i<40; i++)
     {
         *lp++ = conv0;
         *lp++ = conv1;
     }
-    
+
     u32 *r32 = (uint32 *)r;
     *r32++ = data32; *r32++ = data32; *r32++ = data32; *r32++ = data32; *r32++ = data32;
     *r32++ = data32; *r32++ = data32; *r32++ = data32; *r32++ = data32; *r32   = data32;
@@ -1051,7 +1052,7 @@ void MOS6569::el_mc_idle(uint8 *p, uint8 *r)
     uint16 conv0 = (lookup[(data >> 6) & 3] << 16) | lookup[(data >> 4) & 3];
     uint16 conv1 = (lookup[(data >> 2) & 3] << 16) | lookup[(data >> 0) & 3];
 
-    for (int i=0; i<40; i++) 
+    for (int i=0; i<40; i++)
     {
         *++lp = conv0;
         *++lp = conv1;
@@ -1081,7 +1082,7 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_sprites(uint8 *chunky_ptr
             // Fetch sprite data and mask
             uint8_t *sdatap = get_physical(matrix_base[0x3f8 + snum] << 6 | (mc[snum]*3));
             uint32_t sdata = (*sdatap << 24) | (*(sdatap+1) << 16) | (*(sdatap+2) << 8);
-            
+
             if (!sdata) continue; // No data... no draw... no collision...
 
             uint8_t color = spr_color[snum];
@@ -1407,15 +1408,13 @@ int MOS6569::EmulateLine(void)
     unsigned int raster = raster_y+1;
 
     // End of screen reached?
-    if (raster != TOTAL_RASTERS)
+    if (raster == TOTAL_RASTERS)
     {
-        raster_y = raster;
+        vblank();       // Yes, enter vblank - new frame coming up
+        raster = 0;     // Start back at line 0
     }
-    else  // Yes, enter vblank - new frame coming up
-    {
-        vblank();
-        raster = 0;
-    }
+
+    raster_y = raster;
 
     // Trigger raster IRQ if IRQ line reached
     if (raster == irq_raster)
@@ -1428,7 +1427,7 @@ int MOS6569::EmulateLine(void)
     // Skip frame? Only calculate Bad Lines then
     if (frame_skipped)
     {
-        if (raster >= FIRST_DMA_LINE && raster <= LAST_DMA_LINE && ((raster & 7) == y_scroll) && bad_lines_enabled) 
+        if (raster >= FIRST_DMA_LINE && raster <= LAST_DMA_LINE && ((raster & 7) == y_scroll) && bad_lines_enabled)
         {
             is_bad_line = true;
             cycles_left = BAD_CYCLES_PER_LINE + CycleDeltas[myConfig.cpuCycles] + CycleDeltas[myConfig.badCycles];
@@ -1460,7 +1459,7 @@ int MOS6569::EmulateLine(void)
             uint8 *cp = color_line;
             uint8 *mbp = matrix_base + vc;
             uint8 *crp = color_ram + vc;
-            
+
             // If we're on a 32-bit boundary, copy faster...
             if ((((u32)mbp & 3) == 0) && (((u32)crp & 3) == 0))
             {
@@ -1589,12 +1588,12 @@ int MOS6569::EmulateLine(void)
                     case 0:     // Standard text
                     case 1:     // Multicolor text
                     case 4:     // ECM text
-                        if (x_scroll & 3) 
+                        if (x_scroll & 3)
                         {
                             el_std_idle(text_chunky_buf, r);
                             // Experimentally, this is slightly faster than memcpy()
                             u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
-                        } 
+                        }
                         else
                         {
                             el_std_idle(p, r);
@@ -1602,7 +1601,7 @@ int MOS6569::EmulateLine(void)
                         break;
 
                     case 3:     // Multicolor bitmap
-                        if (x_scroll & 3) 
+                        if (x_scroll & 3)
                         {
                             el_mc_idle(text_chunky_buf, r);
                             // Experimentally, this is slightly faster than memcpy()
@@ -1690,7 +1689,7 @@ int MOS6569::EmulateLine(void)
         }
 
         // Increment row counter, go to idle state on overflow
-        if (rc == 7) 
+        if (rc == 7)
         {
             display_state = false;
             vc_base = vc;

@@ -58,11 +58,12 @@ uint8 myRAM[C64_RAM_SIZE];
 uint8 myKERNAL[KERNAL_ROM_SIZE];
 uint8 myBASIC[BASIC_ROM_SIZE];
 uint8 myRAM1541[DRIVE_RAM_SIZE] __attribute__((section(".dtcm")));
+uint8 myCOLOR[0x400]            __attribute__((section(".dtcm")));
 
 uint8 bTurboWarp __attribute__((section(".dtcm"))) = 0;
 uint8 cart_in    __attribute__((section(".dtcm"))) = 0;
 
-MOS6510 myCPU     __attribute__((section(".dtcm")));  // Put the entire CPU object into fast memory...
+MOS6510 myCPU    __attribute__((section(".dtcm")));  // Put the entire CPU object into fast memory...
 
 C64 *gTheC64 = nullptr;
 
@@ -77,7 +78,7 @@ C64::C64()
 {
     quit_thyself = false;
     have_a_break = false;
-    
+
     gTheC64 = this;
 
     // System-dependent things
@@ -91,7 +92,7 @@ C64::C64()
     Basic = myBASIC;
     Kernal = myKERNAL;
     Char = new uint8[CHAR_ROM_SIZE];
-    Color = new uint8[COLOR_RAM_SIZE];
+    Color = myCOLOR;
     RAM1541 = myRAM1541;
     ROM1541 = new uint8[DRIVE_ROM_SIZE];
 
@@ -123,7 +124,7 @@ void C64::InitMemory(void)
 {
     // Clear all of memory...
     memset(RAM, 0x00, sizeof(myRAM));
-    
+
     // Then Initialize RAM with powerup pattern
     // Sampled from a PAL C64 (Assy 250425) with Fujitsu MB8264A-15 DRAM chips
     uint8_t *p = RAM;
@@ -184,7 +185,6 @@ C64::~C64()
     delete TheREU;
 
     delete[] Char;
-    delete[] Color;
     delete[] ROM1541;
 
     c64_dtor();
@@ -208,7 +208,7 @@ void C64::Reset(void)
     TheVIC->Reset();
     TheCart->Reset();
     if (myConfig.reuType) TheREU->Reset();
-    
+
     bTurboWarp = 0;
 }
 
@@ -223,16 +223,16 @@ void C64::NMI(void)
 }
 
 /*
- *  Load PRG file directly into memory
+ *  Inject PRG file directly into memory
  */
- 
-void C64::LoadPRG(char *filename) 
+
+void C64::LoadPRG(char *filename)
 {
     FILE *fp = fopen(filename, "rb");
     if (fp)
     {
         int prg_size = fread(CompressBuffer, 1, sizeof(CompressBuffer), fp);
-        
+
         uint8 start_hi, start_lo;
         uint16 start;
         int i;
@@ -242,7 +242,7 @@ void C64::LoadPRG(char *filename)
         start_hi=*prg++;
         start=(start_hi<<8)+start_lo;
 
-        for(i=0; i<(prg_size-2); i++) 
+        for(i=0; i<(prg_size-2); i++)
         {
             myRAM[start+i]=prg[i];
         }
@@ -262,23 +262,23 @@ void C64::NewPrefs(Prefs *prefs)
     TheDisplay->NewPrefs(prefs);
 
     // Changed order of calls. If 1541 mode hasn't changed the order is insignificant.
-    if (prefs->TrueDrive) 
+    if (prefs->TrueDrive)
     {
         // New prefs have 1541 enabled ==> if old prefs had disabled free drives FIRST
         TheIEC->NewPrefs(prefs);
         TheJob1541->NewPrefs(prefs);
     }
-    else 
+    else
     {
         // New prefs has 1541 disabled ==> if old prefs had enabled free job FIRST
         TheJob1541->NewPrefs(prefs);
         TheIEC->NewPrefs(prefs);
     }
-    
+
     TheSID->NewPrefs(prefs);
 
     // Reset 1541 processor if turned on or off (to bring IEC lines back to sane state)
-    if (ThePrefs.TrueDrive != prefs->TrueDrive) 
+    if (ThePrefs.TrueDrive != prefs->TrueDrive)
     {
         TheCPU1541->AsyncReset();
     }
@@ -613,7 +613,7 @@ bool C64::SaveREUState(FILE *f)
     {
         REUState state;
         TheREU->GetState(&state);
-        
+
         // ---------------------------------------------------------
         // Compress the REU RAM data using 'high' compression ratio...
         // ---------------------------------------------------------
@@ -624,7 +624,7 @@ bool C64::SaveREUState(FILE *f)
         i += fwrite(&comp_len,        sizeof(comp_len), 1, f);
         i += fwrite(&CompressBuffer,  comp_len,         1, f);
         i += fwrite((void*)&state,    sizeof(state),    1, f);
-        
+
         return (i == 3) ? true:false;
     }
     else
@@ -989,9 +989,9 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
 
     TheCIA1->Joystick1 = poll_joystick(0);
     TheCIA1->Joystick2 = poll_joystick(1);
-    
+
     TheCIA1->CountTOD();
-    TheCIA2->CountTOD();    
+    TheCIA2->CountTOD();
 
     frames++;
     while (GetTicks() < (((unsigned int)TICKS_PER_SEC/(unsigned int)50) * (unsigned int)frames))
@@ -1059,29 +1059,29 @@ uint8 C64::poll_joystick(int port)
     u8 joy_right = 0;
     u8 joy_fire  = 0;
     u8 mappable_key_press[8] = {0,0,0,0,0,0,0,0};
-    
+
     if (keys & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_X | KEY_Y))
     {
         if (myConfig.joyMode == JOYMODE_SLIDE_N_GLIDE)
         {
             if (keys & KEY_UP)
             {
-                slide_n_glide_key_up    = 12;
+                slide_n_glide_key_up    = 20;
                 slide_n_glide_key_down  = 0;
             }
             if (keys & KEY_DOWN)
             {
-                slide_n_glide_key_down  = 12;
+                slide_n_glide_key_down  = 20;
                 slide_n_glide_key_up    = 0;
             }
             if (keys & KEY_LEFT)
             {
-                slide_n_glide_key_left  = 12;
+                slide_n_glide_key_left  = 20;
                 slide_n_glide_key_right = 0;
             }
             if (keys & KEY_RIGHT)
             {
-                slide_n_glide_key_right = 12;
+                slide_n_glide_key_right = 20;
                 slide_n_glide_key_left  = 0;
             }
 
@@ -1109,7 +1109,7 @@ uint8 C64::poll_joystick(int port)
                 keys |= KEY_RIGHT;
             }
         }
-        
+
         if (keys & KEY_UP)    mappable_key_press[0] = 1;
         if (keys & KEY_DOWN)  mappable_key_press[1] = 1;
         if (keys & KEY_LEFT)  mappable_key_press[2] = 1;
@@ -1190,7 +1190,7 @@ uint8 C64::poll_joystick(int port)
                         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
                     }
                     break;
-                    
+
                 // Handle all other keypresses... mark the key as pressed for the PollKeyboard() routine
                 default:
                     TheDisplay->IssueKeypress(key_row_map[myConfig.key_map[i]-8], key_col_map[myConfig.key_map[i]-8], TheCIA1->KeyMatrix, TheCIA1->RevMatrix);
@@ -1276,8 +1276,8 @@ uint8 C64::poll_joystick(int port)
 
     if (!dampen) // Handle joystick
     {
-        // Handle the joystick input... never dampen this!
-        if(port != myConfig.joyPort) return j;
+        // Make sure this is the configured joystick...
+        if (port != myConfig.joyPort) return j;
 
         if( joy_up )           j&=0xfe; // Up
         if( joy_down )         j&=0xfd; // Down

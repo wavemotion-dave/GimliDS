@@ -9,7 +9,7 @@ include $(DEVKITARM)/ds_rules
 
 export TARGET		:=	GimliDS
 export TOPDIR		:=	$(CURDIR)
-export VERSION		:=  1.1a
+export VERSION		:=  1.1b
 
 ICON 		:= -b $(CURDIR)/C64_icon.bmp "GimliDS $(VERSION);wavemotion-dave;https://github.com/wavemotion-dave/GimliDS" 
 
