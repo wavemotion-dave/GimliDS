@@ -15,7 +15,7 @@
 // The GimliDS emulator is offered as-is, without any warranty. Please see readme.md
 // =====================================================================================
 
-// Main Menu Loading Code
+// Main Menu Loading Code and Configuration Settings for the DS/XL/LL
 
 #include <nds.h>
 #include <fat.h>
@@ -47,8 +47,7 @@ extern void BottomScreenMainMenu(void);
 #define MENU_ACTION_SAVE_STATE      2   // Save State
 #define MENU_ACTION_LOAD_STATE      3   // Load State
 #define MENU_ACTION_CONFIG          4   // Configure Game
-#define MENU_ACTION_PRESS_C64       5   // Issue the actual C= key!
-#define MENU_ACTION_QUIT_EMU        6   // Exit Emulator
+#define MENU_ACTION_QUIT_EMU        5   // Exit Emulator
 #define MENU_ACTION_SKIP            99  // Skip this MENU choice
 
 typedef struct
@@ -169,12 +168,6 @@ u8 MainMenu(C64 *the_c64)
             {
                 case MENU_ACTION_QUIT_EMU:
                     exit(0);
-                    break;
-                    
-                case MENU_ACTION_PRESS_C64:
-                    extern u8 issue_commodore_key;
-                    issue_commodore_key = 1;
-                    bExitMenu = true;
                     break;
                     
                 case MENU_ACTION_RESET_EMU:
@@ -376,7 +369,7 @@ void SetDefaultGameConfig(void)
     myConfig.trueDrive   = 0;                // Fast 1541 emulation by default
     myConfig.jitter      = 1;                // Medium level of jitter
     myConfig.diskSFX     = 1;                // Disk sound effects on
-    myConfig.joyPort     = 0;                // Default to Joy1
+    myConfig.joyPort     = 1;                // Default to Joy2 (it's a toss-up but more than 50% use Joy2)
     myConfig.joyMode     = 0;                // Default is normal joypad / dpad
     myConfig.poundKey    = 0;                // Default is Pound Key!
     myConfig.reuType     = 0;                // No REU by default

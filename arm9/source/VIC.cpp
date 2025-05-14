@@ -84,7 +84,7 @@
 
 // First and last displayed line
 const unsigned FIRST_DISP_LINE = 0x20;
-const unsigned LAST_DISP_LINE = 0x110;
+const unsigned LAST_DISP_LINE = 0x114;
 
 // First and last possible line for Bad Lines
 const unsigned FIRST_DMA_LINE = 0x30;
@@ -262,8 +262,8 @@ static u8   display_state               __attribute__((section(".dtcm")));     /
 static u8   border_on                   __attribute__((section(".dtcm")));     // Flag: Upper/lower border on
 static u8   border_40_col               __attribute__((section(".dtcm")));     // Flag: 40 column border
 static u8   frame_skipped               __attribute__((section(".dtcm")));     // Flag: Frame is being skipped
-static uint8 bad_lines_enabled          __attribute__((section(".dtcm")));     // Flag: Bad Lines enabled for this frame
-static bool lp_triggered                __attribute__((section(".dtcm")));     // Flag: Lightpen was triggered in this frame
+static u8   bad_lines_enabled           __attribute__((section(".dtcm")));     // Flag: Bad Lines enabled for this frame
+static u8   lp_triggered                __attribute__((section(".dtcm")));     // Flag: Lightpen was triggered in this frame
 
 static u32  total_frames                __attribute__((section(".dtcm")));     // Total frames - used for consistent frame skip on DS-Lite
 

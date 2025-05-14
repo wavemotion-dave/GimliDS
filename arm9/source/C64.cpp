@@ -54,18 +54,19 @@
 #include <maxmod9.h>
 #include "soundbank.h"
 
+// Slight speed improvement to have these in global memory where the address is fixed at linker time
 uint8 myRAM[C64_RAM_SIZE];
 uint8 myKERNAL[KERNAL_ROM_SIZE];
 uint8 myBASIC[BASIC_ROM_SIZE];
-uint8 myRAM1541[DRIVE_RAM_SIZE] __attribute__((section(".dtcm")));
-uint8 myCOLOR[0x400]            __attribute__((section(".dtcm")));
+uint8 myRAM1541[DRIVE_RAM_SIZE] __attribute__((section(".dtcm")));  // Small enough to keep in fast memory
+uint8 myCOLOR[0x400]            __attribute__((section(".dtcm")));  // Small enough to keep in fast memory
 
-uint8 bTurboWarp __attribute__((section(".dtcm"))) = 0;
-uint8 cart_in    __attribute__((section(".dtcm"))) = 0;
+uint8 bTurboWarp __attribute__((section(".dtcm"))) = 0; // Run the CPU as fast as possible
+uint8 cart_in    __attribute__((section(".dtcm"))) = 0; // Will be set to '1' if CART is inserted
 
 MOS6510 myCPU    __attribute__((section(".dtcm")));  // Put the entire CPU object into fast memory...
 
-C64 *gTheC64 = nullptr;
+C64 *gTheC64 = nullptr; // For occasional access in other classes without having to pass it around
 
 u8 CompressBuffer[300*1024]; //300K more than enough (might need to compress RDU at 256K)
 
@@ -111,6 +112,7 @@ C64::C64()
     TheCart = TheCPU->TheCart = new Cartridge();
     TheREU  = TheCPU->TheREU  = new REU(TheCPU);
 
+    // Initialize main C64 memory
     InitMemory();
 
     // Clear joykey
@@ -887,17 +889,11 @@ void Pause(uint32 ms)
 }
 
 
-int frames_per_sec=0;
-
-#ifndef HAVE_USLEEP
-
 int usleep(unsigned long int microSeconds)
 {
     Pause(microSeconds);
     return 0;
 }
-#endif
-
 
 /*
  *  Constructor, system-dependent things
@@ -980,6 +976,7 @@ void kbd_buf_update(C64 *TheC64)
 ITCM_CODE void C64::VBlank(bool draw_frame)
 {
     static int frames=0;
+    static int frames_per_sec=0;
 
     scanKeys();
     kbd_buf_update(this);
@@ -1000,10 +997,10 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
 
     frames_per_sec++;
 
-    extern u16 vBlanks;
-    if (vBlanks >= 60)
+    extern u16 DSIvBlanks;
+    if (DSIvBlanks >= 60)
     {
-        vBlanks = 0;
+        DSIvBlanks = 0;
         TheDisplay->Speedometer((int)frames_per_sec);
         frames_per_sec = 0;
     }
@@ -1292,6 +1289,10 @@ uint8 C64::poll_joystick(int port)
     return j;
 }
 
+/*
+ * C64 .crt Cart Insert
+ */
+
 void C64::InsertCart(char *filename)
 {
 	Cartridge * new_cart = nullptr;
@@ -1314,11 +1315,17 @@ void C64::InsertCart(char *filename)
     }
 }
 
+/*
+ * C64 .crt Cart Remove
+ */
+
 void C64::RemoveCart(void)
 {
     extern u8 cart_in;
     delete TheCart;
     TheCart = TheCPU->TheCart = new Cartridge();
+    extern char CartFilename[];
+    strcpy(CartFilename, "");
     cart_in = 0;
 }
 
