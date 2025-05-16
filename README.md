@@ -158,6 +158,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
 
+Version 1.2 release 16-May-2025 by wavemotion-dave
+  * Added new DIAGONALS joystick mode for a few Q-Bert clones.
+  * Slide-n-Glide joystick mode made more responsive.
+  * Extended visual display by 4 pixels for a few games that utilize long screen renderings.
+  * Minor tweaks and efficiency improvements under the hood.
+
 Version 1.1 release 11-May-2025 by wavemotion-dave
   * Fix to CIA vars initialization so games like Chuckie Egg start properly.
   * Fix to TOD clock counters (previous versions would not clock at all... fixes some utilities mostly).

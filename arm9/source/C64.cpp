@@ -1255,6 +1255,14 @@ uint8 C64::poll_joystick(int port)
             if (myConfig.scaleX < 320) myConfig.scaleX++;
         }
     }
+    
+    if (myConfig.joyMode == JOYMODE_DIAGONALS)
+    {
+             if (joy_up)    {joy_right = 1;}
+        else if (joy_down)  {joy_left  = 1;}
+        else if (joy_left)  {joy_up    = 1;}
+        else if (joy_right) {joy_down  = 1;}
+    }
 
     if( (keys & KEY_SELECT) && !dampen)
     {

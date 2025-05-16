@@ -369,7 +369,7 @@ void SetDefaultGameConfig(void)
     myConfig.trueDrive   = 0;                // Fast 1541 emulation by default
     myConfig.jitter      = 1;                // Medium level of jitter
     myConfig.diskSFX     = 1;                // Disk sound effects on
-    myConfig.joyPort     = 1;                // Default to Joy2 (it's a toss-up but more than 50% use Joy2)
+    myConfig.joyPort     = 0;                // Default to Joy1 (it's a toss-up but feels more natural)
     myConfig.joyMode     = 0;                // Default is normal joypad / dpad
     myConfig.poundKey    = 0;                // Default is Pound Key!
     myConfig.reuType     = 0;                // No REU by default
@@ -581,7 +581,7 @@ const struct options_t Option_Table[1][20] =
         {"TRUE DRIVE",     {"DISABLE (FAST)", "ENABLED (SLOW)"},                                        &myConfig.trueDrive,   2},
         {"REU TYPE",       {"NONE", "REU-1764 256K"},                                                   &myConfig.reuType,     2},        
         {"JOY PORT",       {"PORT 1", "PORT 2"},                                                        &myConfig.joyPort,     2},
-        {"JOY MODE",       {"NORMAL", "SLIDE-N-GLIDE"},                                                 &myConfig.joyMode,     2},        
+        {"JOY MODE",       {"NORMAL", "SLIDE-N-GLIDE", "DIAGONALS"},                                    &myConfig.joyMode,     3},
         {"LCD JITTER",     {"NONE", "LIGHT", "HEAVY"},                                                  &myConfig.jitter,      3},
         {"DISK SOUND",     {"SFX OFF", "SFX ON"},                                                       &myConfig.diskSFX,     2},
         {"CPU CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.cpuCycles,   19},

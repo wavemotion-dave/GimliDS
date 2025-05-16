@@ -104,6 +104,7 @@ extern struct Config_t  myConfig;
 
 #define JOYMODE_NORMAL          0
 #define JOYMODE_SLIDE_N_GLIDE   1
+#define JOYMODE_DIAGONALS       2
 
 extern u32 getCRC32(u8 *buf, int size);
 extern u32 file_crc;

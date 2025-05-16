@@ -144,6 +144,8 @@ int main(int argc, char **argv)
     if (!init_graphics())
         return 0;
 
+    srand(time(NULL));
+    
     LoadConfig();
 
     the_app = new Frodo();
