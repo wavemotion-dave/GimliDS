@@ -93,6 +93,7 @@ public:
     void InsertCart(char *filename);
     void RemoveCart(void);
     void LoadPRG(char *filename);
+    void SetBrightness(void);
 
     uint8 *RAM, *Basic, *Kernal, *Char, *Color; // C64
     uint8 *RAM1541, *ROM1541;   // 1541

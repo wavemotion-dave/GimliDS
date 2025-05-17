@@ -1,6 +1,6 @@
 
-#define MAX_CONFIGS                 960
-#define CONFIG_VERSION              0x0006
+#define MAX_CONFIGS                 1920
+#define CONFIG_VERSION              0x0007
 
 extern s16 CycleDeltas[];
 
@@ -28,7 +28,30 @@ struct __attribute__((__packed__)) Config_t
     s16 scaleY;
 };
 
-extern struct Config_t  myConfig;
+struct __attribute__((__packed__)) GlobalConfig_t
+{
+    u8  defaultX;
+    u8  defaultY;
+    u8  defaultB;
+    u8  defaultDiskSFX;
+    u8  defaultJoyPort;
+    u8  defaultPoundKey;
+    u8  keyboardDim;
+    u8  reserved0;
+    u8  reserved1;
+    u8  reserved2;
+    u8  reserved3;
+    u8  reserved4;
+    u8  reserved5;
+    u8  reserved6;
+    u8  reserved7;
+    u8  reserved8;
+    u8  reserved9;
+    u8  reserved10;
+};
+
+extern struct Config_t        myConfig;
+extern struct GlobalConfig_t  myGlobalConfig;
 
 #define KEY_MAP_JOY_FIRE   0
 #define KEY_MAP_JOY_UP     1

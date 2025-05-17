@@ -31,11 +31,18 @@
 #include "mainmenu.h"
 #include "mainmenu_bg.h"
 #include "Prefs.h"
+#include "Display.h"
 
 extern C64 *TheC64;
 extern int bg0b, bg1b;
 static u16 nds_key;
+extern char strBuf[];
+u32 file_crc = 0x00000000;
+u8 option_table = 0;
 extern void BottomScreenMainMenu(void);
+
+// Used with myConfig.cpuCycles and myConfig.badCycles
+s16 CycleDeltas[] = {0,1,2,3,4,5,6,7,8,9,-9,-8,-7,-6,-5,-4,-3,-2,-1};
 
 // ----------------------------------------------------------------------
 // The Disk Menu can be called up directly from the keyboard graphic
@@ -47,7 +54,9 @@ extern void BottomScreenMainMenu(void);
 #define MENU_ACTION_SAVE_STATE      2   // Save State
 #define MENU_ACTION_LOAD_STATE      3   // Load State
 #define MENU_ACTION_CONFIG          4   // Configure Game
-#define MENU_ACTION_QUIT_EMU        5   // Exit Emulator
+#define MENU_ACTION_GLOBAL_CONFIG   5   // Global Config
+#define MENU_ACTION_LCD_SWAP        6   // Swap upper/lower LCD
+#define MENU_ACTION_QUIT_EMU        7   // Exit Emulator
 #define MENU_ACTION_SKIP            99  // Skip this MENU choice
 
 typedef struct
@@ -60,7 +69,7 @@ typedef struct
 {
     char *title;
     u8   start_row;
-    MenuItem_t menulist[15];
+    MenuItem_t menulist[12];
 } MainMenu_t;
 
 MainMenu_t main_menu =
@@ -70,6 +79,8 @@ MainMenu_t main_menu =
         {(char *)"  CONFIG   GAME   ",      MENU_ACTION_CONFIG},
         {(char *)"  SAVE     STATE  ",      MENU_ACTION_SAVE_STATE},
         {(char *)"  LOAD     STATE  ",      MENU_ACTION_LOAD_STATE},
+        {(char *)"  GLOBAL   CONFIG ",      MENU_ACTION_GLOBAL_CONFIG},
+        {(char *)"  LCD      SWAP   ",      MENU_ACTION_LCD_SWAP},
         {(char *)"  RESET    C64    ",      MENU_ACTION_RESET_EMU},
         {(char *)"  QUIT     GIMLIDS",      MENU_ACTION_QUIT_EMU},        
         {(char *)"  EXIT     MENU   ",      MENU_ACTION_EXIT},
@@ -137,6 +148,7 @@ u8 MainMenu(C64 *the_c64)
   u8 bExitMenu = false;
   while (true)
   {
+    currentBrightness = 0;
     nds_key = keysCurrent();
     if (nds_key)
     {
@@ -178,6 +190,7 @@ u8 MainMenu(C64 *the_c64)
                     break;
                     
                 case MENU_ACTION_CONFIG:
+                    option_table = 0;
                     if (file_crc != 0x00000000)
                     {
                         u8 last_trueDrive = myConfig.trueDrive;
@@ -200,6 +213,18 @@ u8 MainMenu(C64 *the_c64)
                         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
                         DSPrint(0, 18, 6, (char*)"                              ");
                     }
+                    break;
+                    
+                case MENU_ACTION_LCD_SWAP:
+                    lcdSwap();
+                    WAITVBL;WAITVBL;
+                    bExitMenu = true;
+                    break;
+
+                case MENU_ACTION_GLOBAL_CONFIG:
+                    option_table = 1;
+                    GimliDSGameOptions();
+                    bExitMenu = true;
                     break;
                     
                 case MENU_ACTION_SAVE_STATE:
@@ -287,7 +312,9 @@ u8 MainMenu(C64 *the_c64)
 }
 
 
-// zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+// ===================
+// CONFIGURATION AREA
+// ===================
 
 #define CRC32_POLY 0x04C11DB7
 
@@ -341,13 +368,31 @@ u32 getCRC32(u8 *buf, int size)
     return ~crc;
 }
 
-extern char strBuf[];
-u32 file_crc = 0x00000000;
-u8 option_table=0;
-
 struct Config_t AllConfigs[MAX_CONFIGS];
 struct Config_t myConfig __attribute((aligned(4))) __attribute__((section(".dtcm")));
+struct GlobalConfig_t myGlobalConfig;
 
+void SetDefaultGlobalConfig(void)
+{
+    myGlobalConfig.defaultB = KEY_MAP_SPACE;
+    myGlobalConfig.defaultX = KEY_MAP_JOY_UP;
+    myGlobalConfig.defaultY = KEY_MAP_RETURN;
+    myGlobalConfig.defaultDiskSFX = 1;
+    myGlobalConfig.defaultPoundKey = 0;
+    myGlobalConfig.defaultJoyPort = 1;
+    myGlobalConfig.keyboardDim = 0;
+    myGlobalConfig.reserved0 = 0;
+    myGlobalConfig.reserved1 = 0;
+    myGlobalConfig.reserved2 = 0;
+    myGlobalConfig.reserved3 = 0;
+    myGlobalConfig.reserved4 = 0;
+    myGlobalConfig.reserved5 = 0;
+    myGlobalConfig.reserved6 = 0;
+    myGlobalConfig.reserved7 = 0;
+    myGlobalConfig.reserved8 = 0;
+    myGlobalConfig.reserved9 = 0;
+    myGlobalConfig.reserved10 = 1;
+}
 
 void SetDefaultGameConfig(void)
 {
@@ -359,19 +404,20 @@ void SetDefaultGameConfig(void)
     myConfig.key_map[3]  = KEY_MAP_JOY_RIGHT;// D-Pad Right
 
     myConfig.key_map[4]  = KEY_MAP_JOY_FIRE; // A = Fire Button
-    myConfig.key_map[5]  = KEY_MAP_SPACE;    // B = SPACE key
-    myConfig.key_map[6]  = KEY_MAP_JOY_UP;   // X = Joy Up
-    myConfig.key_map[7]  = KEY_MAP_RETURN;   // Y = RETURN key
+    myConfig.key_map[5]  = myGlobalConfig.defaultB; // B = Use Global - def is SPACE key
+    myConfig.key_map[6]  = myGlobalConfig.defaultX; // X = Use Global - def is Joy Up
+    myConfig.key_map[7]  = myGlobalConfig.defaultY; // Y = Use Global - def is RETURN key
     
     myConfig.key_map[8]  = KEY_MAP_SPACE;    // Spare 1
     myConfig.key_map[9]  = KEY_MAP_SPACE;    // Spare 2
     
+    myConfig.diskSFX     = myGlobalConfig.defaultDiskSFX;  // Disk sound effects on
+    myConfig.joyPort     = myGlobalConfig.defaultJoyPort;  // Default to Joy2 (it's a toss-up but more than half use port 2)
+    myConfig.poundKey    = myGlobalConfig.defaultPoundKey; // Default is Pound Key!
+
     myConfig.trueDrive   = 0;                // Fast 1541 emulation by default
     myConfig.jitter      = 1;                // Medium level of jitter
-    myConfig.diskSFX     = 1;                // Disk sound effects on
-    myConfig.joyPort     = 0;                // Default to Joy1 (it's a toss-up but feels more natural)
     myConfig.joyMode     = 0;                // Default is normal joypad / dpad
-    myConfig.poundKey    = 0;                // Default is Pound Key!
     myConfig.reuType     = 0;                // No REU by default
     myConfig.reserved4   = 0;
     myConfig.reserved5   = 0;
@@ -386,8 +432,6 @@ void SetDefaultGameConfig(void)
     myConfig.scaleX      = 256;             // Scale the 320 pixels of C64 display to the DS 256 pixels (squashed... booo!)
     myConfig.scaleY      = 200;             // Scale the 200 pixels of C64 display to the DS 200 (yes, there is only 192 so this will cut... use PAN UP/DN)
 }
-
-s16 CycleDeltas[] = {0,1,2,3,4,5,6,7,8,9,-9,-8,-7,-6,-5,-4,-3,-2,-1};  // Used with myConfig.cpuCycles and myConfig.badCycles
 
 // ----------------------------------------------------------------------
 // Read file twice and ensure we get the same CRC... if not, do it again
@@ -483,8 +527,9 @@ void SaveConfig(bool bShow)
     if (fp != NULL)
     {
         u16 ver = CONFIG_VERSION;
-        fwrite(&ver, sizeof(ver), 1, fp);                   // Write the config version
-        fwrite(&AllConfigs, sizeof(AllConfigs), 1, fp);     // Write the array of all configurations
+        fwrite(&ver, sizeof(ver), 1, fp);                       // Write the config version
+        fwrite(&myGlobalConfig, sizeof(myGlobalConfig), 1, fp); // Write the global configuration
+        fwrite(&AllConfigs, sizeof(AllConfigs), 1, fp);         // Write the array of all configurations
         fclose(fp);
     } else DSPrint(4,3,0, (char*)"ERROR SAVING CONFIG FILE");
 
@@ -509,10 +554,25 @@ void LoadConfig(void)
     u16 ver = 0x0000;
     if (ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&ver, sizeof(ver), 0))  // Read Global Config
     {
-        ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&AllConfigs, sizeof(AllConfigs), sizeof(ver)); // Read the full game array of configs
-
+        if (ver == 0x0006) // One time upgrade - add global config and double the size of the AllConfigs[] array
+        {
+             memset(&myGlobalConfig, 0x00, sizeof(myGlobalConfig));
+             SetDefaultGlobalConfig();
+             memset(&AllConfigs, 0x00, sizeof(AllConfigs));
+             ver = CONFIG_VERSION;
+             ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&AllConfigs, sizeof(AllConfigs)/2, sizeof(ver)); // Read the full game array of configs
+             SaveConfig(false);            
+        }
+        else
+        {
+            ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&myGlobalConfig, sizeof(myGlobalConfig), sizeof(ver));  // Read the global config 
+            ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&AllConfigs, sizeof(AllConfigs), sizeof(myGlobalConfig)); // Read the full game array of configs
+        }
+        
         if (ver != CONFIG_VERSION)
         {
+            memset(&myGlobalConfig, 0x00, sizeof(myGlobalConfig));
+            SetDefaultGlobalConfig();
             memset(&AllConfigs, 0x00, sizeof(AllConfigs));
             SetDefaultGameConfig();
             SaveConfig(FALSE);
@@ -520,6 +580,8 @@ void LoadConfig(void)
     }
     else    // Not found... init the entire database...
     {
+        memset(&myGlobalConfig, 0x00, sizeof(myGlobalConfig));
+        SetDefaultGlobalConfig();
         memset(&AllConfigs, 0x00, sizeof(AllConfigs));
         SetDefaultGameConfig();
         SaveConfig(FALSE);
@@ -574,7 +636,7 @@ struct options_t
                         "PAN-UP 16", "PAN-UP 24", "PAN-DOWN 16", "PAN-DOWN 24", "ZOOM TOGGLE"
                         
 
-const struct options_t Option_Table[1][20] =
+const struct options_t Option_Table[2][20] =
 {
     // Game Specific Configuration
     {
@@ -598,8 +660,21 @@ const struct options_t Option_Table[1][20] =
         {"X BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[6],  65},
         {"Y BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[7],  65},
         
-        {NULL,             {"",      ""},                                                               NULL,                  1},
-    }
+        {NULL,             {"",      ""},                                                               NULL,                  1}
+    },
+    // Global Configuration
+    {
+        {"DEF JOY PORT",       {"PORT 1", "PORT 2"},                                                    &myGlobalConfig.defaultJoyPort,     2},
+        {"DEF DSK SFX",        {"SFX OFF", "SFX ON"},                                                   &myGlobalConfig.defaultDiskSFX,     2},
+        {"DEF PND KEY",        {"POUND", "LEFT ARROW", "UP ARROW", "C= COMMODORE"},                     &myGlobalConfig.defaultPoundKey,    4},
+        {"KEYBD BRIGHT",       {"MAX BRIGHT", "DIM", "DIMMER", "DIMMEST"},                              &myGlobalConfig.keyboardDim,        4},
+        
+        {"DEF KEY B",          {KEY_MAP_OPTIONS},                                                       &myGlobalConfig.defaultB,           65},
+        {"DEF KEY X",          {KEY_MAP_OPTIONS},                                                       &myGlobalConfig.defaultX,           65},
+        {"DEF KEY Y",          {KEY_MAP_OPTIONS},                                                       &myGlobalConfig.defaultY,           65},
+        
+        {NULL,                 {"",      ""},                                                           NULL,                               1}
+    }    
 };
 
 
@@ -643,16 +718,16 @@ void GimliDSGameOptions(void)
     int keys_pressed;
     int last_keys_pressed = 999;
 
-    option_table = 0;
-
     idx=display_options_list(true);
     optionHighlighted = 0;
     while (keysCurrent() != 0)
     {
+        currentBrightness = 0;
         WAITVBL;
     }
     while (!bDone)
     {
+        currentBrightness = 0;
         keys_pressed = keysCurrent();
         if (keys_pressed != last_keys_pressed)
         {
@@ -701,7 +776,7 @@ void GimliDSGameOptions(void)
         }
         swiWaitForVBlank();
     }
-
+    
     // Give a third of a second time delay...
     for (int i=0; i<20; i++)
     {

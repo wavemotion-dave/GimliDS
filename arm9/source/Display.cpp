@@ -63,6 +63,7 @@ uint8_t palette_blue[16] = {
     0x00, 0xff, 0x38, 0xc8, 0x97, 0x4d, 0x9b, 0x71, 0x29, 0x00, 0x71, 0x4a, 0x7b, 0x9f, 0xeb, 0xb2
 };
 
+static uint16 dimDampen = 0;
 
 u8 last_drive_access_type = 0;
 void floppy_soundfx(u8 type)
@@ -252,6 +253,7 @@ C64Display::~C64Display()
 void C64Display::NewPrefs(Prefs *prefs)
 {
     floppy_sound_counter = 50; // One seconds of no floppy sound...
+    dimDampen = 0;
 }
 
 u8 JITTER[]       __attribute__((section(".dtcm"))) = {0, 64, 128};
@@ -259,7 +261,22 @@ s16 temp_offset   __attribute__((section(".dtcm"))) = 0;
 u16 slide_dampen  __attribute__((section(".dtcm"))) = 0;
 u16 DSIvBlanks    __attribute__((section(".dtcm"))) = 0;
 
-ITCM_CODE void vblankIntr(void)
+int8 currentBrightness = 0;
+const int8 brightness[] = {0, -6, -12, -15};
+
+__attribute__ ((noinline)) void HandleBrightness(void)
+{
+    if (currentBrightness == 0) setBrightness(2, currentBrightness);
+    if (++dimDampen > ((currentBrightness == 0) ? 400 : 15))
+    {
+        if (currentBrightness < brightness[myGlobalConfig.keyboardDim]) currentBrightness++; else currentBrightness--;
+        setBrightness(2, currentBrightness);      // Subscreen Brightness
+        dimDampen = 0;
+    }
+}
+
+
+ITCM_CODE void vblankDS(void)
 {
     DSIvBlanks++;
     int cxBG = ((s16)myConfig.offsetX << 8);
@@ -297,6 +314,11 @@ ITCM_CODE void vblankIntr(void)
             if (myConfig.diskSFX) mmEffect(SFX_FLOPPY);
         }
         floppy_sound_counter--;
+    }
+    
+    if (currentBrightness != brightness[myGlobalConfig.keyboardDim])
+    {
+        HandleBrightness();
     }
 }
 
@@ -385,7 +407,7 @@ int init_graphics(void)
     REG_BG3PD = ydyBG;
 
     SetYtrigger(190); //trigger 2 lines before vsync
-    irqSet(IRQ_VBLANK, vblankIntr);
+    irqSet(IRQ_VBLANK, vblankDS);
     irqEnable(IRQ_VBLANK);
 
   return TRUE;
@@ -640,6 +662,7 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
     else
     if ((m_tpActive == false) && (keysCurrent() & KEY_TOUCH))
     {
+        currentBrightness = 0;
         touchRead(&m_tp);
         m_tpActive = true;
 

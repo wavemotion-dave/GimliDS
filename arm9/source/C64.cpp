@@ -212,8 +212,8 @@ void C64::Reset(void)
     if (myConfig.reuType) TheREU->Reset();
 
     bTurboWarp = 0;
+   
 }
-
 
 /*
  *  NMI C64
@@ -256,7 +256,6 @@ void C64::LoadPRG(char *filename)
  *   preferences, ThePrefs still holds the previous ones.
  *   The emulation must be in the paused state!
  */
-
 void C64::NewPrefs(Prefs *prefs)
 {
     PatchKernal(prefs->FastReset, prefs->TrueDrive);

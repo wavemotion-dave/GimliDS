@@ -941,7 +941,7 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_mc_text(uint8 *p, uint8 *
 }
 
 
-__attribute__ ((noinline))  ITCM_CODE void MOS6569::el_std_bitmap(uint8 *p, uint8 *q, uint8 *r)
+void MOS6569::el_std_bitmap(uint8 *p, uint8 *q, uint8 *r)
 {
     uint32 *lp = (uint32 *)p;
     uint8 *mp = matrix_line;

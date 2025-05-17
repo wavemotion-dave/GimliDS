@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <sys/dir.h>
 #include "diskmenu.h"
+#include "Display.h"
 #include "mainmenu.h"
 #include "keyboard.h"
 #include "mainmenu_bg.h"
@@ -208,7 +209,10 @@ u8 gimliDSLoadFile(u8 bCartOnly)
   }
 
   // Show the menu...
-  while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B))!=0);
+  while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B))!=0)
+  {
+      currentBrightness = 0;
+  }
 
   gimliDSFindFiles(bCartOnly);
 
@@ -237,6 +241,7 @@ u8 gimliDSLoadFile(u8 bCartOnly)
   // -----------------------------------------------------
   while (!bDone)
   {
+    currentBrightness = 0;
     if (keysCurrent() & KEY_UP)
     {
       if (!ucHaut)
@@ -643,6 +648,7 @@ u8 DisketteMenu(C64 *the_c64)
   u8 bExitMenu = false;
   while (true)
   {
+    currentBrightness = 0;
     nds_key = keysCurrent();
     if (nds_key)
     {
@@ -825,6 +831,7 @@ u8 CartMenu(C64 *the_c64)
   u8 bExitMenu = false;
   while (true)
   {
+    currentBrightness = 0;
     nds_key = keysCurrent();
     if (nds_key)
     {
