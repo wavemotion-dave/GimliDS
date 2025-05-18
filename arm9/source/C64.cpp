@@ -53,6 +53,7 @@
 #include "lzav.h"
 #include <maxmod9.h>
 #include "soundbank.h"
+#include "printf.h"
 
 // Slight speed improvement to have these in global memory where the address is fixed at linker time
 uint8 myRAM[C64_RAM_SIZE];
@@ -77,7 +78,6 @@ u8 CompressBuffer[300*1024]; //300K more than enough (might need to compress RDU
  */
 C64::C64()
 {
-    quit_thyself = false;
     have_a_break = false;
 
     gTheC64 = this;
@@ -932,7 +932,6 @@ void C64::Run(void)
     orig_kernal_1d85 = Kernal[0x1d85];
     PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
 
-    quit_thyself = false;
     main_loop();
 }
 
@@ -1000,7 +999,7 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
     if (DSIvBlanks >= 60)
     {
         DSIvBlanks = 0;
-        TheDisplay->Speedometer((int)frames_per_sec);
+        TheDisplay->DisplayStatusLine((int)frames_per_sec);
         frames_per_sec = 0;
     }
 
@@ -1343,7 +1342,7 @@ void C64::RemoveCart(void)
 
 void C64::main_loop(void)
 {
-    while (!quit_thyself)
+    while (true)
     {
         if(have_a_break)
         {

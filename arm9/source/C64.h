@@ -119,7 +119,6 @@ private:
     uint8 poll_joystick(int port);
     void main_loop(void);
 
-    bool quit_thyself;      // Emulation thread shall quit
     bool have_a_break;      // Emulation thread shall pause
 
     uint8 joykey;           // Joystick keyboard emulation mask value

@@ -46,6 +46,7 @@
 #include "mainmenu.h"
 #include <maxmod9.h>
 #include "soundbank.h"
+#include "printf.h"
 
 u8 floppy_sound_counter __attribute__((section(".dtcm"))) = 0;
 u8 bDebugDisplay        __attribute__((section(".dtcm"))) = 0;
@@ -228,7 +229,7 @@ void ShowKeyboard(void)
 
 
 /*
- *  Display constructor: Draw Speedometer/LEDs in window
+ *  Display constructor
  */
 
 C64Display::C64Display(C64 *the_c64) : TheC64(the_c64)
@@ -410,7 +411,7 @@ int init_graphics(void)
     irqSet(IRQ_VBLANK, vblankDS);
     irqEnable(IRQ_VBLANK);
 
-  return TRUE;
+    return TRUE;
 
 }
 
@@ -428,11 +429,6 @@ __attribute__ ((noinline)) ITCM_CODE void C64Display::UpdateRasterLine(int raste
         *dest++ = *source++;
     }
 }
-
-
-/*
- *  Draw speedometer
- */
 
 //*****************************************************************************
 // Displays a message on the screen
@@ -536,7 +532,7 @@ int getMemFree() { // returns the amount of free memory in bytes
 
 int i = 0;
 int debug[16]={0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0};
-void C64Display::Speedometer(int speed)
+void C64Display::DisplayStatusLine(int speed)
 {
     char tmp[34];
 

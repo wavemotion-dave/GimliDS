@@ -158,6 +158,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
 
+Version 1.3 release 18-May-2025 by wavemotion-dave
+  * New global options with a number of new configurations (dim screen, default buttons, etc).
+  * Added ability to swap LCD screens on the main Commodore menu.
+  * Slight extension of vertical pixel resolution for some games that utilize more raster lines (Gaplus, etc). 
+  * Minor cleanup and refactor under the hood for improved maintainability and slight performance tweaks.
+
 Version 1.2 release 16-May-2025 by wavemotion-dave
   * Added new DIAGONALS joystick mode for a few Q-Bert clones.
   * Slide-n-Glide joystick mode made more responsive.

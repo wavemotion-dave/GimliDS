@@ -39,14 +39,30 @@
 #define _VIC_H
 #include <nds.h>
 
-extern const unsigned FIRST_DISP_LINE;
-
 // Total number of raster lines (PAL)
-const unsigned TOTAL_RASTERS = 0x138;
+#define TOTAL_RASTERS   0x138
 
 // Screen refresh frequency (PAL)
-const unsigned SCREEN_FREQ = 50;
+#define SCREEN_FREQ     50
 
+// First and last displayed line
+#define FIRST_DISP_LINE 0x20
+#define LAST_DISP_LINE  0x114
+
+// First and last possible line for Bad Lines
+#define FIRST_DMA_LINE  0x30
+#define LAST_DMA_LINE   0xf7
+
+// Display window coordinates
+#define ROW25_YSTART    0x33
+#define ROW25_YSTOP     0xfb
+#define ROW24_YSTART    0x37
+#define ROW24_YSTOP     0xf7
+
+#define COL40_XSTART    0x20
+#define COL40_XSTOP     0x160
+#define COL38_XSTART    0x27
+#define COL38_XSTOP     0x157
 
 class MOS6510;
 class C64Display;

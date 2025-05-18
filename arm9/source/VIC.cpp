@@ -82,25 +82,6 @@
 #include "Prefs.h"
 #include "CIA.h"
 
-// First and last displayed line
-const unsigned FIRST_DISP_LINE = 0x20;
-const unsigned LAST_DISP_LINE = 0x114;
-
-// First and last possible line for Bad Lines
-const unsigned FIRST_DMA_LINE = 0x30;
-const unsigned LAST_DMA_LINE = 0xf7;
-
-// Display window coordinates
-const int ROW25_YSTART = 0x33;
-const int ROW25_YSTOP = 0xfb;
-const int ROW24_YSTART = 0x37;
-const int ROW24_YSTOP = 0xf7;
-
-const int COL40_XSTART = 0x20;
-const int COL40_XSTOP = 0x160;
-const int COL38_XSTART = 0x27;
-const int COL38_XSTOP = 0x157;
-
 uint8 fast_line_buffer[512] __attribute__((section(".dtcm"))) = {0};
 
 // Tables for sprite X expansion
@@ -1496,12 +1477,10 @@ int MOS6569::EmulateLine(void)
             uint8 *r = fore_mask_buf + COL40_XSTART/8;  // Pointer in foreground mask buffer
             if (x_scroll)
             {
-                p--;
                 uint8 b0cc = b0c_color;
                 int limit = x_scroll;
                 for (int i=0; i<limit; i++) // Background on the left if XScroll>0
-                    *++p = b0cc;
-                p++;
+                    *p++ = b0cc;
             }
 
             if (display_state)

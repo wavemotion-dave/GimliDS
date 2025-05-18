@@ -40,7 +40,7 @@
 #include "C64.h"
 #include "CPUC64.h"
 #include "Cartridge.h"
-
+#include "printf.h"
 #include <filesystem>
 namespace fs = std::filesystem;
 

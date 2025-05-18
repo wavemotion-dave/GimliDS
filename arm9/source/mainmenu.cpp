@@ -32,6 +32,7 @@
 #include "mainmenu_bg.h"
 #include "Prefs.h"
 #include "Display.h"
+#include "printf.h"
 
 extern C64 *TheC64;
 extern int bg0b, bg1b;

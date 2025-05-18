@@ -35,6 +35,7 @@
 #include "cartmenu_bg.h"
 #include "Prefs.h"
 #include "C64.h"
+#include "printf.h"
 
 char Drive8File[MAX_FILENAME_LEN];
 char Drive9File[MAX_FILENAME_LEN];

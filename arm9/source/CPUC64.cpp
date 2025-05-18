@@ -79,6 +79,7 @@
 #include "Display.h"
 #include "Cartridge.h"
 #include "mainmenu.h"
+#include "printf.h"
 
 enum 
 {

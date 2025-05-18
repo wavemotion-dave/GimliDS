@@ -130,14 +130,14 @@
 
 #ifndef IS_CPU_1541 // If main C64 CPU we handle borrowed cycles
     // Main opcode fetch/execute loop
-    if (cycles_left != 1) cycles_left -= borrowed_cycles;
+    if (cycles_left != 1) cycles_left += borrowed_cycles;
 
     while (true)
     {
         if (page_plus_cyc) {last_cycles++; page_plus_cyc=0;}
         if ((cycles_left -= last_cycles) <= 0) 
         {
-            borrowed_cycles = -cycles_left;
+            borrowed_cycles = cycles_left;
             break;
         }
 #else // CPU is 1541

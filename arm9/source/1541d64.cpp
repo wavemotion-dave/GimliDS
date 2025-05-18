@@ -32,6 +32,7 @@
 #include "Prefs.h"
 #include "C64.h"
 #include "main.h"
+#include "printf.h"
 
 // Channel modes (IRC users listen up :-)
 enum {

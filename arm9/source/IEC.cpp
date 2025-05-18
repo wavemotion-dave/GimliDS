@@ -64,6 +64,7 @@
 #include "Prefs.h"
 #include "Display.h"
 #include "main.h"
+#include "printf.h"
 
 // IEC command codes
 enum {

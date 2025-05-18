@@ -44,6 +44,7 @@
 
 #include "mainmenu.h"
 #include "intro.h"
+#include "printf.h"
 #include <nds.h>
 #include <sys/stat.h>
 #include <stdio.h>
