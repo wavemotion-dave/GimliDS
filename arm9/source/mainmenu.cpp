@@ -149,7 +149,7 @@ u8 MainMenu(C64 *the_c64)
   u8 bExitMenu = false;
   while (true)
   {
-    currentBrightness = 0;
+    currentBrightness = 0; dimDampen = 0;
     nds_key = keysCurrent();
     if (nds_key)
     {
@@ -723,12 +723,12 @@ void GimliDSGameOptions(void)
     optionHighlighted = 0;
     while (keysCurrent() != 0)
     {
-        currentBrightness = 0;
+        currentBrightness = 0; dimDampen = 0;
         WAITVBL;
     }
     while (!bDone)
     {
-        currentBrightness = 0;
+        currentBrightness = 0; dimDampen = 0;
         keys_pressed = keysCurrent();
         if (keys_pressed != last_keys_pressed)
         {

@@ -51,12 +51,24 @@ extern u8 myRAM[];
 extern u8 myBASIC[];
 extern u8 myKERNAL[];
 
-u8 cartROM[1024*1024]; // 1MB max supported cart size (not including .crt and chip headers)
+u8 *cartROM = NULL;    // 1MB max supported cart size (not including .crt and chip headers). For DSi this gets bumped up to 2MB.
 extern C64 *gTheC64;   // Easy access to the main C64 object
 
 // Base class for cartridge with ROM
 ROMCartridge::ROMCartridge(unsigned num_banks, unsigned bank_size) : numBanks(num_banks), bankSize(bank_size)
 {
+    // Allocate the cart memory only once... for DSi we can support 2MB carts (MagicDesk 16K) and for DS-Lite/Phat, 1MB max
+    if (cartROM == NULL)
+    {
+        if (isDSiMode())
+        {
+            cartROM = (u8*)malloc(2*1024*1024);
+        }
+        else 
+        {
+            cartROM = (u8*)malloc(1*1024*1024);
+        }
+    }
     // We always re-use the same 1MB cart ROM buffer...
     rom = cartROM;
     memset(rom, 0xff, num_banks * bank_size);
@@ -379,6 +391,37 @@ void CartridgeMagicDesk::WriteIO1(uint16_t adr, uint8_t byte)
     MapThyself();
 }
 
+// Magic Desk2 / Magic Desk 16K (mainly for SNK vs Capcom - Stronger Edition)
+CartridgeMagicDesk2::CartridgeMagicDesk2() : ROMCartridge(128, 0x4000)
+{
+    bTrueDriveRequired = true; // Magic Desk won't load properly without the true drive infrastructure
+
+    notEXROM = false;
+    notGAME = false;
+    bank = 0;
+    MapThyself();
+}
+
+void CartridgeMagicDesk2::Reset()
+{
+    notEXROM = false;
+    notGAME = false;
+    bank = 0;
+    MapThyself();
+}
+
+void CartridgeMagicDesk2::MapThyself(void)
+{
+    StandardMapping(0x2000); // HI ROM offset by 8K (16K maps)
+}
+
+void CartridgeMagicDesk2::WriteIO1(uint16_t adr, uint8_t byte)
+{
+    bank = byte & 0x7f;
+    notEXROM = byte & 0x80;
+    MapThyself();
+}
+
 
 // Easyflash cartridge (banked 8K ROM cartridge)
 CartridgeEasyFlash::CartridgeEasyFlash(bool not_game, bool not_exrom) : ROMCartridge(128, 0x2000)
@@ -514,6 +557,10 @@ Cartridge * Cartridge::FromFile(char *filename, char *errBuffer)
                 break;
             case 32:
                 cart = new CartridgeEasyFlash(game,exrom);
+                break;
+            case 85:
+                if (isDSiMode()) cart = new CartridgeMagicDesk2;
+                else goto error_unsupp;
                 break;
             default:
                 goto error_unsupp;

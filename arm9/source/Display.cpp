@@ -64,7 +64,7 @@ uint8_t palette_blue[16] = {
     0x00, 0xff, 0x38, 0xc8, 0x97, 0x4d, 0x9b, 0x71, 0x29, 0x00, 0x71, 0x4a, 0x7b, 0x9f, 0xeb, 0xb2
 };
 
-static uint16 dimDampen = 0;
+uint16 dimDampen = 0;
 
 u8 last_drive_access_type = 0;
 void floppy_soundfx(u8 type)
@@ -658,7 +658,7 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
     else
     if ((m_tpActive == false) && (keysCurrent() & KEY_TOUCH))
     {
-        currentBrightness = 0;
+        currentBrightness = 0; dimDampen = 0;
         touchRead(&m_tp);
         m_tpActive = true;
 

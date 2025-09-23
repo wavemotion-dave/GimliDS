@@ -190,6 +190,17 @@ public:
 };
 
 
+// Magic Desk 16K cartridge (banked 8K ROM cartridge)
+class CartridgeMagicDesk2 : public ROMCartridge {
+public:
+    CartridgeMagicDesk2();
+
+    void Reset() override;
+    void MapThyself(void) override;
+    void WriteIO1(uint16_t adr, uint8_t byte) override;
+};
+
+
 // Easy Flash cartridge (banked 16K ROM cartridge)
 class CartridgeEasyFlash : public ROMCartridge {
 public:

@@ -129,7 +129,7 @@ private:
 
 extern void floppy_soundfx(u8 type);
 extern uint8 cart_in;
-extern u8 cartROM[];
+extern u8 *cartROM;
 
 #define WAITVBL swiWaitForVBlank();swiWaitForVBlank();swiWaitForVBlank();
 

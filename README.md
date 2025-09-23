@@ -89,6 +89,7 @@ Although primarily a disk-based emulator, GimliDS does support the more common C
   * Ocean up to 512K
   * Magic Desk up to 1MB
   * Easy Flash up to 1MB with 256b RAM
+  * Magic Desk 16K (aka Magic Desk 2) up to 2MB on DSi or above only
 
 This should cover a wide number of carts - recommend you seek out the OneLoad64 cart archive.
 
@@ -116,10 +117,12 @@ To get some of the more popular games running as good as possible on the venerab
 
   * Gauntlet - set the CPU CYCLES to +5 to eliminate graphical glitches on 'G' font.
   * Bruce Lee - set the CPU CYCLES to +4 to minimize graphical line-based glitches.
+  * LED Storm - set CPU CYCLES to +4 to eliminate top line graphical glitch.
+  * SNK vs CAPCOM Stronger Edition - set CPU CYCLES to +9 so in-game fighting sprites are reasonably correct.
   * Turrican I - set the BAD CYCLES to -6 (you will have some corruption on the title screen but the game will look and play fine - most importantly you can actually start the game!).
   * Turrican II - requires True Drive enabled (or load from cart).
   * Lode Runner - requires True Drive enabled (or load from cart).
-  * LED Storm - set CPU CYCLES to +4 to eliminate top line graphical glitch.
+  * Sky Shark - load from Arcade Compilation Cart, I can't get the disk versions working either.
 
 ## Acknowledgements
 
@@ -157,6 +160,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
+
+Version 1.3a release 23-Sep-2025 by wavemotion-dave
+  * Improved keyboard screen dim handling.
+  * For the DSi and above (with the extra memory), 2MB MagicDesk 16K carts are supported (mainly for SNK vs Capcom - Stronger Edition)
+  * Other minor tweaks under the hood.
 
 Version 1.3 release 18-May-2025 by wavemotion-dave
   * New global options with a number of new configurations (dim screen, default buttons, etc).
