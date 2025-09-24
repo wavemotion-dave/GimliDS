@@ -274,11 +274,14 @@ void MOS6581::SetState(MOS6581State *ss)
  **  Renderer for digital SID emulation (SIDTYPE_DIGITAL)
  **/
 
-const uint32 SAMPLE_FREQ    = 15600;                             // NDS Sample Rate - 50 frames x 312 scanlines = 15600 samples per second
-const uint32 SID_FREQ       = 985248;                            // SID frequency in Hz
-const uint32 SID_CYCLES_FIX = ((SID_FREQ << 11)/SAMPLE_FREQ)<<5; // # of SID clocks per sample frame * 65536
-const uint32 SID_CYCLES     = SID_CYCLES_FIX << 16;              // # of SID clocks per sample frame
-const int SAMPLE_BUF_SIZE   = 0x138*2;                           // Size of buffer for sampled voice (double buffered)
+const uint32 SAMPLE_FREQ        = 15600;                                  // NDS Sample Rate - 50 frames x 312 scanlines = 15600 samples per second - normal sample rate for older DS hardware
+const uint32 SID_FREQ           = 985248;                                 // SID frequency in Hz
+const uint32 SID_CYCLES_FIX     = ((SID_FREQ << 11)/SAMPLE_FREQ)<<5;      // # of SID clocks per sample frame * 65536
+
+const uint32 SAMPLE_FREQ_DSI    = 2*15600;                                // NDS Sample Rate - 50 frames x 312 scanlines = 15600 samples per second - doubled sample rate
+const uint32 SID_CYCLES_FIX_DSI = ((SID_FREQ << 11)/SAMPLE_FREQ_DSI)<<5;  // # of SID clocks per sample frame * 65536
+
+const int SAMPLE_BUF_SIZE       = 0x138*4;                                // Size of buffer for sampled voice (double buffered)
 
 uint8 sample_vol_filt[SAMPLE_BUF_SIZE] __attribute__((section(".dtcm"))); // Buffer for sampled volumes and filter bits shifted up
 int sample_in_ptr                      __attribute__((section(".dtcm"))); // Index in sample_vol_filt[] for writing
@@ -367,7 +370,8 @@ private:
     static const uint16 TriRectTable[0x100];
     static const uint16 SawRectTable[0x100];
     static const uint16 TriSawRectTable[0x100];
-    static const int32_t EGTable[16];   // Increment/decrement values for all A/D/R settings
+    static const int32_t EGTable[16];      // Increment/decrement values for all A/D/R settings
+    static const int32_t EGTableDSi[16];   // Increment/decrement values for all A/D/R settings
 
     uint8 f_type;                   // Filter type
     uint8 f_freq;                   // SID filter frequency (upper 8 bits)
@@ -537,15 +541,27 @@ int16_t EGDivTable[16] __attribute__((section(".dtcm"))) = {
 };
 
  const int32_t DigitalRenderer::EGTable[16] = {
-    SID_CYCLES_FIX / 9, SID_CYCLES_FIX / 32,
-    SID_CYCLES_FIX / 63, SID_CYCLES_FIX / 95,
-    SID_CYCLES_FIX / 149, SID_CYCLES_FIX / 220,
-    SID_CYCLES_FIX / 267, SID_CYCLES_FIX / 313,
-    SID_CYCLES_FIX / 392, SID_CYCLES_FIX / 977,
-    SID_CYCLES_FIX / 1954, SID_CYCLES_FIX / 3126,
-    SID_CYCLES_FIX / 3906, SID_CYCLES_FIX / 11720,
+    SID_CYCLES_FIX / 9,     SID_CYCLES_FIX / 32,
+    SID_CYCLES_FIX / 63,    SID_CYCLES_FIX / 95,
+    SID_CYCLES_FIX / 149,   SID_CYCLES_FIX / 220,
+    SID_CYCLES_FIX / 267,   SID_CYCLES_FIX / 313,
+    SID_CYCLES_FIX / 392,   SID_CYCLES_FIX / 977,
+    SID_CYCLES_FIX / 1954,  SID_CYCLES_FIX / 3126,
+    SID_CYCLES_FIX / 3906,  SID_CYCLES_FIX / 11720,
     SID_CYCLES_FIX / 19531, SID_CYCLES_FIX / 31251
 };
+
+ const int32_t DigitalRenderer::EGTableDSi[16] = {
+    SID_CYCLES_FIX_DSI / 9,     SID_CYCLES_FIX_DSI / 32,
+    SID_CYCLES_FIX_DSI / 63,    SID_CYCLES_FIX_DSI / 95,
+    SID_CYCLES_FIX_DSI / 149,   SID_CYCLES_FIX_DSI / 220,
+    SID_CYCLES_FIX_DSI / 267,   SID_CYCLES_FIX_DSI / 313,
+    SID_CYCLES_FIX_DSI / 392,   SID_CYCLES_FIX_DSI / 977,
+    SID_CYCLES_FIX_DSI / 1954,  SID_CYCLES_FIX_DSI / 3126,
+    SID_CYCLES_FIX_DSI / 3906,  SID_CYCLES_FIX_DSI / 11720,
+    SID_CYCLES_FIX_DSI / 19531, SID_CYCLES_FIX_DSI / 31251
+};
+
 
 uint8_t EGDRShift[256] __attribute__((section(".dtcm"))) = {
     5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,
@@ -587,7 +603,7 @@ DigitalRenderer::DigitalRenderer()
       resonanceHP[i] = FixNo(CALC_RESONANCE_HP(i));
     }
     // Pre-compute the quotient. No problem since int-part is small enough
-    sidquot = SID_CYCLES_FIX;
+    sidquot = (isDSiMode() ? SID_CYCLES_FIX_DSI : SID_CYCLES_FIX);
     // compute lookup table for sin and cos
     InitFixSinTab();
 #endif
@@ -615,7 +631,7 @@ void DigitalRenderer::Reset(void)
         voice[v].add = 0;
         voice[v].freq = voice[v].pw = 0;
         voice[v].eg_level = voice[v].s_level = 0;
-        voice[v].a_add = voice[v].d_sub = voice[v].r_sub = EGTable[0];
+        voice[v].a_add = voice[v].d_sub = voice[v].r_sub = (isDSiMode() ? EGTableDSi[0] : EGTable[0]);
         voice[v].gate = voice[v].ring = voice[v].test = false;
         voice[v].sync = voice[v].mute = false;
     }
@@ -706,15 +722,15 @@ void DigitalRenderer::WriteRegister(uint16 adr, uint8 byte)
         case 5:
         case 12:
         case 19:
-            voice[v].a_add = EGTable[byte >> 4];
-            voice[v].d_sub = EGTable[byte & 0xf];
+            voice[v].a_add = (isDSiMode() ? EGTableDSi[byte >> 4] : EGTable[byte >> 4]);
+            voice[v].d_sub = (isDSiMode() ? EGTableDSi[byte & 0xf] : EGTable[byte & 0xf]);
             break;
 
         case 6:
         case 13:
         case 20:
             voice[v].s_level = (byte >> 4) * 0x111111;
-            voice[v].r_sub = EGTable[byte & 0xf];
+            voice[v].r_sub = (isDSiMode() ? EGTableDSi[byte & 0xf] : EGTable[byte & 0xf]);
             break;
 
         case 21: // Filter Frequency - lower 3 bits
@@ -790,7 +806,7 @@ void DigitalRenderer::calc_filter(void)
 #endif
 
     // explanations see below.
-    arg = fr / (int)(SAMPLE_FREQ >> 1);
+    arg = fr / (int)((isDSiMode() ? SAMPLE_FREQ_DSI : SAMPLE_FREQ) >> 1);
 
     if (arg > FixNo(0.99)) {arg = FixNo(0.99);}
     if (arg < FixNo(0.01)) {arg = FixNo(0.01);}
@@ -843,7 +859,7 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
     FixPoint cd1 = d1, cd2 = d2, cg1 = g1, cg2 = g2;
 
     // Index in sample_vol_filt[] for reading, 16.16 fixed
-    uint32 sample_count = (sample_in_ptr + SAMPLE_BUF_SIZE/2) << 16;
+    uint32 sample_count = (sample_in_ptr + SAMPLE_BUF_SIZE/(isDSiMode() ? 2:4)) << 16;
     
     // Output DC offset
  	int32_t dc_offset = 0x100000;
@@ -853,11 +869,11 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
     while (count--)
     {
 		// Get current master volume and RES/FILT setting from sample buffers
- 		uint8_t master_volume = sample_vol_filt[(sample_count >> 16) % SAMPLE_BUF_SIZE] & 0xf;
- 		uint8_t res_filt = sample_vol_filt[(sample_count >> 16) % SAMPLE_BUF_SIZE] >> 4;
+ 		uint8_t master_volume = sample_vol_filt[(sample_count >> 16) % (isDSiMode() ? SAMPLE_BUF_SIZE : (SAMPLE_BUF_SIZE/2))] & 0xf;
+ 		uint8_t res_filt = sample_vol_filt[(sample_count >> 16) % (isDSiMode() ? SAMPLE_BUF_SIZE : (SAMPLE_BUF_SIZE/2))] >> 4;
                 
         // calculate sampled voice
-        sample_count += ((0x138 * 50) << 16) / SAMPLE_FREQ;
+        sample_count += ((0x138 * (isDSiMode() ? 100:50)) << 16) / (isDSiMode() ? SAMPLE_FREQ_DSI : SAMPLE_FREQ);
         int32_t sum_output = 0;
         int32 sum_output_filter = 0;
 
@@ -1038,8 +1054,8 @@ void DigitalRenderer::init_sound(void)
 
     mm_stream mstream;
     memset(&mstream, 0, sizeof(mstream));
-    mstream.sampling_rate = SAMPLE_FREQ;
-    mstream.buffer_length = 0x138 * 2;
+    mstream.sampling_rate = (isDSiMode() ? SAMPLE_FREQ_DSI : SAMPLE_FREQ);
+    mstream.buffer_length = 0x138 * (isDSiMode() ? 4:2);
     mstream.callback = SoundMixCallback;
     mstream.format = MM_STREAM_16BIT_MONO;
     mstream.timer = MM_TIMER2;
@@ -1056,7 +1072,7 @@ DigitalRenderer::~DigitalRenderer()
 void DigitalRenderer::EmulateLine(void)
 {
     sample_vol_filt[sample_in_ptr] = volume | ((res_filt & 7) << 4);
-    sample_in_ptr = (sample_in_ptr + 1) % SAMPLE_BUF_SIZE;
+    sample_in_ptr = (sample_in_ptr + 1) % (isDSiMode() ? SAMPLE_BUF_SIZE : (SAMPLE_BUF_SIZE/2));
 }
 
 void DigitalRenderer::Pause(void)

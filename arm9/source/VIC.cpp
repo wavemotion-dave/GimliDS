@@ -1000,7 +1000,7 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_ecm_text(uint8 *p, uint8 
 }
 
 
-__attribute__ ((noinline))  ITCM_CODE void MOS6569::el_std_idle(uint8 *p, uint8 *r)
+__attribute__ ((noinline))  void MOS6569::el_std_idle(uint8 *p, uint8 *r)
 {
     uint8 data = *get_physical(ctrl1 & 0x40 ? 0x39ff : 0x3fff);
     uint32 *lp = (uint32 *)p;
