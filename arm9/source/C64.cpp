@@ -71,7 +71,7 @@ C64 *gTheC64 = nullptr; // For occasional access in other classes without having
 
 u8 CompressBuffer[300*1024]; //300K more than enough (might need to compress RDU at 256K)
 
-#define SNAPSHOT_VERSION 3
+#define SNAPSHOT_VERSION 4
 
 /*
  *  Constructor: Allocate objects and memory
@@ -986,6 +986,8 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
 
     TheCIA1->CountTOD();
     TheCIA2->CountTOD();
+    
+    TheCart->CartFrame();
 
     frames++;
     while (GetTicks() < (((unsigned int)TICKS_PER_SEC/(unsigned int)SCREEN_FREQ) * (unsigned int)frames))
@@ -1331,7 +1333,9 @@ void C64::RemoveCart(void)
     delete TheCart;
     TheCart = TheCPU->TheCart = new Cartridge();
     extern char CartFilename[];
+    extern char CartType[];
     strcpy(CartFilename, "");
+    strcpy(CartType, "");
     cart_in = 0;
 }
 

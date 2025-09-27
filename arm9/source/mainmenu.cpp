@@ -231,22 +231,18 @@ u8 MainMenu(C64 *the_c64)
                 case MENU_ACTION_SAVE_STATE:
                 {
                     check_and_make_sav_directory();
-                    int len = 0;
                     if (strlen(CartFilename) > 1) // Cart overrides disk
                     {
                         sprintf(theDrivePath,"sav/%s", CartFilename);
-                        len = strlen(CartFilename);
                     }
                     else
                     {
                         sprintf(theDrivePath,"sav/%s", ThePrefs.DrivePath[0]);
-                        len = strlen(theDrivePath);
                     }
-                    if (len > 4)
-                    {
-                        char *p=&theDrivePath[len-4];
-                        strcpy(p,".GSS");
-                    }
+                    int len = strlen(theDrivePath);
+                    theDrivePath[len-3] = 'g';
+                    theDrivePath[len-2] = 's';
+                    theDrivePath[len-1] = 's';
                     if (the_c64->SaveSnapshot(theDrivePath) == false)
                     {
                         DSPrint(0, 18, 6, (char*)"      UNABLE TO SAVE STATE     ");
@@ -266,22 +262,18 @@ u8 MainMenu(C64 *the_c64)
                 case MENU_ACTION_LOAD_STATE:
                 {
                     check_and_make_sav_directory();
-                    int len = 0;
                     if (strlen(CartFilename) > 1) // Cart overrides disk
                     {
                         sprintf(theDrivePath,"sav/%s", CartFilename);
-                        len = strlen(CartFilename);
                     }
                     else
                     {
                         sprintf(theDrivePath,"sav/%s", ThePrefs.DrivePath[0]);
-                        len = strlen(theDrivePath);
                     }
-                    if (len > 4)
-                    {
-                        char *p=&theDrivePath[len-4];
-                        strcpy(p,".GSS");
-                    }
+                    int len = strlen(theDrivePath);
+                    theDrivePath[len-3] = 'g';
+                    theDrivePath[len-2] = 's';
+                    theDrivePath[len-1] = 's';
                     if (the_c64->LoadSnapshot(theDrivePath) == false)
                     {
                         DSPrint(0, 18, 6, (char*)"    NO VALID SNAPSHOT FOUND    ");
@@ -375,24 +367,24 @@ struct GlobalConfig_t myGlobalConfig;
 
 void SetDefaultGlobalConfig(void)
 {
-    myGlobalConfig.defaultB = KEY_MAP_SPACE;
-    myGlobalConfig.defaultX = KEY_MAP_JOY_UP;
-    myGlobalConfig.defaultY = KEY_MAP_RETURN;
-    myGlobalConfig.defaultDiskSFX = 1;
-    myGlobalConfig.defaultPoundKey = 0;
-    myGlobalConfig.defaultJoyPort = 1;
-    myGlobalConfig.keyboardDim = 0;
-    myGlobalConfig.reserved0 = 0;
-    myGlobalConfig.reserved1 = 0;
-    myGlobalConfig.reserved2 = 0;
-    myGlobalConfig.reserved3 = 0;
-    myGlobalConfig.reserved4 = 0;
-    myGlobalConfig.reserved5 = 0;
-    myGlobalConfig.reserved6 = 0;
-    myGlobalConfig.reserved7 = 0;
-    myGlobalConfig.reserved8 = 0;
-    myGlobalConfig.reserved9 = 0;
-    myGlobalConfig.reserved10 = 1;
+    myGlobalConfig.defaultB         = KEY_MAP_JOY_UP;
+    myGlobalConfig.defaultX         = KEY_MAP_SPACE;
+    myGlobalConfig.defaultY         = KEY_MAP_RETURN;
+    myGlobalConfig.defaultDiskFlash = DISK_WRITE_WITH_SFX;
+    myGlobalConfig.defaultPoundKey  = 1;
+    myGlobalConfig.defaultJoyPort   = 1;
+    myGlobalConfig.keyboardDim      = 0;
+    myGlobalConfig.reserved0        = 0;
+    myGlobalConfig.reserved1        = 0;
+    myGlobalConfig.reserved2        = 0;
+    myGlobalConfig.reserved3        = 0;
+    myGlobalConfig.reserved4        = 0;
+    myGlobalConfig.reserved5        = 0;
+    myGlobalConfig.reserved6        = 0;
+    myGlobalConfig.reserved7        = 0;
+    myGlobalConfig.reserved8        = 0;
+    myGlobalConfig.reserved9        = 0;
+    myGlobalConfig.reserved10       = 1;
 }
 
 void SetDefaultGameConfig(void)
@@ -412,19 +404,19 @@ void SetDefaultGameConfig(void)
     myConfig.key_map[8]  = KEY_MAP_SPACE;    // Spare 1
     myConfig.key_map[9]  = KEY_MAP_SPACE;    // Spare 2
     
-    myConfig.diskSFX     = myGlobalConfig.defaultDiskSFX;  // Disk sound effects on
+    myConfig.diskFlash   = myGlobalConfig.defaultDiskFlash;// Disk is writable with sound effects
     myConfig.joyPort     = myGlobalConfig.defaultJoyPort;  // Default to Joy2 (it's a toss-up but more than half use port 2)
-    myConfig.poundKey    = myGlobalConfig.defaultPoundKey; // Default is Pound Key!
+    myConfig.poundKey    = myGlobalConfig.defaultPoundKey; // Default is Back Arrow
 
     myConfig.trueDrive   = 0;                // Fast 1541 emulation by default
     myConfig.jitter      = 1;                // Medium level of jitter
     myConfig.joyMode     = 0;                // Default is normal joypad / dpad
     myConfig.reuType     = 0;                // No REU by default
-    myConfig.reserved4   = 0;
-    myConfig.reserved5   = 0;
-    myConfig.reserved6   = 0;
-    myConfig.reserved7   = 0;
-    myConfig.reserved8   = 0xA5;             // So it's easy to spot on an "upgrade" and we can re-default it
+    myConfig.reserved0   = 0;
+    myConfig.reserved1   = 0;
+    myConfig.reserved2   = 0;
+    myConfig.reserved3   = 0;
+    myConfig.reserved4   = 0xA5;             // So it's easy to spot on an "upgrade" and we can re-default it
     myConfig.cpuCycles   = 0;                // Normal 63 - this is the delta adjustment to that
     myConfig.badCycles   = 0;                // Normal 23 - this is the delta adjustment to that
     
@@ -555,20 +547,8 @@ void LoadConfig(void)
     u16 ver = 0x0000;
     if (ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&ver, sizeof(ver), 0))  // Read Global Config
     {
-        if (ver == 0x0006) // One time upgrade - add global config and double the size of the AllConfigs[] array
-        {
-             memset(&myGlobalConfig, 0x00, sizeof(myGlobalConfig));
-             SetDefaultGlobalConfig();
-             memset(&AllConfigs, 0x00, sizeof(AllConfigs));
-             ver = CONFIG_VERSION;
-             ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&AllConfigs, sizeof(AllConfigs)/2, sizeof(ver)); // Read the full game array of configs
-             SaveConfig(false);            
-        }
-        else
-        {
-            ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&myGlobalConfig, sizeof(myGlobalConfig), sizeof(ver));  // Read the global config 
-            ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&AllConfigs, sizeof(AllConfigs), sizeof(myGlobalConfig)); // Read the full game array of configs
-        }
+        ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&myGlobalConfig, sizeof(myGlobalConfig), sizeof(ver));                  // Read the global config 
+        ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&AllConfigs, sizeof(AllConfigs), sizeof(ver) + sizeof(myGlobalConfig)); // Read the full game array of configs
         
         if (ver != CONFIG_VERSION)
         {
@@ -599,7 +579,7 @@ void FindConfig(void)
     // below, we will fill in the config with data read from the file.
     // -----------------------------------------------------------------
     SetDefaultGameConfig();
-
+    
     for (u16 slot=0; slot<MAX_CONFIGS; slot++)
     {
         if (AllConfigs[slot].game_crc == file_crc)  // Got a match?!
@@ -646,10 +626,10 @@ const struct options_t Option_Table[2][20] =
         {"JOY PORT",       {"PORT 1", "PORT 2"},                                                        &myConfig.joyPort,     2},
         {"JOY MODE",       {"NORMAL", "SLIDE-N-GLIDE", "DIAGONALS"},                                    &myConfig.joyMode,     3},
         {"LCD JITTER",     {"NONE", "LIGHT", "HEAVY"},                                                  &myConfig.jitter,      3},
-        {"DISK SOUND",     {"SFX OFF", "SFX ON"},                                                       &myConfig.diskSFX,     2},
+        {"DISK/FLASH",     {"READ NO SFX", "READ WITH SFX", "WRITE NO SFX", "WRITE WITH SFX"},          &myConfig.diskFlash,   4},
         {"CPU CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.cpuCycles,   19},
         {"BAD CYCLES" ,    {CYCLE_DELTA_STR},                                                           &myConfig.badCycles,   19},
-        {"POUND KEY",      {"POUND", "LEFT ARROW", "UP ARROW", "C= COMMODORE"},                         &myConfig.poundKey,    4},        
+        {"POUND KEY",      {"POUND", "BACK ARROW", "UP ARROW", "C= COMMODORE"},                         &myConfig.poundKey,    4},
 
         {"D-PAD UP",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[0],  65},
         {"D-PAD DOWN",     {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[1],  65},
@@ -666,10 +646,9 @@ const struct options_t Option_Table[2][20] =
     // Global Configuration
     {
         {"DEF JOY PORT",       {"PORT 1", "PORT 2"},                                                    &myGlobalConfig.defaultJoyPort,     2},
-        {"DEF DSK SFX",        {"SFX OFF", "SFX ON"},                                                   &myGlobalConfig.defaultDiskSFX,     2},
-        {"DEF PND KEY",        {"POUND", "LEFT ARROW", "UP ARROW", "C= COMMODORE"},                     &myGlobalConfig.defaultPoundKey,    4},
-        {"KEYBD BRIGHT",       {"MAX BRIGHT", "DIM", "DIMMER", "DIMMEST"},                              &myGlobalConfig.keyboardDim,        4},
-        
+        {"DEF DSK/FLSH",       {"READ NO SFX", "READ WITH SFX", "WRITE NO SFX", "WRITE WITH SFX"},      &myGlobalConfig.defaultDiskFlash,   4},
+        {"DEF PND KEY",        {"POUND", "BACK ARROW", "UP ARROW", "C= COMMODORE"},                     &myGlobalConfig.defaultPoundKey,    4},
+        {"DEF KEYBOARD",       {"MAX BRIGHT", "DIM", "DIMMER", "DIMMEST"},                              &myGlobalConfig.keyboardDim,        4},        
         {"DEF KEY B",          {KEY_MAP_OPTIONS},                                                       &myGlobalConfig.defaultB,           65},
         {"DEF KEY X",          {KEY_MAP_OPTIONS},                                                       &myGlobalConfig.defaultX,           65},
         {"DEF KEY Y",          {KEY_MAP_OPTIONS},                                                       &myGlobalConfig.defaultY,           65},
@@ -786,3 +765,27 @@ void GimliDSGameOptions(void)
 
     return;
 }
+
+// ----------------------------------------------------------
+// Put up printf-style string on screen for a few seconds...
+// ----------------------------------------------------------
+void debug_printf(const char * str, ...)
+{
+    char szTemp[40];
+    va_list ap;
+
+    va_start(ap, str);
+    vsnprintf(szTemp, 32, str, ap);
+    va_end(ap);
+    
+    for (int i=strlen(szTemp); i<33; i++)
+    {
+        szTemp[i] = ' ';
+        szTemp[i+1] = 0;
+    }
+
+    DSPrint(0, 0, 6, (char*)szTemp);
+    for (int i=0; i<64; i++) {WAITVBL;}
+    DSPrint(0, 0, 6, (char*)"                              ");
+}
+

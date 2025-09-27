@@ -1,5 +1,5 @@
 /*
- *  1541d64.cpp - 1541 emulation in disk image files (.d64/.x64/zipcode)
+ *  1541d64.cpp - 1541 emulation in disk image files (.d64)
  *
  *  Frodo Copyright (C) Christian Bauer
  *
@@ -32,6 +32,7 @@
 #include "Prefs.h"
 #include "C64.h"
 #include "main.h"
+#include "mainmenu.h"
 #include "printf.h"
 
 // Channel modes (IRC users listen up :-)
@@ -1338,10 +1339,15 @@ static int write_sector(FILE *f, const image_file_desc &desc, int track, int sec
         return ERR_NOTREADY;
 
     fseek(f, offset, SEEK_SET);
-    if (fwrite(buffer, 1, 256, f) != 256)
-        return ERR_WRITE25;
-    else
-        return ERR_OK;
+    
+    // Is the disk writable?
+    if (myConfig.diskFlash & 0x02)
+    {
+        if (fwrite(buffer, 1, 256, f) != 256)
+            return ERR_WRITE25;
+        else
+            return ERR_OK;
+    } else return ERR_WRITE25;
 }
 
 // Read sector and set error message, returns false on error
@@ -1365,10 +1371,14 @@ bool ImageDrive::write_sector(int track, int sector, uint8 *buffer)
 // Write error info back to image file
 static void write_back_error_info(FILE *f, const image_file_desc &desc)
 {
-    if (desc.type == TYPE_D64 && desc.has_error_info) {
+    if (desc.type == TYPE_D64 && desc.has_error_info) 
+    {
         int num_sectors = desc.num_tracks == 40 ? NUM_SECTORS_40 : NUM_SECTORS_35;
         fseek(f, num_sectors * 256, SEEK_SET);
-        fwrite(desc.error_info, num_sectors, 1, f);
+        if (myConfig.diskFlash & 0x02)
+        {
+            fwrite(desc.error_info, num_sectors, 1, f);
+        }
     }
 }
 
@@ -1811,160 +1821,10 @@ static bool is_x64_file(const uint8 *header, long size)
     return memcmp(header, "C\x15\x41\x64\x01\x02", 6) == 0;
 }
 
-static bool is_zipcode_file(const char *path)
-{
-#if 0
-    string base, part;
-    SplitPath(path, base, part);
-    return part.length() > 2 && part[0] >= '1' && part[0] <= '4' && part[1] == '!';
-#else
-    return false;
-#endif
-}
-
 bool IsImageFile(const char *path, const uint8 *header, long size)
 {
-    return is_d64_file(header, size) || is_x64_file(header, size) || is_zipcode_file(path);
+    return is_d64_file(header, size) || is_x64_file(header, size);
 }
-
-
-#if 0
-/*
- *  Convert zipcode file to extended d64 file (d64 file with header ID)
- */
-
-static FILE *open_zipcode_file(FILE *old, int num, const string &base, string &part, uint8 &id1, uint8 &id2)
-{
-    if (old)
-        fclose(old);
-    part[0] = num + '1';
-    FILE *f = fopen(AddToPath(base, part).c_str(), "rb");
-    if (f == NULL)
-        return NULL;
-    if (fseek(f, 2, SEEK_SET) < 0) {
-        fclose(f);
-        return NULL;
-    }
-    if (num == 0) {
-        id1 = getc(f);
-        id2 = getc(f);
-    }
-    return f;
-}
-
-static FILE *convert_zipcode_to_ed64(const string &path)
-{
-    FILE *in = NULL, *out = NULL;
-    uint8 id1, id2;
-
-    // Split input file name
-    string base, part;
-    SplitPath(path, base, part);
-
-    // Open output file
-    out = NULL;//fopen("ramdiskfs:/ram/test3.txt","wb");
-    if (out == NULL)
-        goto error;
-
-    // Decode all tracks
-    for (int track=1; track<=35; track++) {
-        int max_sect = 17 + ((track < 31) ? 1 : 0) + ((track < 25) ? 1 : 0) + ((track < 18) ? 2 : 0);
-
-        // Select appropriate input file
-        switch (track) {
-            case 1:
-                if ((in = open_zipcode_file(NULL, 0, base, part, id1, id2)) == NULL)
-                    goto error;
-                break;
-            case 9:
-                if ((in = open_zipcode_file(in, 1, base, part, id1, id2)) == NULL)
-                    goto error;
-                break;
-            case 17:
-                if ((in = open_zipcode_file(in, 2, base, part, id1, id2)) == NULL)
-                    goto error;
-                break;
-            case 26:
-                if ((in = open_zipcode_file(in, 3, base, part, id1, id2)) == NULL)
-                    goto error;
-                break;
-        }
-
-        // Clear "sector read" flags
-        bool sect_flag[21];
-        for (int i=0; i<max_sect; i++)
-            sect_flag[i] = false;
-
-        // Read track
-        uint8 act_track[21 * 256];
-        for (int i=0; i<max_sect; i++) {
-
-            // Read and verify track/sector number
-            uint8 t = getc(in);
-            uint8 s = getc(in);
-            if ((t & 0x3f) != track || s >= max_sect || sect_flag[s] || feof(in))
-                goto error;
-            sect_flag[s] = true;
-            uint8 *p = act_track + s * 256;
-
-            // Uncompress sector
-            if (t & 0x80) {
-                // Run-length encoded sector
-                uint8 len = getc(in);
-                uint8 rep = getc(in);
-                int count = 0;
-                for (int j=0; j<len; j++) {
-                    if (feof(in))
-                        goto error;
-                    uint8 c = getc(in);
-                    if (c != rep)
-                        p[count++] = c;
-                    else {
-                        uint8 repnum = getc(in);
-                        if (feof(in))
-                            goto error;
-                        c = getc(in);
-                        j += 2;
-                        for (int k=0; k<repnum; k++)
-                            p[count++] = c;
-                    }
-                }
-            } else if (t & 0x40) {
-                // Sector filled with constant byte
-                if (feof(in))
-                    goto error;
-                uint8 c = getc(in);
-                memset(p, c, 256);
-            } else {
-                // Plain sector
-                if (fread(p, 1, 256, in) != 256)
-                    goto error;
-            }
-        }
-
-        // Write track
-        if (fwrite(act_track, 256, max_sect, out) != (size_t)max_sect)
-            goto error;
-    }
-
-    // Write header ID
-    putc(id1, out);
-    putc(id2, out);
-
-    // Done
-    fclose(in);
-    fseek(out, 0, SEEK_SET);
-    return out;
-
-error:
-    if (in)
-        fclose(in);
-    if (out)
-        fclose(out);
-    return NULL;
-}
-#endif
-
 
 /*
  *  Open disk image file, return file handle
@@ -1972,17 +1832,7 @@ error:
 
 static FILE *open_image_file(const char *path, bool write_mode)
 {
-
-#if 0
-    if (is_zipcode_file(path)) {
-        if (write_mode)
-            return NULL;
-        else
-            return convert_zipcode_to_ed64(path);
-    } else
-#endif
-
-        return fopen(path, write_mode ? "r+b" : "rb");
+    return fopen(path, write_mode ? "r+b" : "rb");
 }
 
 

@@ -103,6 +103,7 @@ private:
     uint16 read_word_slow(uint16 adr);
     void write_byte(uint16 adr, uint8 byte);
     void write_byte_io(uint16 adr, uint8 byte);
+    void write_byte_flash(uint16 adr, uint8 byte);
 
     uint8 read_zp(uint16 adr);
     uint16 read_zp_word(uint16 adr);

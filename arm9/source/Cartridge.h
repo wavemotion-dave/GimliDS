@@ -46,9 +46,34 @@ struct CartridgeState {
     u8 notEXROM;
     u8 notGAME;
     u8 bank;
+    u8 dirtyFlash;
+    u8 flash_state_lo;
+    u8 flash_state_hi;
+    u8 flash_base_state_lo;
+    u8 flash_base_state_hi;
+    u8 bTrueDriveRequired;
+    u8 ultimax_mode;
+    u8 spare1;
+    u8 spare2;
+    u8 spare3;
+    u8 spare4;
+    u8 spare32;
     uint8_t ram[256];
 };
 
+#define FLASH_IDLE      0   // Normal Flash READ (Idle) mode
+#define FLASH_x555_AA   1   // First write unlock sequence
+#define FLASH_x2AA_55   2   // Second write unlock sequence
+#define FLASH_x555_80   3   // Third write - Sector Erase
+#define FLASH_x555_A0   4   // Third write - Write byte
+#define FLASH_x555_SE   5   // Fourth write - Sector Erase key #1
+#define FLASH_x2AA_SE   6   // Fourth write - Sector Erase key #2
+#define FLASH_CHIP_ID  99   // We're in CHIP ID (AutoSelect) mode
+
+
+extern uint8 flash_write_supported;
+extern uint8 cart_led;
+extern uint8 cart_led_color;
 
 // Base class for cartridges
 class Cartridge {
@@ -61,9 +86,10 @@ public:
 
     static Cartridge * FromFile(char *filename, char *errBuffer);
 
-    virtual void Reset() { }
+    virtual void Reset() { flash_write_supported = 0; }
 
     bool isTrueDriveRequired(void);
+    void CartFrame(void);
 
     // Map cart into the CPU memory map...
     virtual void MapThyself(void)
@@ -76,18 +102,26 @@ public:
     virtual void WriteIO1(uint16_t adr, uint8_t byte) { }
     virtual uint8_t ReadIO2(uint16_t adr, uint8_t bus_byte) { return bus_byte; }
     virtual void WriteIO2(uint16_t adr, uint8_t byte) { }
+    virtual void WriteFlash(uint16_t adr, uint8_t byte) { }
+    virtual void PersistFlash(void) { }
 
     u32 total_cart_size = 0;
     u8  last_bank = 0;
     u8  cart_type = 0;
 
     // Memory mapping control lines
-    u8 notEXROM = true;             // Cartridge /GAME control line
-    u8 notGAME = true;              // Cartridge /GAME control line
-    u8 bank = 0;                    // Selected bank - only for cart types that support banking
-    u8 bTrueDriveRequired = false;  // Magic Desk disk conversions need the scaffolding of True Drive to load the 'virtual disk'
-    uint8 ram[256];                 // Mostly for EasyFlash but can be used for any cart that maps some RAM
-    uint8_t * rom = nullptr;        // Pointer to ROM contents
+    u8 notEXROM = true;                     // Cartridge /GAME control line
+    u8 notGAME = true;                      // Cartridge /GAME control line
+    u8 bank = 0;                            // Selected bank - only for cart types that support banking
+    u8 bTrueDriveRequired = false;          // Magic Desk disk conversions need the scaffolding of True Drive to load the 'virtual disk'
+    u8 ultimax_mode = false;                // Set true when we are in ultimax mode (RAM pass through)
+    u8 dirtyFlash = false;                  // By default, the cart does not need write-back
+    u8 flash_state_lo = FLASH_IDLE;         // For carts that support flash write
+    u8 flash_state_hi = FLASH_IDLE;         // For carts that support flash write
+    u8 flash_base_state_lo = FLASH_IDLE;    // For carts that support flash write
+    u8 flash_base_state_hi = FLASH_IDLE;    // For carts that support flash write
+    uint8 ram[256];                         // Mostly for EasyFlash but can be used for any cart that maps some RAM
+    uint8_t * rom = nullptr;                // Pointer to ROM contents
 };
 
 
@@ -200,8 +234,7 @@ public:
     void WriteIO1(uint16_t adr, uint8_t byte) override;
 };
 
-
-// Easy Flash cartridge (banked 16K ROM cartridge)
+// Easy Flash cartridge (banked 16K ROM cartridge with flash write support)
 class CartridgeEasyFlash : public ROMCartridge {
 public:
     CartridgeEasyFlash(bool not_game, bool not_exrom);
@@ -212,7 +245,29 @@ public:
     void WriteIO2(uint16_t adr, uint8_t byte) override;
     uint8_t ReadIO1(uint16_t adr, uint8_t bus_byte) override;
     uint8_t ReadIO2(uint16_t adr, uint8_t bus_byte) override;
+    void WriteFlash(uint16_t adr, uint8_t byte) override;
+    void PersistFlash(void) override;
+    
+    void PatchEAPI(void);
+    
+private:
+    u8 under_autoselect_lo[64][4];
+    u8 under_autoselect_hi[64][4];
+    u8 dirtySectors[256];   // Don't need to save this in the .gss save file as we will restore/patch EAPI dirty sectors from the .ezf file
 };
 
+// GMOD2 cartridge (banked 8K LOROM cartridge with 2K byte Serial EEPROM)
+class CartridgeGMOD2 : public ROMCartridge {
+public:
+    CartridgeGMOD2(bool not_game, bool not_exrom);
 
-#endif // ndef CARTRIDGE_H
+    void Reset() override;
+    void MapThyself(void) override;
+    void WriteIO1(uint16_t adr, uint8_t byte) override;
+    uint8_t ReadIO1(uint16_t adr, uint8_t bus_byte) override;
+    
+private:
+    u8 eeprom_data[2048];
+};
+
+#endif // CARTRIDGE_H

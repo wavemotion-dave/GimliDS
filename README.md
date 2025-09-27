@@ -88,7 +88,8 @@ Although primarily a disk-based emulator, GimliDS does support the more common C
   * C64 Games System up to 512K
   * Ocean up to 512K
   * Magic Desk up to 1MB
-  * Easy Flash up to 1MB with 256b RAM
+  * EasyFlash up to 1MB with 256b RAM and Flash Write support
+  * GMOD2 up to 512K (Serial EE support coming soon)
   * Magic Desk 16K (aka Magic Desk 2) up to 2MB on DSi or above only
 
 This should cover a wide number of carts - recommend you seek out the OneLoad64 cart archive.
@@ -161,8 +162,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
 
-Version 1.3a release 23-Sep-2025 by wavemotion-dave
+Version 1.4 release 27-Sep-2025 by wavemotion-dave
+  * Easyflash now supports flash writes with auto-persist to the SD card
+  * GMOD2 cart type (60) supported but without the Serial EEPROM
+  * Fixed Game Config so it properly restores the configuration last saved (oops!)
+  * Changed default keymap... B is now UP for help with platform/jumping games.
+  * Improved SID emulation on the DSi or above with the extra CPU horsepower.
   * Improved keyboard screen dim handling.
+  * Fix .gss Save State names
   * For the DSi and above (with the extra memory), 2MB MagicDesk 16K carts are supported (mainly for SNK vs Capcom - Stronger Edition)
   * Other minor tweaks under the hood.
 

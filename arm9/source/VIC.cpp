@@ -636,7 +636,7 @@ uint8 MOS6569::ReadRegister(uint16 adr)
 /*
  *  Write to VIC register
  */
-ITCM_CODE void MOS6569::WriteRegister(uint16 adr, uint8 byte)
+void MOS6569::WriteRegister(uint16 adr, uint8 byte)
 {
     switch (adr) {
         case 0x00: case 0x02: case 0x04: case 0x06:
@@ -922,7 +922,7 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_mc_text(uint8 *p, uint8 *
 }
 
 
-void MOS6569::el_std_bitmap(uint8 *p, uint8 *q, uint8 *r)
+ITCM_CODE void MOS6569::el_std_bitmap(uint8 *p, uint8 *q, uint8 *r)
 {
     uint32 *lp = (uint32 *)p;
     uint8 *mp = matrix_line;
@@ -1000,7 +1000,7 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_ecm_text(uint8 *p, uint8 
 }
 
 
-__attribute__ ((noinline))  void MOS6569::el_std_idle(uint8 *p, uint8 *r)
+__attribute__ ((noinline))  ITCM_CODE  void MOS6569::el_std_idle(uint8 *p, uint8 *r)
 {
     uint8 data = *get_physical(ctrl1 & 0x40 ? 0x39ff : 0x3fff);
     uint32 *lp = (uint32 *)p;
@@ -1020,7 +1020,7 @@ __attribute__ ((noinline))  void MOS6569::el_std_idle(uint8 *p, uint8 *r)
 }
 
 
-void MOS6569::el_mc_idle(uint8 *p, uint8 *r)
+ITCM_CODE void MOS6569::el_mc_idle(uint8 *p, uint8 *r)
 {
     uint8 data = *get_physical(0x3fff);
     uint32 *lp = (uint32 *)p - 1;

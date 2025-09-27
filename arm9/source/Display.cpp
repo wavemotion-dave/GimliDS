@@ -70,7 +70,7 @@ u8 last_drive_access_type = 0;
 void floppy_soundfx(u8 type)
 {
     last_drive_access_type = type;
-    if (myConfig.diskSFX)
+    if (myConfig.diskFlash & 1)
     {
         if (floppy_sound_counter == 0) floppy_sound_counter = 250;
     }
@@ -312,7 +312,7 @@ ITCM_CODE void vblankDS(void)
     {
         if (floppy_sound_counter == 250)
         {
-            if (myConfig.diskSFX) mmEffect(SFX_FLOPPY);
+            if (myConfig.diskFlash & 1) mmEffect(SFX_FLOPPY);
         }
         floppy_sound_counter--;
     }
@@ -486,10 +486,9 @@ void show_cartstatus(void)
         DSPrint(21, 23, 2, (char*)"012");
     }
 
-    extern u8 cart_led;
     if (cart_led)
     {
-        DSPrint(22, 21, 2, (char*)"3");
+        DSPrint(22, 21, 2, cart_led_color ? (char*)"4":(char*)"3");
         cart_led--;
     }
     else

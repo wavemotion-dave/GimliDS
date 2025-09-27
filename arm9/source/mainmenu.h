@@ -1,6 +1,6 @@
 
 #define MAX_CONFIGS                 1920
-#define CONFIG_VERSION              0x0007
+#define CONFIG_VERSION              0x0008
 
 extern s16 CycleDeltas[];
 
@@ -10,18 +10,18 @@ struct __attribute__((__packed__)) Config_t
     u8  key_map[10];  // U,D,L,R, A,B,X,Y, +2 spares
     u8  trueDrive;
     u8  jitter;
-    u8  diskSFX;
+    u8  diskFlash;
     u8  joyPort;
     u8  joyMode;
     u8  poundKey;
     u8  reuType;
-    u8  reserved4;
-    u8  reserved5;
-    u8  reserved6;
-    u8  reserved7;
-    u8  reserved8;
     u8  cpuCycles;
     u8  badCycles;
+    u8  reserved0;
+    u8  reserved1;
+    u8  reserved2;
+    u8  reserved3;
+    u8  reserved4;
     s8  offsetX;
     s8  offsetY;
     s16 scaleX;
@@ -33,7 +33,7 @@ struct __attribute__((__packed__)) GlobalConfig_t
     u8  defaultX;
     u8  defaultY;
     u8  defaultB;
-    u8  defaultDiskSFX;
+    u8  defaultDiskFlash;
     u8  defaultJoyPort;
     u8  defaultPoundKey;
     u8  keyboardDim;
@@ -129,9 +129,16 @@ extern struct GlobalConfig_t  myGlobalConfig;
 #define JOYMODE_SLIDE_N_GLIDE   1
 #define JOYMODE_DIAGONALS       2
 
+#define DISK_READ_NO_SFX        0x00
+#define DISK_READ_WITH_SFX      0x01
+#define DISK_WRITE_NO_SFX       0x02
+#define DISK_WRITE_WITH_SFX     0x03
+
 extern u32 getCRC32(u8 *buf, int size);
 extern u32 file_crc;
 void LoadConfig(void);
 void SaveConfig(void);
 void FindConfig(void);
 void GimliDSGameOptions(void);
+void check_and_make_sav_directory(void);
+void debug_printf(const char * str, ...);

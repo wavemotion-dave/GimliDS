@@ -89,8 +89,8 @@ enum
 extern uint8 myRAM[];
 extern uint8 myCOLOR[];
 
-uint8 *MemMap[0x10]  __attribute__((section(".dtcm"))) ;
-
+uint8 *MemMap[0x10]         __attribute__((section(".dtcm")));
+uint8 flash_write_supported __attribute__((section(".dtcm"))) = 0;
 
 /*
  *  6510 constructor: Initialize registers
@@ -158,7 +158,7 @@ void MOS6510::setCharVsIO(void)
  *  Memory configuration has probably changed
  */
 
-void MOS6510::new_config(void)
+__attribute__ ((noinline)) void MOS6510::new_config(void)
 {
     if ((ram[0] & 0x10) == 0) 
     {
@@ -325,13 +325,28 @@ __attribute__ ((noinline)) void MOS6510::write_byte_io(uint16 adr, uint8 byte)
 }
 
 
+__attribute__ ((noinline)) ITCM_CODE void MOS6510::write_byte_flash(uint16 adr, uint8 byte)
+{
+    if ((adr >> 12) == 0xd)
+    {
+        write_byte_io(adr, byte);
+    }
+    else
+    {
+        if (flash_write_supported) TheCart->WriteFlash(adr, byte);
+        else myRAM[adr] = byte;
+    }
+}
+
 /*
  *  Write a byte to the CPU's address space
  */
-
 inline void MOS6510::write_byte(uint16 adr, uint8 byte)
 {
-    if ((adr >> 12) == 0xd) write_byte_io(adr, byte);
+    if (adr & 0x8000)
+    {
+        write_byte_flash(adr, byte);
+    }
     else
     {
         myRAM[adr] = byte;
@@ -384,7 +399,7 @@ inline void MOS6510::write_zp(uint16 adr, uint8 byte)
  *  Adc instruction
  */
 
-void MOS6510::do_adc(uint8 byte)
+ITCM_CODE void MOS6510::do_adc(uint8 byte)
 {
     if (!d_flag) {
         uint16 tmp = a + (byte) + (c_flag ? 1 : 0);
@@ -411,7 +426,7 @@ void MOS6510::do_adc(uint8 byte)
  * Sbc instruction
  */
 
-void MOS6510::do_sbc(uint8 byte)
+ITCM_CODE void MOS6510::do_sbc(uint8 byte)
 {
     uint16 tmp = a - (byte) - (c_flag ? 0 : 1);
     if (!d_flag) {
@@ -583,8 +598,9 @@ void MOS6510::Reset(void)
     interrupt.intr_any = 0;
     nmi_state = false;
     
+    // The CPU starts fresh with no borrowed cycles from a previous scanline
     borrowed_cycles = 0;
-
+    
     interrupt.intr[INT_VICIRQ] = false;
     interrupt.intr[INT_CIAIRQ] = false;
     interrupt.intr[INT_NMI] = false;

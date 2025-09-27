@@ -40,6 +40,7 @@
 char Drive8File[MAX_FILENAME_LEN];
 char Drive9File[MAX_FILENAME_LEN];
 char CartFilename[MAX_FILENAME_LEN];
+char CartType[16] = {'N','O','N','E', 0};
 
 extern int bg0b, bg1b;
 int         diskCount=0;
@@ -527,11 +528,19 @@ void DisplayFileNameCartridge(void)
         DSPrint(7,5,6, (char *)"CARTRIDGE IS MOUNTED AS:");
         strncpy(tmp, CartFilename, 25); tmp[24]=0;
         DSPrint(7,7,6, tmp);
+        if (strlen(CartFilename) > 28)
+        {
+            strncpy(tmp, CartFilename+24, 25); tmp[24]=0;
+            DSPrint(7,8,6, tmp);
+        }
     }
     else
     {
         DSPrint(7,5,6, (char *)"CARTRIDGE IS NOT MOUNTED");
     }
+    
+    sprintf(tmp, "TYPE: %s", CartType);
+    DSPrint(16-(strlen(tmp)/2),22,6, tmp);
 }
 
 // ----------------------------------------------------------------------

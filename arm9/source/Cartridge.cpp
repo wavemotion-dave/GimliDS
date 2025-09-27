@@ -40,11 +40,14 @@
 #include "C64.h"
 #include "CPUC64.h"
 #include "Cartridge.h"
+#include "mainmenu.h"
+#include "diskmenu.h"
 #include "printf.h"
 #include <filesystem>
 namespace fs = std::filesystem;
 
-u8 cart_led = 0; // Used to briefly 'light up' the cart icon for Easy Flash 'disk' access
+uint8 cart_led = 0;         // Used to briefly 'light up' the cart icon for Easy Flash 256 byte RAM access
+uint8 cart_led_color = 0;   // Yellow
 
 extern uint8 *MemMap[0x10];
 extern u8 myRAM[];
@@ -53,6 +56,9 @@ extern u8 myKERNAL[];
 
 u8 *cartROM = NULL;    // 1MB max supported cart size (not including .crt and chip headers). For DSi this gets bumped up to 2MB.
 extern C64 *gTheC64;   // Easy access to the main C64 object
+
+extern char CartType[16];   // For debug mostly
+char tmpFilename[256];
 
 // Base class for cartridge with ROM
 ROMCartridge::ROMCartridge(unsigned num_banks, unsigned bank_size) : numBanks(num_banks), bankSize(bank_size)
@@ -69,16 +75,20 @@ ROMCartridge::ROMCartridge(unsigned num_banks, unsigned bank_size) : numBanks(nu
             cartROM = (u8*)malloc(1*1024*1024);
         }
     }
-    // We always re-use the same 1MB cart ROM buffer...
+    // We always re-use the same cart ROM buffer...
     rom = cartROM;
     memset(rom, 0xff, num_banks * bank_size);
     cart_led = 0;
+    cart_led_color = 0;
+    dirtyFlash = false;
+    memset(ram, 0xff, sizeof(ram));
+    
+    strcpy(CartType, "NONE");
 }
 
 ROMCartridge::~ROMCartridge()
 {
 }
-
 
 // Simplified mapping table without CHAREN
 // _EXROM  _GAME   HIRAM   LORAM   $0000-$0FFF   $1000-$7FFF  $8000-$9FFF   $A000-$BFFF   $C000-$CFFF    $D000-$DFFF    $E000-$FFFF
@@ -87,10 +97,10 @@ ROMCartridge::~ROMCartridge()
 //   1       1      0       1       RAM           RAM          RAM          RAM            RAM           CHAR/IO         RAM
 //   1       1      0       0       RAM           RAM          RAM          RAM            RAM           RAM             RAM
 //
-//   1       0      1       1       RAM           -            CARTLO       -              -             CHAR/IO         CARTHI
-//   1       0      1       0       RAM           -            CARTLO       -              -             CHAR/IO         CARTHI
-//   1       0      0       1       RAM           -            CARTLO       -              -             CHAR/IO         CARTHI
-//   1       0      0       0       RAM           -            CARTLO       -              -             CHAR/IO         CARTHI
+//   1       0      1       1       RAM           -            CARTLO       -              -             CHAR/IO         CARTHI     (Ultimax mode)
+//   1       0      1       0       RAM           -            CARTLO       -              -             CHAR/IO         CARTHI     (Ultimax mode)
+//   1       0      0       1       RAM           -            CARTLO       -              -             CHAR/IO         CARTHI     (Ultimax mode)
+//   1       0      0       0       RAM           -            CARTLO       -              -             CHAR/IO         CARTHI     (Ultimax mode)
 //
 //   0       1      1       1       RAM           RAM          CARTLO       BASIC          RAM           CHAR/IO         KERNAL
 //   0       1      1       0       RAM           RAM          RAM          RAM            RAM           CHAR/IO         KERNAL
@@ -110,6 +120,8 @@ void ROMCartridge::StandardMapping(int32 hi_bank_offset)
     if (notGAME)   portMap |= 0x04;  // _GAME
     if (port & 2)  portMap |= 0x02;  // HI_RAM
     if (port & 1)  portMap |= 0x01;  // LO_RAM
+    
+    ultimax_mode = false;
 
     switch (portMap)
     {
@@ -141,6 +153,7 @@ void ROMCartridge::StandardMapping(int32 hi_bank_offset)
             MemMap[0xb]=myRAM; // Technically N/C but for now...
             MemMap[0xe]=rom + ((uint32)bank * bankSize) + hi_bank_offset - 0xe000;
             MemMap[0xf]=rom + ((uint32)bank * bankSize) + hi_bank_offset - 0xe000;
+            ultimax_mode = true;
             break;
 
         case 0x7:
@@ -198,10 +211,23 @@ bool Cartridge::isTrueDriveRequired(void)
     return bTrueDriveRequired;
 }
 
+// Called once per frame - see if there is any cart data that needs persisting
+void Cartridge::CartFrame(void)
+{
+    if (dirtyFlash)
+    {
+        if (--dirtyFlash == 0)
+        {
+            PersistFlash();
+        }
+    }
+}
+
 // 8K ROM cartridge (EXROM = 0, GAME = 1)
 Cartridge8K::Cartridge8K() : ROMCartridge(1, 0x2000)
 {
     notEXROM = false;
+    strcpy(CartType, "STD8K");
 }
 
 void Cartridge8K::MapThyself(void)
@@ -222,6 +248,7 @@ Cartridge16K::Cartridge16K() : ROMCartridge(1, 0x4000)
 {
     notEXROM = false;
     notGAME = false;
+    strcpy(CartType, "STD16K");
 }
 
 void Cartridge16K::MapThyself(void)
@@ -249,6 +276,7 @@ CartridgeOcean::CartridgeOcean(bool not_game) : ROMCartridge(64, 0x2000)
     notEXROM = false;
     notGAME = not_game;
     MapThyself();
+    strcpy(CartType, "OCEAN");
 }
 
 void CartridgeOcean::Reset()
@@ -275,6 +303,7 @@ CartridgeSuperGames::CartridgeSuperGames() : ROMCartridge(4, 0x4000)
     notEXROM = false;
     notGAME = false;
     MapThyself();
+    strcpy(CartType, "SUPERGAME");
 }
 
 void CartridgeSuperGames::Reset()
@@ -309,6 +338,7 @@ CartridgeC64GS::CartridgeC64GS() : ROMCartridge(64, 0x2000)
 {
     notEXROM = false;
     MapThyself();
+    strcpy(CartType, "C64GS");
 }
 
 void CartridgeC64GS::Reset()
@@ -341,6 +371,7 @@ CartridgeDinamic::CartridgeDinamic() : ROMCartridge(16, 0x2000)
 {
     notEXROM = false;
     MapThyself();
+    strcpy(CartType, "DINAMIC");
 }
 
 void CartridgeDinamic::Reset()
@@ -370,6 +401,7 @@ CartridgeMagicDesk::CartridgeMagicDesk() : ROMCartridge(128, 0x2000)
     notEXROM = false;
     bank = 0;
     MapThyself();
+    strcpy(CartType, "MAGICDESK");
 }
 
 void CartridgeMagicDesk::Reset()
@@ -400,6 +432,7 @@ CartridgeMagicDesk2::CartridgeMagicDesk2() : ROMCartridge(128, 0x4000)
     notGAME = false;
     bank = 0;
     MapThyself();
+    strcpy(CartType, "MAGICDESK 16K");
 }
 
 void CartridgeMagicDesk2::Reset()
@@ -422,24 +455,172 @@ void CartridgeMagicDesk2::WriteIO1(uint16_t adr, uint8_t byte)
     MapThyself();
 }
 
+// Borrowed from VICE - many thanks!!
+static const unsigned char eapiam29f040[768] = {
+    0x65, 0x61, 0x70, 0x69, 0xc1, 0x4d,
+    0x2f, 0xcd, 0x32, 0x39, 0xc6, 0x30, 0x34, 0x30,
+    0x20, 0xd6, 0x31, 0x2e, 0x34, 0x00, 0x08, 0x78,
+    0xa5, 0x4b, 0x48, 0xa5, 0x4c, 0x48, 0xa9, 0x60,
+    0x85, 0x4b, 0x20, 0x4b, 0x00, 0xba, 0xbd, 0x00,
+    0x01, 0x85, 0x4c, 0xca, 0xbd, 0x00, 0x01, 0x85,
+    0x4b, 0x18, 0x90, 0x70, 0x4c, 0x67, 0x01, 0x4c,
+    0xa4, 0x01, 0x4c, 0x39, 0x02, 0x4c, 0x40, 0x02,
+    0x4c, 0x44, 0x02, 0x4c, 0x4e, 0x02, 0x4c, 0x58,
+    0x02, 0x4c, 0x8e, 0x02, 0x4c, 0xd9, 0x02, 0x4c,
+    0xd9, 0x02, 0x8d, 0x02, 0xde, 0xa9, 0xaa, 0x8d,
+    0x55, 0x85, 0xa9, 0x55, 0x8d, 0xaa, 0x82, 0xa9,
+    0xa0, 0x8d, 0x55, 0x85, 0xad, 0xf2, 0xdf, 0x8d,
+    0x00, 0xde, 0xa9, 0x00, 0x8d, 0xff, 0xff, 0xa2,
+    0x07, 0x8e, 0x02, 0xde, 0x60, 0x8d, 0x02, 0xde,
+    0xa9, 0xaa, 0x8d, 0x55, 0xe5, 0xa9, 0x55, 0x8d,
+    0xaa, 0xe2, 0xa9, 0xa0, 0x8d, 0x55, 0xe5, 0xd0,
+    0xdb, 0xa2, 0x55, 0x8e, 0xe3, 0xdf, 0x8c, 0xe4,
+    0xdf, 0xa2, 0x85, 0x8e, 0x02, 0xde, 0x8d, 0xff,
+    0xff, 0x4c, 0xbb, 0xdf, 0xad, 0xff, 0xff, 0x60,
+    0xcd, 0xff, 0xff, 0x60, 0xa2, 0x6f, 0xa0, 0x7f,
+    0xb1, 0x4b, 0x9d, 0x80, 0xdf, 0xdd, 0x80, 0xdf,
+    0xd0, 0x21, 0x88, 0xca, 0x10, 0xf2, 0xa2, 0x00,
+    0xe8, 0x18, 0xbd, 0x80, 0xdf, 0x65, 0x4b, 0x9d,
+    0x80, 0xdf, 0xe8, 0xbd, 0x80, 0xdf, 0x65, 0x4c,
+    0x9d, 0x80, 0xdf, 0xe8, 0xe0, 0x1e, 0xd0, 0xe8,
+    0x18, 0x90, 0x06, 0xa9, 0x01, 0x8d, 0xb9, 0xdf,
+    0x38, 0x68, 0x85, 0x4c, 0x68, 0x85, 0x4b, 0xb0,
+    0x48, 0xa9, 0xaa, 0xa0, 0xe5, 0x20, 0xd5, 0xdf,
+    0xa0, 0x85, 0x20, 0xd5, 0xdf, 0xa9, 0x55, 0xa2,
+    0xaa, 0xa0, 0xe2, 0x20, 0xd7, 0xdf, 0xa2, 0xaa,
+    0xa0, 0x82, 0x20, 0xd7, 0xdf, 0xa9, 0x90, 0xa0,
+    0xe5, 0x20, 0xd5, 0xdf, 0xa0, 0x85, 0x20, 0xd5,
+    0xdf, 0xad, 0x00, 0xa0, 0x8d, 0xf1, 0xdf, 0xae,
+    0x01, 0xa0, 0x8e, 0xb9, 0xdf, 0xc9, 0x01, 0xd0,
+    0x06, 0xe0, 0xa4, 0xd0, 0x02, 0xf0, 0x0c, 0xc9,
+    0x20, 0xd0, 0x39, 0xe0, 0xe2, 0xd0, 0x35, 0xf0,
+    0x02, 0xb0, 0x50, 0xad, 0x00, 0x80, 0xae, 0x01,
+    0x80, 0xc9, 0x01, 0xd0, 0x06, 0xe0, 0xa4, 0xd0,
+    0x02, 0xf0, 0x08, 0xc9, 0x20, 0xd0, 0x19, 0xe0,
+    0xe2, 0xd0, 0x15, 0xa0, 0x3f, 0x8c, 0x00, 0xde,
+    0xae, 0x02, 0x80, 0xd0, 0x13, 0xae, 0x02, 0xa0,
+    0xd0, 0x12, 0x88, 0x10, 0xf0, 0x18, 0x90, 0x12,
+    0xa9, 0x02, 0xd0, 0x0a, 0xa9, 0x03, 0xd0, 0x06,
+    0xa9, 0x04, 0xd0, 0x02, 0xa9, 0x05, 0x8d, 0xb9,
+    0xdf, 0x38, 0xa9, 0x00, 0x8d, 0x00, 0xde, 0xa0,
+    0xe0, 0xa9, 0xf0, 0x20, 0xd7, 0xdf, 0xa0, 0x80,
+    0x20, 0xd7, 0xdf, 0xad, 0xb9, 0xdf, 0xb0, 0x08,
+    0xae, 0xf1, 0xdf, 0xa0, 0x40, 0x28, 0x18, 0x60,
+    0x28, 0x38, 0x60, 0x8d, 0xb7, 0xdf, 0x8e, 0xb9,
+    0xdf, 0x8e, 0xed, 0xdf, 0x8c, 0xba, 0xdf, 0x08,
+    0x78, 0x98, 0x29, 0xbf, 0x8d, 0xee, 0xdf, 0xa9,
+    0x00, 0x8d, 0x00, 0xde, 0xa9, 0x85, 0xc0, 0xe0,
+    0x90, 0x05, 0x20, 0xc1, 0xdf, 0xb0, 0x03, 0x20,
+    0x9e, 0xdf, 0xa2, 0x14, 0x20, 0xec, 0xdf, 0xf0,
+    0x06, 0xca, 0xd0, 0xf8, 0x18, 0x90, 0x63, 0xad,
+    0xf2, 0xdf, 0x8d, 0x00, 0xde, 0x18, 0x90, 0x72,
+    0x8d, 0xb7, 0xdf, 0x8e, 0xb9, 0xdf, 0x8c, 0xba,
+    0xdf, 0x08, 0x78, 0x98, 0xc0, 0x80, 0xf0, 0x04,
+    0xa0, 0xe0, 0xa9, 0xa0, 0x8d, 0xee, 0xdf, 0xc8,
+    0xc8, 0xc8, 0xc8, 0xc8, 0xa9, 0xaa, 0x20, 0xd5,
+    0xdf, 0xa9, 0x55, 0xa2, 0xaa, 0x88, 0x88, 0x88,
+    0x20, 0xd7, 0xdf, 0xa9, 0x80, 0xc8, 0xc8, 0xc8,
+    0x20, 0xd5, 0xdf, 0xa9, 0xaa, 0x20, 0xd5, 0xdf,
+    0xa9, 0x55, 0xa2, 0xaa, 0x88, 0x88, 0x88, 0x20,
+    0xd7, 0xdf, 0xad, 0xb7, 0xdf, 0x8d, 0x00, 0xde,
+    0xa2, 0x00, 0x8e, 0xed, 0xdf, 0x88, 0x88, 0xa9,
+    0x30, 0x20, 0xd7, 0xdf, 0xa9, 0xff, 0xaa, 0xa8,
+    0xd0, 0x24, 0xad, 0xf2, 0xdf, 0x8d, 0x00, 0xde,
+    0xa0, 0x80, 0xa9, 0xf0, 0x20, 0xd7, 0xdf, 0xa0,
+    0xe0, 0xa9, 0xf0, 0x20, 0xd7, 0xdf, 0x28, 0x38,
+    0xb0, 0x02, 0x28, 0x18, 0xac, 0xba, 0xdf, 0xae,
+    0xb9, 0xdf, 0xad, 0xb7, 0xdf, 0x60, 0x20, 0xec,
+    0xdf, 0xf0, 0x09, 0xca, 0xd0, 0xf8, 0x88, 0xd0,
+    0xf5, 0x18, 0x90, 0xce, 0xad, 0xf2, 0xdf, 0x8d,
+    0x00, 0xde, 0x18, 0x90, 0xdd, 0x8d, 0xf2, 0xdf,
+    0x8d, 0x00, 0xde, 0x60, 0xad, 0xf2, 0xdf, 0x60,
+    0x8d, 0xf3, 0xdf, 0x8e, 0xe9, 0xdf, 0x8c, 0xea,
+    0xdf, 0x60, 0x8e, 0xf4, 0xdf, 0x8c, 0xf5, 0xdf,
+    0x8d, 0xf6, 0xdf, 0x60, 0xad, 0xf2, 0xdf, 0x8d,
+    0x00, 0xde, 0x20, 0xe8, 0xdf, 0x8d, 0xb7, 0xdf,
+    0x8e, 0xf0, 0xdf, 0x8c, 0xf1, 0xdf, 0xa9, 0x00,
+    0x8d, 0xba, 0xdf, 0xf0, 0x3b, 0xad, 0xf4, 0xdf,
+    0xd0, 0x10, 0xad, 0xf5, 0xdf, 0xd0, 0x08, 0xad,
+    0xf6, 0xdf, 0xf0, 0x0b, 0xce, 0xf6, 0xdf, 0xce,
+    0xf5, 0xdf, 0xce, 0xf4, 0xdf, 0x90, 0x45, 0x38,
+    0xb0, 0x42, 0x8d, 0xb7, 0xdf, 0x8e, 0xf0, 0xdf,
+    0x8c, 0xf1, 0xdf, 0xae, 0xe9, 0xdf, 0xad, 0xea,
+    0xdf, 0xc9, 0xa0, 0x90, 0x02, 0x09, 0x40, 0xa8,
+    0xad, 0xb7, 0xdf, 0x20, 0x80, 0xdf, 0xb0, 0x24,
+    0xee, 0xe9, 0xdf, 0xd0, 0x19, 0xee, 0xea, 0xdf,
+    0xad, 0xf3, 0xdf, 0x29, 0xe0, 0xcd, 0xea, 0xdf,
+    0xd0, 0x0c, 0xad, 0xf3, 0xdf, 0x0a, 0x0a, 0x0a,
+    0x8d, 0xea, 0xdf, 0xee, 0xf2, 0xdf, 0x18, 0xad,
+    0xba, 0xdf, 0xf0, 0xa1, 0xac, 0xf1, 0xdf, 0xae,
+    0xf0, 0xdf, 0xad, 0xb7, 0xdf, 0x60, 0xff, 0xff,
+    0xff, 0xff
+};
 
-// Easyflash cartridge (banked 8K ROM cartridge)
+// -------------------------------------------------------------------------------------------------------
+// Easyflash cartridge (banked 16K ROM cartridge with 8K LOROM and 8K HIGH ROM and flash write supported)
+// -------------------------------------------------------------------------------------------------------
 CartridgeEasyFlash::CartridgeEasyFlash(bool not_game, bool not_exrom) : ROMCartridge(128, 0x2000)
 {
     notEXROM = not_exrom;
     notGAME = not_game;
     MapThyself();
+    strcpy(CartType, "EASYFLASH");
+}
+
+void CartridgeEasyFlash::PatchEAPI(void)
+{
+    // -------------------------------------------------------------------------------------------
+    // If the EAPI driver is located at the correct offset in the HIROM chip, we patch over
+    // it with the standard EasyFlash driver which is all we support for GimliDS. Most likely
+    // the driver we are patching is also an EasyFlash driver - in which case, no harm, no foul.
+    // -------------------------------------------------------------------------------------------
+    if ((rom[0x81800] == 'e') && (rom[0x81801] == 'a') && (rom[0x81802] == 'p') && (rom[0x81803] == 'i'))
+    {
+        memcpy(rom+0x81800, eapiam29f040, sizeof(eapiam29f040));
+    }
+    
+    // ------------------------------------------------------------------------------------------------
+    // There might be an ".ezf" flash patch file sitting on the SD card... if so read it and apply it.
+    // ------------------------------------------------------------------------------------------------
+    if (myConfig.diskFlash & 0x02)
+    {
+        sprintf(tmpFilename,"sav/%s", CartFilename);
+        tmpFilename[strlen(tmpFilename)-3] = 'e';
+        tmpFilename[strlen(tmpFilename)-2] = 'z';
+        tmpFilename[strlen(tmpFilename)-1] = 'f';
+        
+        FILE *fp = fopen(tmpFilename, "rb");
+        if (fp)
+        {
+            fread(dirtySectors, sizeof(dirtySectors), 1, fp);
+            for (int i=0; i<256; i++)
+            {
+                if (dirtySectors[i])
+                {
+                    fread(rom + (i * 0x2000), 0x2000, 1, fp);
+                }
+            }
+            fclose(fp);
+        }
+    }
 }
 
 void CartridgeEasyFlash::Reset()
 {
+    flash_write_supported = 1;
+    flash_state_lo = FLASH_IDLE;
+    flash_state_hi = FLASH_IDLE;
+    flash_base_state_lo = FLASH_IDLE;
+    flash_base_state_hi = FLASH_IDLE;
+    
     bank = 0;
     MapThyself();
+    PatchEAPI();
 }
 
 void CartridgeEasyFlash::MapThyself(void)
 {
-    StandardMapping(64 * 0x2000);
+    StandardMapping(64 * 0x2000); // Easyflash is 2 ROMs of 512K each... so when we map, the HIROM bank is just offset by 512K
 }
 
 
@@ -453,7 +634,7 @@ void CartridgeEasyFlash::WriteIO1(uint16_t adr, uint8_t byte)
     {
         notEXROM = (byte & 2) ? false:true;
         notGAME  = (byte & 4) ? ((byte & 1) ? false:true) : false;
-        if (byte & 0x80) cart_led=2;
+        if (byte & 0x80) {cart_led=2;cart_led_color=0;}
     }
     MapThyself();
 }
@@ -473,6 +654,260 @@ uint8_t CartridgeEasyFlash::ReadIO2(uint16_t adr, uint8_t bus_byte)
     return ram[adr & 0xff];
 }
 
+// --------------------------------------------------------------------------
+// Easy Flash supports write to the flash. Erase happens on 64K sized blocks.
+// --------------------------------------------------------------------------
+void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
+{
+    // -----------------------------------------------------------------
+    // Trap any writes that would be hitting our Cartridge ROM space...
+    // -----------------------------------------------------------------
+    if ((MemMap[adr>>12] >= (rom-0xe000)) && (MemMap[adr>>12] < (rom+(1024*1024))))
+    {
+        cart_led=2;
+        cart_led_color=1;
+        
+        uint8 *flash_state      = ((adr & 0xE000) == 0x8000) ? &flash_state_lo : &flash_state_hi;
+        uint8 *flash_base_state = ((adr & 0xE000) == 0x8000) ? &flash_base_state_lo : &flash_base_state_hi;
+        uint32 flash_offset     = ((adr & 0xE000) == 0x8000) ? 0x00000000 : (64 * 0x2000);
+
+        switch (*flash_state)
+        {
+            case FLASH_IDLE:
+                if ((bank == 0) && ((adr & 0x7FF) == 0x555) && (byte == 0xAA)) // The first keyed sequence to wake up the flash controller
+                {
+                    *flash_state = FLASH_x555_AA;
+                }
+                else if (byte == 0xF0)
+                {
+                    *flash_state = FLASH_IDLE;
+                    *flash_base_state = FLASH_IDLE;
+                }
+                break;
+                
+            case FLASH_CHIP_ID: // Chip ID (aka AutoSelect mode)
+                if ((bank == 0) && ((adr & 0x7FF) == 0x555) && (byte == 0xAA)) // The first keyed sequence to wake up the flash controller
+                {
+                    *flash_state = FLASH_x555_AA;
+                }
+                else if (byte == 0xF0)
+                {
+                    *flash_state = FLASH_IDLE;
+                    *flash_base_state = FLASH_IDLE;
+                    // Revert back to true flash contents
+                    for (int i=0; i<64; i++)
+                    {
+                        memcpy(rom + flash_offset + (i*0x2000), ((adr & 0xE000) == 0x8000) ? under_autoselect_lo[i] : under_autoselect_hi[i], 4);
+                    }
+                }
+                break;
+                
+                
+            case FLASH_x555_AA:
+                if ((bank == 0) && ((adr & 0x7FF) == 0x2AA) && (byte == 0x55)) // The second keyed sequence to wake up the flash controller
+                {
+                    *flash_state = FLASH_x2AA_55;
+                }
+                else
+                {
+                    *flash_state = *flash_base_state;
+                }
+                break;
+            
+            // -----------------------------------------------------------    
+            // Determine what kind of flash command is being requested...
+            // -----------------------------------------------------------
+            case FLASH_x2AA_55:
+                if (((adr & 0x7FF) == 0x555) && (byte == 0x80)) 
+                {
+                    *flash_state = FLASH_x555_80;    // Sector Erase
+                }
+                else if (((adr & 0x7FF) == 0x555) && (byte == 0x90))
+                {
+                    *flash_base_state = FLASH_CHIP_ID;
+                    *flash_state = FLASH_CHIP_ID;
+                    
+                    // ----------------------------------------------
+                    // We are in 'AutoSelect' mode where the program
+                    // is trying to read out the Chip ID / Mfr and
+                    // possibly the state of the bank protection.
+                    // ----------------------------------------------
+                    for (int i=0; i<64; i++)
+                    {
+                        memcpy(((adr & 0xE000) == 0x8000) ? under_autoselect_lo[i] : under_autoselect_hi[i], rom + flash_offset + (i*(0x2000)), 4);
+                        rom[flash_offset+(i*(0x2000))+0] = 0x01; // AMD
+                        rom[flash_offset+(i*(0x2000))+1] = 0xA4; // AM29F040
+                        rom[flash_offset+(i*(0x2000))+2] = 0x00; // Not Protected
+                        rom[flash_offset+(i*(0x2000))+3] = 0x00; // Unused but padded just in case
+                    }
+                }
+                else if (((adr & 0x7FF) == 0x555) && (byte == 0xA0))
+                {
+                    *flash_state = FLASH_x555_A0;    // Byte Write
+                }
+                else if (((adr & 0x7FF) == 0x555) && (byte == 0xF0))
+                {
+                    *flash_state = FLASH_IDLE;
+                    *flash_base_state = FLASH_IDLE;
+                }
+                else
+                {
+                    *flash_state = *flash_base_state;
+                }
+                break;
+                
+            case FLASH_x555_80: // Sector Erase
+                if (((adr & 0x7FF) == 0x555) && (byte == 0xAA))
+                {
+                    *flash_state = FLASH_x555_SE;
+                }
+                else
+                {
+                    *flash_state = *flash_base_state;
+                }
+                break;
+
+            case FLASH_x555_SE: // Sector Erase - Key 1
+                if (((adr & 0x7FF) == 0x2AA) && (byte == 0x55))
+                {
+                    *flash_state = FLASH_x2AA_SE;
+                }
+                else
+                {
+                    *flash_state = *flash_base_state;
+                }
+                break;
+            
+            case FLASH_x2AA_SE: // Sector Erase - Key 2
+                if (byte == 0x30)
+                {
+                    // Erase the chip sector -- 64K bank is erased.
+                    memset(rom + flash_offset + ((bank/8) * (64 * 1024)), 0xFF, (64 * 1024));
+                    for (int i=(bank/8)*8; i<((bank/8)*8)+8; i++)
+                    {
+                        dirtySectors[i + (flash_offset ? 128:0)] = true;
+                    }
+                    dirtyFlash = 10;
+                }
+                else if (byte == 0x10)
+                {
+                    // Erase the WHOLE chip!!!
+                    memset(rom + flash_offset, 0xFF, (512 * 1024));
+                    for (int i=0; i<128; i++)
+                    {
+                        dirtySectors[i + (flash_offset ? 128:0)] = true;
+                    }
+                    dirtyFlash = 10;
+                }
+                *flash_state = FLASH_IDLE;
+                *flash_base_state = FLASH_IDLE;
+                break;
+            
+            case FLASH_x555_A0: // Byte Write
+                // -------------------------------------------------------------------------
+                // Write the byte into the rom[] memory in the appropriate banking location
+                // This is a flash write so we AND with the current contents (that is... we
+                // can turn a '1' into a '0' but not the other way around).
+                // -------------------------------------------------------------------------
+                rom[flash_offset + (bank * 0x2000) + (adr & 0x1FFF)] &= byte;
+                dirtySectors[bank + (flash_offset ? 128:0)] = true;
+                dirtyFlash = 10;
+                *flash_state = *flash_base_state;
+                break;
+        }
+        
+        // -------------------------------------------------------
+        // In Ultimax mode, the cartridge takes over the bus and 
+        // does not allow the normal C64 write-through to RAM.
+        // -------------------------------------------------------
+        if (ultimax_mode) return; 
+    }
+
+    // --------------------------------------------------------
+    // Non ultimax modes allows write-thru to the RAM below...
+    // --------------------------------------------------------
+    myRAM[adr] = byte;
+}
+
+// -------------------------------------------------------------------------
+// We don't write back to the original .CRT file as we want to keep that
+// pristine so we instead write any modified 8K sectors into a special .ezf
+// patch file and when we reload the cartridge, we simply apply the patch.
+// -------------------------------------------------------------------------
+void CartridgeEasyFlash::PersistFlash(void)
+{
+    if (myConfig.diskFlash & 0x02)
+    {
+        check_and_make_sav_directory();
+        sprintf(tmpFilename,"sav/%s", CartFilename);
+        tmpFilename[strlen(tmpFilename)-3] = 'e';
+        tmpFilename[strlen(tmpFilename)-2] = 'z';
+        tmpFilename[strlen(tmpFilename)-1] = 'f';
+        
+        FILE *fp = fopen(tmpFilename, "wb");
+        if (fp)
+        {
+            fwrite(dirtySectors, sizeof(dirtySectors), 1, fp);
+            for (int i=0; i<256; i++)
+            {
+                if (dirtySectors[i])
+                {
+                    fwrite(rom + (i * 0x2000), 0x2000, 1, fp);
+                }
+            }
+            fclose(fp);
+        }
+    }
+}
+
+
+// GMOD2 cartridge (banked 8K ROM cartridge)
+CartridgeGMOD2::CartridgeGMOD2(bool not_game, bool not_exrom) : ROMCartridge(64, 0x2000)
+{
+    notEXROM = not_exrom;
+    notGAME = not_game;
+    MapThyself();
+    strcpy(CartType, "GMOD2");
+}
+
+void CartridgeGMOD2::Reset()
+{
+    bank = 0;
+    MapThyself();
+}
+
+void CartridgeGMOD2::MapThyself(void)
+{
+    StandardMapping(64 * 0x2000); // GMOD2 is 512K each with only a LOROM (no HIROM bank) - map HIROM into area with all 0xFF
+}
+
+#define EEPROM_DATAOUT  0x80
+#define EEPROM_SELECT   0x40
+#define EEPROM_CLOCK    0x20
+#define EEPROM_DATAIN   0x10
+
+void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
+{
+    if ((adr&0xff) == 0x00) // We only respond to $DE00
+    {
+        if (byte & EEPROM_SELECT) // EEPROM Selected?
+        {
+            if (byte & EEPROM_CLOCK) debug[4]++; else debug[5]++;
+        }
+        else // Must be EXROM - handle bank switch
+        {
+            bank = byte & 0x3f;
+            MapThyself();
+        }        
+    }
+}
+
+uint8_t CartridgeGMOD2::ReadIO1(uint16_t adr, uint8_t bus_byte)
+{
+    return bus_byte;
+}
+
+
 
 /*
  *  Functions to save and restore the Cartridge State
@@ -483,6 +918,18 @@ void Cartridge::GetState(CartridgeState *cs)
     cs->notEXROM = notEXROM;
     cs->notGAME = notGAME;
     cs->bank = bank;
+    cs->dirtyFlash = dirtyFlash;
+    cs->bTrueDriveRequired = bTrueDriveRequired;
+    cs->ultimax_mode = ultimax_mode;    
+    cs->flash_state_lo = flash_state_lo;
+    cs->flash_state_hi = flash_state_hi;
+    cs->flash_base_state_lo = flash_base_state_lo;
+    cs->flash_base_state_hi = flash_base_state_hi;
+    cs->spare1 = 0;
+    cs->spare2 = 0;
+    cs->spare3 = 0;
+    cs->spare4 = 0;
+    cs->spare32 = 0x00000000;
     memcpy(cs->ram, ram, 256);
 }
 
@@ -491,10 +938,15 @@ void Cartridge::SetState(CartridgeState *cs)
     notEXROM = cs->notEXROM;
     notGAME = cs->notGAME;
     bank = cs->bank;
+    dirtyFlash = cs->dirtyFlash;
+    bTrueDriveRequired = cs->bTrueDriveRequired;
+    ultimax_mode = cs->ultimax_mode;    
+    flash_state_lo = cs->flash_state_lo;
+    flash_state_hi = cs->flash_state_hi;
+    flash_base_state_lo = cs->flash_base_state_lo;
+    flash_base_state_hi = cs->flash_base_state_hi;    
     memcpy(ram, cs->ram, 256);
 }
-
-
 
 /*
  *  Construct cartridge object from image file path, return nullptr on error
@@ -558,6 +1010,9 @@ Cartridge * Cartridge::FromFile(char *filename, char *errBuffer)
             case 32:
                 cart = new CartridgeEasyFlash(game,exrom);
                 break;
+            case 60:
+                cart = new CartridgeGMOD2(game,exrom);
+                break;
             case 85:
                 if (isDSiMode()) cart = new CartridgeMagicDesk2;
                 else goto error_unsupp;
@@ -595,7 +1050,7 @@ Cartridge * Cartridge::FromFile(char *filename, char *errBuffer)
 
             if (type == 32 && chip_start == 0xa000)   // Special mapping for EasyFlash - move upper bank
             {
-                offset += (64*0x2000);
+                offset += (64 * 0x2000);
             }
 
             if (fread(cart->ROM() + offset, chip_size, 1, f) != 1)
