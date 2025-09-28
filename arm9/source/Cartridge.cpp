@@ -50,7 +50,6 @@ uint8 cart_led = 0;         // Used to briefly 'light up' the cart icon for Easy
 uint8 cart_led_color = 0;   // Yellow
 
 extern uint8 *MemMap[0x10];
-extern u8 myRAM[];
 extern u8 myBASIC[];
 extern u8 myKERNAL[];
 
@@ -77,7 +76,7 @@ ROMCartridge::ROMCartridge(unsigned num_banks, unsigned bank_size) : numBanks(nu
     }
     // We always re-use the same cart ROM buffer...
     rom = cartROM;
-    memset(rom, 0xff, num_banks * bank_size);
+    memset(rom, 0xff, (isDSiMode() ? (2*1024*1024) : (1*1024*1024)));
     cart_led = 0;
     cart_led_color = 0;
     dirtyFlash = false;
@@ -897,7 +896,12 @@ void CartridgeGMOD2::Reset()
     eeprom_data_out = 0x0000;
     memset(eeprom_data, 0xff, sizeof(eeprom_data));
     
-    FILE *fp = fopen("zzz.eep", "rb");
+    sprintf(tmpFilename,"sav/%s", CartFilename);
+    tmpFilename[strlen(tmpFilename)-3] = 'e';
+    tmpFilename[strlen(tmpFilename)-2] = 'e';
+    tmpFilename[strlen(tmpFilename)-1] = 'p';
+   
+    FILE *fp = fopen(tmpFilename, "rb");
     if (fp)
     {
         fread(eeprom_data, sizeof(eeprom_data), 1, fp);
@@ -912,6 +916,10 @@ void CartridgeGMOD2::MapThyself(void)
     StandardMapping(64 * 0x2000); // GMOD2 is 512K each with only a LOROM (no HIROM bank) - map HIROM into area with all 0xFF
 }
 
+// -------------------------------------------------------------------------------
+// GMOD2 has a 2K byte (16K-bit) Serial EEPROM (M93C86 from STMicroelectronics). 
+// This is wired in x16 mode so the addressing and data are all 16-bits wide.
+// -------------------------------------------------------------------------------
 void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
 {
     if (byte & EEPROM_SELECT) // EEPROM Selected?
@@ -949,16 +957,15 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                         eeprom_address |= (data << eeprom_bit_count);
                         if (!eeprom_bit_count)
                         {
+                            bWriteAll = false;
                             if (eeprom_opcode == 1) // Write Data
                             {
-                                debug[1]++;
                                 eeprom_data_in = 0x0000;
                                 eeprom_bit_count = 16;
                                 eeprom_state = EEPROM_STATE_WRITE_DATA;
                             }
                             if (eeprom_opcode == 2) // Read Data
                             {
-                                debug[2]++;
                                 eeprom_bit_count = 16;
                                 eeprom_data_out = (eeprom_data[(eeprom_address<<1)+0] << 8) | eeprom_data[(eeprom_address<<1)+1];
                                 eeprom_bit_out = 0;
@@ -966,15 +973,36 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                             }
                             if (eeprom_opcode == 3) // Erase Word
                             {
-                                debug[3]++;
                                 eeprom_data[(eeprom_address<<1)+1] = 0xFF;
                                 eeprom_data[(eeprom_address<<1)+0] = 0xFF;
                                 dirtyFlash = 10;
                                 eeprom_state = EEPROM_STATE_IDLE;
                             }
-                            if (eeprom_opcode == 0) // Special
+                            if (eeprom_opcode == 0) // Special - needs top 2 bits of address to define the operation
                             {
-                                debug[4 + (eeprom_address >> 8)]++;
+                                if ((eeprom_address >> 8) == 0x00)
+                                {
+                                    // Write Disable - ignored for the purposes of emulation (we assume well-behaved carts)
+                                }
+                                if ((eeprom_address >> 8) == 0x01)
+                                {
+                                    // Write All Memory with Same Value
+                                    bWriteAll = true;
+                                    eeprom_data_in = 0x0000;
+                                    eeprom_bit_count = 16;
+                                    eeprom_state = EEPROM_STATE_WRITE_DATA;
+                                }
+                                if ((eeprom_address >> 8) == 0x02)
+                                {
+                                    // Erase All Memory
+                                    memset(eeprom_data, 0xff, sizeof(eeprom_data));
+                                    dirtyFlash = 10;
+                                }
+                                if ((eeprom_address >> 8) == 0x03)
+                                {
+                                    // Write Enable - ignored for the purposes of emulation (we assume well-behaved carts)
+                                }
+                                
                                 eeprom_state = EEPROM_STATE_IDLE;
                             }
                         }
@@ -986,7 +1014,6 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                         break;
 
                     case EEPROM_STATE_READ_DATA:
-                        debug[8]++;
                         if (eeprom_bit_count) eeprom_bit_count--;                            
                         eeprom_bit_out = (eeprom_data_out & (1<<eeprom_bit_count));
                         if (!eeprom_bit_count)
@@ -1003,11 +1030,21 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                         if (!eeprom_bit_count)
                         {
                             dirtyFlash = 10;
-                            
-                            eeprom_data[(eeprom_address<<1)+1] = (eeprom_data_in>>0) & 0xFF;
-                            eeprom_data[(eeprom_address<<1)+0] = (eeprom_data_in>>8) & 0xFF;
-                            
-                            eeprom_address = (eeprom_address + 1) & 0x3FF;
+                         
+                            if (bWriteAll)
+                            {
+                                for (int address = 0; address < 0x400; address++)
+                                {
+                                    eeprom_data[(address<<1)+1] = (eeprom_data_in>>0) & 0xFF;
+                                    eeprom_data[(address<<1)+0] = (eeprom_data_in>>8) & 0xFF;
+                                }
+                                bWriteAll = false;
+                            }
+                            else
+                            {
+                                eeprom_data[(eeprom_address<<1)+1] = (eeprom_data_in>>0) & 0xFF;
+                                eeprom_data[(eeprom_address<<1)+0] = (eeprom_data_in>>8) & 0xFF;
+                            }
                             eeprom_state = EEPROM_STATE_IDLE;
                         }
                         break;
@@ -1037,7 +1074,11 @@ uint8_t CartridgeGMOD2::ReadIO1(uint16_t adr, uint8_t bus_byte)
 
 void CartridgeGMOD2::PersistFlash(void)
 {
-    FILE *fp = fopen("zzz.eep", "wb");
+    sprintf(tmpFilename,"sav/%s", CartFilename);
+    tmpFilename[strlen(tmpFilename)-3] = 'e';
+    tmpFilename[strlen(tmpFilename)-2] = 'e';
+    tmpFilename[strlen(tmpFilename)-1] = 'p';
+    FILE *fp = fopen(tmpFilename, "wb");
     if (fp)
     {
         fwrite(eeprom_data, sizeof(eeprom_data), 1, fp);

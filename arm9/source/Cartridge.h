@@ -74,6 +74,7 @@ struct CartridgeState {
 extern uint8 flash_write_supported;
 extern uint8 cart_led;
 extern uint8 cart_led_color;
+extern u8 myRAM[];
 
 // Base class for cartridges
 class Cartridge {
@@ -102,7 +103,7 @@ public:
     virtual void WriteIO1(uint16_t adr, uint8_t byte) { }
     virtual uint8_t ReadIO2(uint16_t adr, uint8_t bus_byte) { return bus_byte; }
     virtual void WriteIO2(uint16_t adr, uint8_t byte) { }
-    virtual void WriteFlash(uint16_t adr, uint8_t byte) { }
+    virtual void WriteFlash(uint16_t adr, uint8_t byte) { if (!ultimax_mode) myRAM[adr] = byte;}
     virtual void PersistFlash(void) { }
 
     u32 total_cart_size = 0;
@@ -276,6 +277,7 @@ private:
     u8  eeprom_opcode;
     u16 eeprom_bit_out;
     u16 eeprom_address;
+    u8  bWriteAll;
     u8  eeprom_data[2048];  // 2K bytes of data arranged as 16-bit words
 };
 

@@ -79,7 +79,7 @@ this way. But if the game requires it, that's your only option. Recommended to s
 
 ## Cartridge Support
 
-Although primarily a disk-based emulator, GimliDS does support the more common Cart Types up to 1MB. Included here is:
+GimliDS supports the more common Cart Types up to 1MB. Included here is:
 
   * Standard 8K
   * Standard 16K
@@ -89,7 +89,7 @@ Although primarily a disk-based emulator, GimliDS does support the more common C
   * Ocean up to 512K
   * Magic Desk up to 1MB
   * EasyFlash up to 1MB with 256b RAM and Flash Write support
-  * GMOD2 up to 512K (Serial EE support coming soon)
+  * GMOD2 up to 512K with 2K of Serial EE write support
   * Magic Desk 16K (aka Magic Desk 2) up to 2MB on DSi or above only
 
 This should cover a wide number of carts - recommend you seek out the OneLoad64 cart archive.
@@ -106,7 +106,7 @@ But some games use these tricks to a lesser or greater extent. This can result i
 
 Until I can gain a better understanding and try to improve the emulation (without going FULL cycle-accurate which will cripple the emulation speed), there are some tricks we can pull to help.  One of them is the 'CPU Adjustment' settings in the Configuration (set on a per game basis).
 
-The one that is more interesting is the CPU CYCLES adjustment. This ranges from -9 cycles to +9 cycles with the default being +0 (no adjustment).  This gives the C64 CPU extra cycles to play with on a per-scanline basis. As the beam races down the screen, the CPU and the VIC/SID can get slightly out of alignment... and making an adjustment can help. But be careful - too much adjustment and you're running "out of spec" and could crash the game. 
+CPU Cycles adjust ranges from -9 cycles to +9 cycles with the default being +0 (no adjustment).  This gives the C64 CPU extra cycles to play with on a per-scanline basis. As the beam races down the screen, the CPU and the VIC/SID can get slightly out of alignment... and making an adjustment can help. But be careful - too much adjustment and you're running "out of spec" and could crash the game. 
 
 How would this work... well, if you're not experiencing any weird graphical glitches, you should NOT touch the setting. But let's take Gauntlet which has a slight flicker/flash of the P2 'G' in the lower left of the screen. This kind of flicker is indicative of a timing issue. By pushing the CPU CYCLES adjustment to +2 or +3, the flickering lessens. If you push to +5 it goes away and the screen is nice and stable. You should adjust only as much as is needed to achieve the effect and NO more.  
 
