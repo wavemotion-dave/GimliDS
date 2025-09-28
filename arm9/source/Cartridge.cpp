@@ -593,7 +593,7 @@ void CartridgeEasyFlash::PatchEAPI(void)
         if (fp)
         {
             fread(dirtySectors, sizeof(dirtySectors), 1, fp);
-            for (int i=0; i<256; i++)
+            for (int i=0; i<128; i++)
             {
                 if (dirtySectors[i])
                 {
@@ -613,6 +613,7 @@ void CartridgeEasyFlash::Reset()
     flash_base_state_lo = FLASH_IDLE;
     flash_base_state_hi = FLASH_IDLE;
     
+    memset(dirtySectors, 0x00, sizeof(dirtySectors));
     bank = 0;
     MapThyself();
     PatchEAPI();
@@ -785,7 +786,7 @@ void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
                     memset(rom + flash_offset + ((bank/8) * (64 * 1024)), 0xFF, (64 * 1024));
                     for (int i=(bank/8)*8; i<((bank/8)*8)+8; i++)
                     {
-                        dirtySectors[i + (flash_offset ? 128:0)] = true;
+                        dirtySectors[i + (flash_offset ? 64:0)] = true;
                     }
                     dirtyFlash = 10;
                 }
@@ -793,9 +794,9 @@ void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
                 {
                     // Erase the WHOLE chip!!!
                     memset(rom + flash_offset, 0xFF, (512 * 1024));
-                    for (int i=0; i<128; i++)
+                    for (int i=0; i<64; i++)
                     {
-                        dirtySectors[i + (flash_offset ? 128:0)] = true;
+                        dirtySectors[i + (flash_offset ? 64:0)] = true;
                     }
                     dirtyFlash = 10;
                 }
@@ -810,7 +811,7 @@ void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
                 // can turn a '1' into a '0' but not the other way around).
                 // -------------------------------------------------------------------------
                 rom[flash_offset + (bank * 0x2000) + (adr & 0x1FFF)] &= byte;
-                dirtySectors[bank + (flash_offset ? 128:0)] = true;
+                dirtySectors[bank + (flash_offset ? 64:0)] = true;
                 dirtyFlash = 10;
                 *flash_state = *flash_base_state;
                 break;
@@ -848,7 +849,7 @@ void CartridgeEasyFlash::PersistFlash(void)
         if (fp)
         {
             fwrite(dirtySectors, sizeof(dirtySectors), 1, fp);
-            for (int i=0; i<256; i++)
+            for (int i=0; i<128; i++)
             {
                 if (dirtySectors[i])
                 {
@@ -860,6 +861,21 @@ void CartridgeEasyFlash::PersistFlash(void)
     }
 }
 
+
+
+#define EEPROM_DATAOUT      0x80
+#define EEPROM_SELECT       0x40
+#define EEPROM_CLOCK        0x20
+#define EEPROM_DATAIN       0x10
+
+
+#define EEPROM_STATE_IDLE                   0
+#define EEPROM_STATE_START                  1
+#define EEPROM_STATE_CLOCK_OP               2
+#define EEPROM_STATE_CLOCK_ADDR             3
+#define EEPROM_STATE_READ_DATA              4
+#define EEPROM_STATE_WRITE_DATA             5
+#define EEPROM_STATE_READ_DATA_DUMMY_ZERO   6
 
 // GMOD2 cartridge (banked 8K ROM cartridge)
 CartridgeGMOD2::CartridgeGMOD2(bool not_game, bool not_exrom) : ROMCartridge(64, 0x2000)
@@ -873,6 +889,21 @@ CartridgeGMOD2::CartridgeGMOD2(bool not_game, bool not_exrom) : ROMCartridge(64,
 void CartridgeGMOD2::Reset()
 {
     bank = 0;
+    eeprom_state = EEPROM_STATE_IDLE;
+    eeprom_opcode = 0x00;
+    eeprom_address = 0x000;
+    eeprom_clock = 0;
+    eeprom_data_in = 0x0000;
+    eeprom_data_out = 0x0000;
+    memset(eeprom_data, 0xff, sizeof(eeprom_data));
+    
+    FILE *fp = fopen("zzz.eep", "rb");
+    if (fp)
+    {
+        fread(eeprom_data, sizeof(eeprom_data), 1, fp);
+        fclose(fp);
+    }    
+        
     MapThyself();
 }
 
@@ -881,32 +912,138 @@ void CartridgeGMOD2::MapThyself(void)
     StandardMapping(64 * 0x2000); // GMOD2 is 512K each with only a LOROM (no HIROM bank) - map HIROM into area with all 0xFF
 }
 
-#define EEPROM_DATAOUT  0x80
-#define EEPROM_SELECT   0x40
-#define EEPROM_CLOCK    0x20
-#define EEPROM_DATAIN   0x10
-
 void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
 {
-    if ((adr&0xff) == 0x00) // We only respond to $DE00
+    if (byte & EEPROM_SELECT) // EEPROM Selected?
     {
-        if (byte & EEPROM_SELECT) // EEPROM Selected?
+        if ((byte & EEPROM_CLOCK) != eeprom_clock)
         {
-            if (byte & EEPROM_CLOCK) debug[4]++; else debug[5]++;
+            eeprom_clock = byte & EEPROM_CLOCK;
+            u8 data  = (byte & EEPROM_DATAIN) ? 1:0;
+            if (eeprom_clock) // Clock has gone HI
+            {
+                switch (eeprom_state)
+                {
+                    case EEPROM_STATE_IDLE:
+                        if (data) 
+                        {
+                            eeprom_bit_count = 2;
+                            eeprom_opcode = 0x00;
+                            eeprom_state = EEPROM_STATE_CLOCK_OP;
+                        }
+                        break;
+                    case EEPROM_STATE_CLOCK_OP:
+                        if (eeprom_bit_count) eeprom_bit_count--;
+                        eeprom_opcode |= (data << eeprom_bit_count);
+                        
+                        if (!eeprom_bit_count)
+                        {
+                            eeprom_address = 0;
+                            eeprom_bit_count = 10;
+                            eeprom_state = EEPROM_STATE_CLOCK_ADDR;
+                        }
+                        break;
+                        
+                    case EEPROM_STATE_CLOCK_ADDR:
+                        if (eeprom_bit_count) eeprom_bit_count--;
+                        eeprom_address |= (data << eeprom_bit_count);
+                        if (!eeprom_bit_count)
+                        {
+                            if (eeprom_opcode == 1) // Write Data
+                            {
+                                debug[1]++;
+                                eeprom_data_in = 0x0000;
+                                eeprom_bit_count = 16;
+                                eeprom_state = EEPROM_STATE_WRITE_DATA;
+                            }
+                            if (eeprom_opcode == 2) // Read Data
+                            {
+                                debug[2]++;
+                                eeprom_bit_count = 16;
+                                eeprom_data_out = (eeprom_data[(eeprom_address<<1)+0] << 8) | eeprom_data[(eeprom_address<<1)+1];
+                                eeprom_bit_out = 0;
+                                eeprom_state = EEPROM_STATE_READ_DATA;
+                            }
+                            if (eeprom_opcode == 3) // Erase Word
+                            {
+                                debug[3]++;
+                                eeprom_data[(eeprom_address<<1)+1] = 0xFF;
+                                eeprom_data[(eeprom_address<<1)+0] = 0xFF;
+                                dirtyFlash = 10;
+                                eeprom_state = EEPROM_STATE_IDLE;
+                            }
+                            if (eeprom_opcode == 0) // Special
+                            {
+                                debug[4 + (eeprom_address >> 8)]++;
+                                eeprom_state = EEPROM_STATE_IDLE;
+                            }
+                        }
+                        break;
+                    
+                    case EEPROM_STATE_READ_DATA_DUMMY_ZERO:
+                        eeprom_bit_out = 0;
+                        eeprom_state = EEPROM_STATE_READ_DATA;
+                        break;
+
+                    case EEPROM_STATE_READ_DATA:
+                        debug[8]++;
+                        if (eeprom_bit_count) eeprom_bit_count--;                            
+                        eeprom_bit_out = (eeprom_data_out & (1<<eeprom_bit_count));
+                        if (!eeprom_bit_count)
+                        {
+                            eeprom_bit_count = 16;
+                            eeprom_address = (eeprom_address + 1) & 0x3FF;
+                            eeprom_data_out = (eeprom_data[(eeprom_address<<1)+0] << 8) | eeprom_data[(eeprom_address<<1)+1];
+                        }
+                        break;
+                        
+                    case EEPROM_STATE_WRITE_DATA:
+                        if (eeprom_bit_count) eeprom_bit_count--;
+                        eeprom_data_in |= (data << eeprom_bit_count);
+                        if (!eeprom_bit_count)
+                        {
+                            dirtyFlash = 10;
+                            
+                            eeprom_data[(eeprom_address<<1)+1] = (eeprom_data_in>>0) & 0xFF;
+                            eeprom_data[(eeprom_address<<1)+0] = (eeprom_data_in>>8) & 0xFF;
+                            
+                            eeprom_address = (eeprom_address + 1) & 0x3FF;
+                            eeprom_state = EEPROM_STATE_IDLE;
+                        }
+                        break;
+                }
+            }
         }
-        else // Must be EXROM - handle bank switch
-        {
-            bank = byte & 0x3f;
-            MapThyself();
-        }        
     }
+    else // Must be EXROM - handle bank switch
+    {
+        eeprom_clock = 0;
+        eeprom_state = EEPROM_STATE_IDLE;
+        eeprom_bit_out = 1;
+        eeprom_bit_count = 0;
+        
+        bank = byte & 0x3f;
+        MapThyself();
+    }        
 }
 
 uint8_t CartridgeGMOD2::ReadIO1(uint16_t adr, uint8_t bus_byte)
 {
+    bus_byte &= ~EEPROM_DATAOUT;
+    if (eeprom_bit_out) bus_byte |= EEPROM_DATAOUT;
+    
     return bus_byte;
 }
 
+void CartridgeGMOD2::PersistFlash(void)
+{
+    FILE *fp = fopen("zzz.eep", "wb");
+    if (fp)
+    {
+        fwrite(eeprom_data, sizeof(eeprom_data), 1, fp);
+        fclose(fp);
+    }
+}
 
 
 /*

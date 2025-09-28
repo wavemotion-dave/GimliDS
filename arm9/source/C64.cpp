@@ -1032,6 +1032,8 @@ u8 slide_n_glide_key_down = 0;
 u8 slide_n_glide_key_left = 0;
 u8 slide_n_glide_key_right = 0;
 
+u8 zoom_dampen = 0;
+
 uint8 C64::poll_joystick(int port)
 {
     uint8 j = 0xff;
@@ -1122,6 +1124,8 @@ uint8 C64::poll_joystick(int port)
           if (slide_n_glide_key_down)  slide_n_glide_key_down--;
           if (slide_n_glide_key_left)  slide_n_glide_key_left--;
           if (slide_n_glide_key_right) slide_n_glide_key_right--;
+          
+          if (zoom_dampen)  zoom_dampen--;
       }
 
     u8 auto_fire = 0;
@@ -1180,11 +1184,11 @@ uint8 C64::poll_joystick(int port)
                     slide_dampen = 15;
                     break;
                 case KEY_MAP_ZOOM_SCR:
-                    if (keysCurrent() & KEY_X)
+                    if (!zoom_dampen)
                     {
                         toggle_zoom();
-                        WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
                     }
+                    zoom_dampen = 50;                    
                     break;
 
                 // Handle all other keypresses... mark the key as pressed for the PollKeyboard() routine

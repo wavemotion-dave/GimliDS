@@ -253,7 +253,7 @@ public:
 private:
     u8 under_autoselect_lo[64][4];
     u8 under_autoselect_hi[64][4];
-    u8 dirtySectors[256];   // Don't need to save this in the .gss save file as we will restore/patch EAPI dirty sectors from the .ezf file
+    u8 dirtySectors[128];   // Don't need to save this in the .gss save file as we will restore/patch EAPI dirty sectors from the .ezf file
 };
 
 // GMOD2 cartridge (banked 8K LOROM cartridge with 2K byte Serial EEPROM)
@@ -265,9 +265,18 @@ public:
     void MapThyself(void) override;
     void WriteIO1(uint16_t adr, uint8_t byte) override;
     uint8_t ReadIO1(uint16_t adr, uint8_t bus_byte) override;
+    void PersistFlash(void) override;
     
 private:
-    u8 eeprom_data[2048];
+    u8  eeprom_state;
+    u8  eeprom_clock;
+    u16 eeprom_data_in;
+    u16 eeprom_data_out;
+    u8  eeprom_bit_count;
+    u8  eeprom_opcode;
+    u16 eeprom_bit_out;
+    u16 eeprom_address;
+    u8  eeprom_data[2048];  // 2K bytes of data arranged as 16-bit words
 };
 
 #endif // CARTRIDGE_H
