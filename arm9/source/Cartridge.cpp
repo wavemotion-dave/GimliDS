@@ -47,7 +47,7 @@
 namespace fs = std::filesystem;
 
 uint8 cart_led = 0;         // Used to briefly 'light up' the cart icon for Easy Flash 256 byte RAM access
-uint8 cart_led_color = 0;   // Yellow
+uint8 cart_led_color = 0;   // 0=Yellow, 1=Blue
 
 extern uint8 *MemMap[0x10];
 extern u8 myBASIC[];
@@ -980,6 +980,8 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                             }
                             if (eeprom_opcode == 0) // Special - needs top 2 bits of address to define the operation
                             {
+                                eeprom_state = EEPROM_STATE_IDLE;
+                                
                                 if ((eeprom_address >> 8) == 0x00)
                                 {
                                     // Write Disable - ignored for the purposes of emulation (we assume well-behaved carts)
@@ -1002,8 +1004,6 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                                 {
                                     // Write Enable - ignored for the purposes of emulation (we assume well-behaved carts)
                                 }
-                                
-                                eeprom_state = EEPROM_STATE_IDLE;
                             }
                         }
                         break;
