@@ -16,6 +16,15 @@ all interested in this emulator code.
 
 The GimliDS emulator is offered as-is, without any warranty.
 
+## Features
+
+  * Commodore 64 with full 6510 emulation and 64K of base memory
+  * REU-1750 emulated with 256K of expanded memory
+  * D64 disk file support for two drives (8, 9)
+  * CRT cartridge file support with writeback for EasyFlash (flash sectors) and GMOD2 (serial EE)
+  * Full key mapping of C64 Keyboard / Joystick to any of the main DS keys
+  * Save/Load state so you can pickup gameplay right where you left off
+
 ## BIOS Files
 
 You must have original Commodore BIOS files to run this emulator. Place them in /roms/bios or /roms/c64
