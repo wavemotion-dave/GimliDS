@@ -19,7 +19,7 @@ The GimliDS emulator is offered as-is, without any warranty.
 ## Features
 
   * Commodore 64 with full 6510 CPU emulation, 64K of base memory, VIC II and SID chip rendering
-  * REU-1750 emulated with 256K of expanded memory
+  * REU-1764 emulated with 256K of expanded memory
   * D64 disk file support for two drives (8, 9)
   * CRT cartridge file support with writeback for EasyFlash (flash sectors) and GMOD2 (serial EE)
   * Virtual touch-screen keyboard to replicate the C64 look and feel
