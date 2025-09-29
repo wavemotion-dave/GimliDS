@@ -56,7 +56,7 @@
 #include "Prefs.h"
 
 #define FIXPOINT_PREC           16    // number of fractional bits used in fixpoint representation
-#define PRECOMPUTE_RESONANCE          // For a bit of added speed
+#define PRECOMPUTE_RESONANCE    1     // For a bit of added speed
 #define ldSINTAB                9     // size of sinus table (0 to 90 degrees)
 
 #include "FixPoint.h"

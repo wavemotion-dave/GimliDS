@@ -1021,8 +1021,9 @@ u8 key_col_map[] __attribute__((section(".dtcm"))) = {7,5,4,5,6,3,1,5,0,3,4,7,5,
 u8  space=0;
 u8  retkey=0;
 u16 dampen=0;
-extern s16 temp_offset;
-extern u16 slide_dampen;
+extern s16 temp_offset_y,  temp_offset_x;
+extern u8 slide_dampen_y,  slide_dampen_x;
+
 // ----------------------------------------------------------------------------
 // Chuckie-Style d-pad keeps moving in the last known direction for a few more
 // frames to help make those hairpin turns up and off ladders much easier...
@@ -1168,21 +1169,48 @@ uint8 C64::poll_joystick(int port)
 
                 // Handle special meta-mapped buttons (pan screen Up/Down)
                 case KEY_MAP_PAN_UP16:
-                    temp_offset = -16;
-                    slide_dampen = 15;
+                    temp_offset_y = -16;
+                    slide_dampen_y = 15;
                     break;
                 case KEY_MAP_PAN_UP24:
-                    temp_offset = -24;
-                    slide_dampen = 15;
+                    temp_offset_y = -24;
+                    slide_dampen_y = 15;
                     break;
+                case KEY_MAP_PAN_UP32:
+                    temp_offset_y = -32;
+                    slide_dampen_y = 15;
+                    break;
+                
                 case KEY_MAP_PAN_DN16:
-                    temp_offset = 16;
-                    slide_dampen = 15;
+                    temp_offset_y = 16;
+                    slide_dampen_y = 15;
                     break;
                 case KEY_MAP_PAN_DN24:
-                    temp_offset = 24;
-                    slide_dampen = 15;
+                    temp_offset_y = 24;
+                    slide_dampen_y = 15;
                     break;
+                case KEY_MAP_PAN_DN32:
+                    temp_offset_y = 32;
+                    slide_dampen_y = 15;
+                    break;
+
+                case KEY_MAP_PAN_LT32:
+                    temp_offset_x = -32;
+                    slide_dampen_x = 15;
+                    break;
+                case KEY_MAP_PAN_RT32:
+                    temp_offset_x = 32;
+                    slide_dampen_x = 15;
+                    break;
+                case KEY_MAP_PAN_LT64:
+                    temp_offset_x = -64;
+                    slide_dampen_x = 15;
+                    break;
+                case KEY_MAP_PAN_RT64:
+                    temp_offset_x = 64;
+                    slide_dampen_x = 15;
+                    break;
+                    
                 case KEY_MAP_ZOOM_SCR:
                     if (!zoom_dampen)
                     {
@@ -1323,6 +1351,8 @@ void C64::InsertCart(char *filename)
         DSPrint(0, 0, 6, (char*)errBuffer);
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+        WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+        WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
         DSPrint(0, 0, 6, (char*)"                              ");
     }
 }
@@ -1339,7 +1369,7 @@ void C64::RemoveCart(void)
     extern char CartFilename[];
     extern char CartType[];
     strcpy(CartFilename, "");
-    strcpy(CartType, "");
+    strcpy(CartType, "NONE");
     cart_in = 0;
 }
 

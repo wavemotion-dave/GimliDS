@@ -47,7 +47,7 @@
 
 // First and last displayed line
 #define FIRST_DISP_LINE 0x20
-#define LAST_DISP_LINE  0x114
+#define LAST_DISP_LINE  0x11C
 
 // First and last possible line for Bad Lines
 #define FIRST_DMA_LINE  0x30

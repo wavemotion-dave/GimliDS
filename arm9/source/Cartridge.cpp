@@ -57,7 +57,7 @@ u8 *cartROM = NULL;    // 1MB max supported cart size (not including .crt and ch
 extern C64 *gTheC64;   // Easy access to the main C64 object
 
 extern char CartType[16];   // For debug mostly
-char tmpFilename[256];
+char tmpFilename[256];      // For Flash and EE saves
 
 // Base class for cartridge with ROM
 ROMCartridge::ROMCartridge(unsigned num_banks, unsigned bank_size) : numBanks(num_banks), bankSize(bank_size)
@@ -454,7 +454,11 @@ void CartridgeMagicDesk2::WriteIO1(uint16_t adr, uint8_t byte)
     MapThyself();
 }
 
+// -----------------------------------------------------------------------------
 // Borrowed from VICE - many thanks!!
+// This is the standard AMD 29F040B EAPI driver and we can patch any EasyFlash
+// cart that has an EAPI driver in the right location (0x1800 offset in HIROM).
+// -----------------------------------------------------------------------------
 static const unsigned char eapiam29f040[768] = {
     0x65, 0x61, 0x70, 0x69, 0xc1, 0x4d,
     0x2f, 0xcd, 0x32, 0x39, 0xc6, 0x30, 0x34, 0x30,
@@ -620,7 +624,7 @@ void CartridgeEasyFlash::Reset()
 
 void CartridgeEasyFlash::MapThyself(void)
 {
-    StandardMapping(64 * 0x2000); // Easyflash is 2 ROMs of 512K each... so when we map, the HIROM bank is just offset by 512K
+    StandardMapping(64 * 0x2000); // Easyflash is 2 ROMs of 512K each... so when we map, the HIROM bank is just offset by 512K from the LOROM
 }
 
 
@@ -656,6 +660,8 @@ uint8_t CartridgeEasyFlash::ReadIO2(uint16_t adr, uint8_t bus_byte)
 
 // --------------------------------------------------------------------------
 // Easy Flash supports write to the flash. Erase happens on 64K sized blocks.
+// The flash chip is an AM29F040 512K chip and the EasyFlash has two of these
+// one for the LOROM and one for the HIROM. 
 // --------------------------------------------------------------------------
 void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
 {
@@ -727,13 +733,18 @@ void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
                     *flash_base_state = FLASH_CHIP_ID;
                     *flash_state = FLASH_CHIP_ID;
                     
-                    // ----------------------------------------------
-                    // We are in 'AutoSelect' mode where the program
-                    // is trying to read out the Chip ID / Mfr and
-                    // possibly the state of the bank protection.
-                    // ----------------------------------------------
+                    // ----------------------------------------------------------------
+                    // We are in 'AutoSelect' mode where the program is trying to read
+                    // the Chip ID / Mfr and possibly the state of the bank protection.
+                    // ----------------------------------------------------------------
                     for (int i=0; i<64; i++)
                     {
+                        // ------------------------------------------------------------------------------------------------------
+                        // A trick of the light... rather than make a more complicated read handler for the CPU, we simply
+                        // save the first few bytes of every 8K block and overwrite with the AMD chip ID and indicate that
+                        // the block is not protected... this is good enough to fool the EAPI driver and the game will think
+                        // we have valid flash chip support. When we drop out of autoselect mode, we restore the flash contents.
+                        // ------------------------------------------------------------------------------------------------------
                         memcpy(((adr & 0xE000) == 0x8000) ? under_autoselect_lo[i] : under_autoselect_hi[i], rom + flash_offset + (i*(0x2000)), 4);
                         rom[flash_offset+(i*(0x2000))+0] = 0x01; // AMD
                         rom[flash_offset+(i*(0x2000))+1] = 0xA4; // AM29F040
@@ -750,7 +761,7 @@ void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
                     *flash_state = FLASH_IDLE;
                     *flash_base_state = FLASH_IDLE;
                 }
-                else
+                else // No change... just keep the last known flash state
                 {
                     *flash_state = *flash_base_state;
                 }
@@ -791,7 +802,7 @@ void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
                 }
                 else if (byte == 0x10)
                 {
-                    // Erase the WHOLE chip!!!
+                    // Erase the WHOLE chip!!! Unlikely any game uses this... but we support it.
                     memset(rom + flash_offset, 0xFF, (512 * 1024));
                     for (int i=0; i<64; i++)
                     {
@@ -876,7 +887,9 @@ void CartridgeEasyFlash::PersistFlash(void)
 #define EEPROM_STATE_WRITE_DATA             5
 #define EEPROM_STATE_READ_DATA_DUMMY_ZERO   6
 
-// GMOD2 cartridge (banked 8K ROM cartridge)
+// ----------------------------------------------------------------------------------
+// GMOD2 cartridge (banked 8K ROM cartridge up to 512K in size) plus Serial EEPROM
+// ----------------------------------------------------------------------------------
 CartridgeGMOD2::CartridgeGMOD2(bool not_game, bool not_exrom) : ROMCartridge(64, 0x2000)
 {
     notEXROM = not_exrom;
@@ -895,6 +908,8 @@ void CartridgeGMOD2::Reset()
     eeprom_data_in = 0x0000;
     eeprom_data_out = 0x0000;
     memset(eeprom_data, 0xff, sizeof(eeprom_data));
+    
+    flash_write_supported = 1; // Technically allowed but we don't actually perform the write
     
     sprintf(tmpFilename,"sav/%s", CartFilename);
     tmpFilename[strlen(tmpFilename)-3] = 'e';
@@ -973,6 +988,7 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                             }
                             if (eeprom_opcode == 3) // Erase Word
                             {
+                                cart_led=2; cart_led_color=1;                                
                                 eeprom_data[(eeprom_address<<1)+1] = 0xFF;
                                 eeprom_data[(eeprom_address<<1)+0] = 0xFF;
                                 dirtyFlash = 10;
@@ -997,6 +1013,7 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                                 if ((eeprom_address >> 8) == 0x02)
                                 {
                                     // Erase All Memory
+                                    cart_led=2; cart_led_color=1;
                                     memset(eeprom_data, 0xff, sizeof(eeprom_data));
                                     dirtyFlash = 10;
                                 }
@@ -1030,6 +1047,7 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                         if (!eeprom_bit_count)
                         {
                             dirtyFlash = 10;
+                            cart_led=2; cart_led_color=1;
                          
                             if (bWriteAll)
                             {
@@ -1072,6 +1090,11 @@ uint8_t CartridgeGMOD2::ReadIO1(uint16_t adr, uint8_t bus_byte)
     return bus_byte;
 }
 
+// ----------------------------------------------------------
+// The 2K Serial EEPROM file will be saved to the same base
+// filename as the game and with a new extention of ".EEP"
+// This will be read back when the game is reloaded.
+// ----------------------------------------------------------
 void CartridgeGMOD2::PersistFlash(void)
 {
     sprintf(tmpFilename,"sav/%s", CartFilename);
@@ -1226,7 +1249,7 @@ Cartridge * Cartridge::FromFile(char *filename, char *errBuffer)
             // Load packet contents
             uint32_t offset = chip_bank * cart->bankSize;
 
-            if (type == 32 && chip_start == 0xa000)   // Special mapping for EasyFlash - move upper bank
+            if (type == 32 && chip_start == 0xa000)   // Special mapping for EasyFlash - move upper bank to offset 512K for HIROM
             {
                 offset += (64 * 0x2000);
             }

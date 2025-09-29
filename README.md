@@ -162,15 +162,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
 
-Version 1.4 release 27-Sep-2025 by wavemotion-dave
-  * Easyflash now supports flash writes with auto-persist to the SD card
-  * GMOD2 cart type (60) supported but without the Serial EEPROM
-  * Fixed Game Config so it properly restores the configuration last saved (oops!)
-  * Changed default keymap... B is now UP for help with platform/jumping games.
+Version 1.4 release 29-Sep-2025 by wavemotion-dave
+  * Easyflash now supports flash writes with auto-persist to the SD card.
+  * GMOD2 cart type (60) supported with Serial EEPROM write to the SD card.
+  * Fixed Game Config so it properly restores the configuration last saved (oops!) - old configurations will be reset.
+  * Changed default keymap... B is now UP for help with platform/jumping games, X is SPACE typical for C64 games that need 2 buttons.
   * Improved SID emulation on the DSi or above with the extra CPU horsepower.
   * Improved keyboard screen dim handling.
-  * Fix .gss Save State names
+  * Fix .gss Save State names for cartridges.
+  * Save state tweaks and fixes. Old save states will be reset.
+  * Disk and Cartridges can be marked as read-only on a per game configuration basis. Use DISK/FLASH options.
   * For the DSi and above (with the extra memory), 2MB MagicDesk 16K carts are supported (mainly for SNK vs Capcom - Stronger Edition)
+  * Added PAN LEFT / PAN RIGHT options to map keys to slide the screen left/right during gameplay.
   * Other minor tweaks under the hood.
 
 Version 1.3 release 18-May-2025 by wavemotion-dave

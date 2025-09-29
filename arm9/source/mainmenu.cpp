@@ -417,8 +417,8 @@ void SetDefaultGameConfig(void)
     myConfig.reserved2   = 0;
     myConfig.reserved3   = 0;
     myConfig.reserved4   = 0xA5;             // So it's easy to spot on an "upgrade" and we can re-default it
-    myConfig.cpuCycles   = 0;                // Normal 63 - this is the delta adjustment to that
-    myConfig.badCycles   = 0;                // Normal 23 - this is the delta adjustment to that
+    myConfig.cpuCycles   = 3;                // Normal 63 - this is the delta adjustment to that
+    myConfig.badCycles   = 3;                // Normal 23 - this is the delta adjustment to that
     
     myConfig.offsetX     = 32;              // Push the side border off the main display
     myConfig.offsetY     = 19;              // Push the top border off the main display
@@ -601,7 +601,7 @@ void FindConfig(void)
 struct options_t
 {
     const char  *label;
-    const char  *option[65];
+    const char  *option[72];
     u8          *option_val;
     u8           option_max;
 };
@@ -614,7 +614,8 @@ struct options_t
                         "KEY A", "KEY B", "KEY C", "KEY D", "KEY E", "KEY F", "KEY G", "KEY H", "KEY I", "KEY J", "KEY K", "KEY L",\
                         "KEY M", "KEY N", "KEY O", "KEY P", "KEY Q", "KEY R", "KEY S", "KEY T", "KEY U", "KEY V", "KEY W", "KEY X",\
                         "KEY Y", "KEY Z", "KEY 1", "KEY 2", "KEY 3", "KEY 4", "KEY 5", "KEY 6", "KEY 7", "KEY 8", "KEY 9", "KEY 0",\
-                        "PAN-UP 16", "PAN-UP 24", "PAN-DOWN 16", "PAN-DOWN 24", "ZOOM TOGGLE"
+                        "PAN-UP 16", "PAN-UP 24", "PAN-UP 32", "PAN-DOWN 16", "PAN-DOWN 24", "PAN-DOWN 32","PAN-LEFT 32", "PAN-RIGHT 32",\
+                        "PAN-LEFT 64", "PAN-RIGHT 64", "ZOOM TOGGLE"
                         
 
 const struct options_t Option_Table[2][20] =
@@ -631,15 +632,15 @@ const struct options_t Option_Table[2][20] =
         {"BAD CYCLES" ,    {CYCLE_DELTA_STR},                                                           &myConfig.badCycles,   19},
         {"POUND KEY",      {"POUND", "BACK ARROW", "UP ARROW", "C= COMMODORE"},                         &myConfig.poundKey,    4},
 
-        {"D-PAD UP",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[0],  65},
-        {"D-PAD DOWN",     {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[1],  65},
-        {"D-PAD LEFT",     {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[2],  65},
-        {"D-PAD RIGHT",    {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[3],  65},
+        {"D-PAD UP",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[0],  71},
+        {"D-PAD DOWN",     {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[1],  71},
+        {"D-PAD LEFT",     {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[2],  71},
+        {"D-PAD RIGHT",    {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[3],  71},
 
-        {"A BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[4],  65},
-        {"B BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[5],  65},
-        {"X BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[6],  65},
-        {"Y BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[7],  65},
+        {"A BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[4],  71},
+        {"B BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[5],  71},
+        {"X BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[6],  71},
+        {"Y BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[7],  71},
         
         {NULL,             {"",      ""},                                                               NULL,                  1}
     },
@@ -649,9 +650,9 @@ const struct options_t Option_Table[2][20] =
         {"DEF DSK/FLSH",       {"READ NO SFX", "READ WITH SFX", "WRITE NO SFX", "WRITE WITH SFX"},      &myGlobalConfig.defaultDiskFlash,   4},
         {"DEF PND KEY",        {"POUND", "BACK ARROW", "UP ARROW", "C= COMMODORE"},                     &myGlobalConfig.defaultPoundKey,    4},
         {"DEF KEYBOARD",       {"MAX BRIGHT", "DIM", "DIMMER", "DIMMEST"},                              &myGlobalConfig.keyboardDim,        4},        
-        {"DEF KEY B",          {KEY_MAP_OPTIONS},                                                       &myGlobalConfig.defaultB,           65},
-        {"DEF KEY X",          {KEY_MAP_OPTIONS},                                                       &myGlobalConfig.defaultX,           65},
-        {"DEF KEY Y",          {KEY_MAP_OPTIONS},                                                       &myGlobalConfig.defaultY,           65},
+        {"DEF KEY B",          {KEY_MAP_OPTIONS},                                                       &myGlobalConfig.defaultB,           71},
+        {"DEF KEY X",          {KEY_MAP_OPTIONS},                                                       &myGlobalConfig.defaultX,           71},
+        {"DEF KEY Y",          {KEY_MAP_OPTIONS},                                                       &myGlobalConfig.defaultY,           71},
         
         {NULL,                 {"",      ""},                                                           NULL,                               1}
     }    

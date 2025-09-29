@@ -905,6 +905,8 @@ void Drive::validate_cmd(void)
 
 void Drive::unsupp_cmd(void)
 {
+    void debug_printf(const char * str, ...);
+    debug_printf("Drive::unsupp_cmd");
 }
 
 

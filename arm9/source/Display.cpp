@@ -257,10 +257,12 @@ void C64Display::NewPrefs(Prefs *prefs)
     dimDampen = 0;
 }
 
-u8 JITTER[]       __attribute__((section(".dtcm"))) = {0, 64, 128};
-s16 temp_offset   __attribute__((section(".dtcm"))) = 0;
-u16 slide_dampen  __attribute__((section(".dtcm"))) = 0;
-u16 DSIvBlanks    __attribute__((section(".dtcm"))) = 0;
+u8 JITTER[]         __attribute__((section(".dtcm"))) = {0, 64, 128};
+s16 temp_offset_y   __attribute__((section(".dtcm"))) = 0;
+s16 temp_offset_x   __attribute__((section(".dtcm"))) = 0;
+u8  slide_dampen_y  __attribute__((section(".dtcm"))) = 0;
+u8  slide_dampen_x  __attribute__((section(".dtcm"))) = 0;
+u16 DSIvBlanks      __attribute__((section(".dtcm"))) = 0;
 
 int8 currentBrightness = 0;
 const int8 brightness[] = {0, -6, -12, -15};
@@ -280,8 +282,8 @@ __attribute__ ((noinline)) void HandleBrightness(void)
 ITCM_CODE void vblankDS(void)
 {
     DSIvBlanks++;
-    int cxBG = ((s16)myConfig.offsetX << 8);
-    int cyBG = ((s16)myConfig.offsetY+temp_offset) << 8;
+    int cxBG = ((s16)myConfig.offsetX+temp_offset_x) << 8;
+    int cyBG = ((s16)myConfig.offsetY+temp_offset_y) << 8;
     int xdxBG = ((320 / myConfig.scaleX) << 8) | (320 % myConfig.scaleX) ;
     int ydyBG = ((200 / myConfig.scaleY) << 8) | (200 % myConfig.scaleY);
 
@@ -295,16 +297,29 @@ ITCM_CODE void vblankDS(void)
     REG_BG3PA = xdxBG;
     REG_BG3PD = ydyBG;
 
-    if (temp_offset)
+    if (temp_offset_y)
     {
-        if (slide_dampen == 0)
+        if (slide_dampen_y == 0)
         {
-            if (temp_offset > 0) temp_offset--;
-            else temp_offset++;
+            if (temp_offset_y > 0) temp_offset_y--;
+            else temp_offset_y++;
         }
         else
         {
-            slide_dampen--;
+            slide_dampen_y--;
+        }
+    }
+
+    if (temp_offset_x)
+    {
+        if (slide_dampen_x == 0)
+        {
+            if (temp_offset_x > 0) temp_offset_x--;
+            else temp_offset_x++;
+        }
+        else
+        {
+            slide_dampen_x--;
         }
     }
 

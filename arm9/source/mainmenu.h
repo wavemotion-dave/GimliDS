@@ -1,6 +1,6 @@
 
 #define MAX_CONFIGS                 1920
-#define CONFIG_VERSION              0x0008
+#define CONFIG_VERSION              0x000A
 
 extern s16 CycleDeltas[];
 
@@ -48,6 +48,7 @@ struct __attribute__((__packed__)) GlobalConfig_t
     u8  reserved8;
     u8  reserved9;
     u8  reserved10;
+    u8  spare_A[128];
 };
 
 extern struct Config_t        myConfig;
@@ -119,11 +120,18 @@ extern struct GlobalConfig_t  myGlobalConfig;
 
 #define KEY_MAP_PAN_UP16   60
 #define KEY_MAP_PAN_UP24   61
-#define KEY_MAP_PAN_DN16   62
-#define KEY_MAP_PAN_DN24   63
-#define KEY_MAP_ZOOM_SCR   64
+#define KEY_MAP_PAN_UP32   62
+#define KEY_MAP_PAN_DN16   63
+#define KEY_MAP_PAN_DN24   64
+#define KEY_MAP_PAN_DN32   65
+#define KEY_MAP_PAN_LT32   66
+#define KEY_MAP_PAN_RT32   67
+#define KEY_MAP_PAN_LT64   68
+#define KEY_MAP_PAN_RT64   69
 
-#define KEY_MAP_MAX        65
+#define KEY_MAP_ZOOM_SCR   70
+
+#define KEY_MAP_MAX        71
 
 #define JOYMODE_NORMAL          0
 #define JOYMODE_SLIDE_N_GLIDE   1
