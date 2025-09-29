@@ -22,6 +22,7 @@ The GimliDS emulator is offered as-is, without any warranty.
   * REU-1750 emulated with 256K of expanded memory
   * D64 disk file support for two drives (8, 9)
   * CRT cartridge file support with writeback for EasyFlash (flash sectors) and GMOD2 (serial EE)
+  * Virtual touch-screen keyboard to replicate the C64 look and feel
   * Full key mapping of C64 Keyboard / Joystick to any of the main DS keys
   * Save/Load state so you can pickup gameplay right where you left off
 
