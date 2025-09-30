@@ -51,6 +51,8 @@
 u8 floppy_sound_counter __attribute__((section(".dtcm"))) = 0;
 u8 bDebugDisplay        __attribute__((section(".dtcm"))) = 0;
 
+extern void kbd_buf_feed(const char *s);
+
 // "Colodore" palette
 uint8_t palette_red[16] = {
     0x00, 0xff, 0x81, 0x75, 0x8e, 0x56, 0x2e, 0xed, 0x8e, 0x55, 0xc4, 0x4a, 0x7b, 0xa9, 0x70, 0xb2
@@ -631,16 +633,17 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
     // For PRG files, we wait about half-a-sec before loading in the program...
     if (bDelayLoadPRG)
     {
-        if (--bDelayLoadPRG)
+        if (--bDelayLoadPRG == 0)
         {
             TheC64->LoadPRG(CartFilename);
+            kbd_buf_feed("RUN\r");
         }
     }
 
     // For PRG files, we wait about half-a-sec before loading in the program...
     if (bDelayLoadCRT)
     {
-        if (--bDelayLoadCRT)
+        if (--bDelayLoadCRT == 0)
         {
             TheC64->InsertCart(CartFilename);
             
@@ -653,7 +656,7 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
             TheC64->NewPrefs(prefs);
             ThePrefs = *prefs;
             delete prefs;
-            
+            WAITVBL;WAITVBL;
             TheC64->Reset();
         }
     }
@@ -850,7 +853,6 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
 
                 if (reload & 0x80)
                 {
-                    extern void kbd_buf_feed(const char *s);
                     kbd_buf_feed("\rLOAD\"*\",8,1\rRUN\r");
                 }
             }
