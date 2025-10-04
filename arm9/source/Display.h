@@ -44,7 +44,7 @@ const int DISPLAY_Y = 0x11f;
 class C64Window;
 class C64Screen;
 class C64;
-class Prefs;
+class DrivePrefs;
 
 // Class for C64 graphics display
 class C64Display {
@@ -58,7 +58,7 @@ public:
     void KeyRelease(int key, uint8 *key_matrix, uint8 *rev_matrix);
     void PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joystick);
     void InitColors(uint8 *colors);
-    void NewPrefs(Prefs *prefs);
+    void NewPrefs(DrivePrefs *prefs);
     void IssueKeypress(uint8 row, uint8 col, uint8 *key_matrix, uint8 *rev_matrix);
     C64 *TheC64;
 

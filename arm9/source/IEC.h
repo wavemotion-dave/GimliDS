@@ -145,7 +145,7 @@ struct c64_dir_entry {
 
 class Drive;
 class C64Display;
-class Prefs;
+class DrivePrefs;
 
 // Class for complete IEC bus system with drives 8..11
 class IEC {
@@ -154,7 +154,7 @@ public:
     ~IEC();
 
     void Reset(void);
-    void NewPrefs(Prefs *prefs);
+    void NewPrefs(DrivePrefs *prefs);
     void UpdateLEDs(void);
 
     uint8 Out(uint8 byte, bool eoi);

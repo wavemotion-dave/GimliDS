@@ -61,7 +61,6 @@
 #include "sysdeps.h"
 #include "IEC.h"
 #include "1541d64.h"
-#include "Prefs.h"
 #include "Display.h"
 #include "main.h"
 #include "printf.h"
@@ -112,9 +111,9 @@ IEC::IEC(C64Display *display) : the_display(display)
     for (i=0; i<2; i++)
         drive[i] = NULL;    // Important because UpdateLEDs is called from the drive constructors (via set_error)
 
-    if (!ThePrefs.TrueDrive) {
+    if (!TheDrivePrefs.TrueDrive) {
         for (i=0; i<2; i++)
-            drive[i] = create_drive(ThePrefs.DrivePath[i]);
+            drive[i] = create_drive(TheDrivePrefs.DrivePath[i]);
     }
 
     listener_active = talker_active = false;
@@ -149,16 +148,16 @@ void IEC::Reset(void)
 
 /*
  *  Preferences have changed, prefs points to new preferences,
- *  ThePrefs still holds the previous ones. Check if drive settings
+ *  TheDrivePrefs still holds the previous ones. Check if drive settings
  *  have changed.
  */
 
-void IEC::NewPrefs(Prefs *prefs)
+void IEC::NewPrefs(DrivePrefs *prefs)
 {
     // Delete and recreate all changed drives
     for (int i=0; i<2; i++)
     {
-        if (strcmp(ThePrefs.DrivePath[i], prefs->DrivePath[i]) || ThePrefs.TrueDrive != prefs->TrueDrive)
+        if (strcmp(TheDrivePrefs.DrivePath[i], prefs->DrivePath[i]) || TheDrivePrefs.TrueDrive != prefs->TrueDrive)
         {
             delete drive[i];
             drive[i] = NULL;    // Important because UpdateLEDs is called from drive constructors (via set_error())

@@ -53,7 +53,7 @@
 #include <math.h>
 
 #include "SID.h"
-#include "Prefs.h"
+#include "1541d64.h"
 
 #define FIXPOINT_PREC           16    // number of fractional bits used in fixpoint representation
 #define PRECOMPUTE_RESONANCE    1     // For a bit of added speed
@@ -135,7 +135,7 @@ void MOS6581::Reset(void)
  *  Preferences may have changed
  */
 
-void MOS6581::NewPrefs(Prefs *prefs)
+void MOS6581::NewPrefs(DrivePrefs *prefs)
 {
     open_close_renderer(SIDTYPE_DIGITAL, SIDTYPE_DIGITAL);
     if (the_renderer != NULL)
@@ -355,7 +355,7 @@ public:
     virtual void Reset(void);
     virtual void EmulateLine(void);
     virtual void WriteRegister(uint16 adr, uint8 byte);
-    virtual void NewPrefs(Prefs *prefs);
+    virtual void NewPrefs(DrivePrefs *prefs);
     virtual void Pause(void);
     virtual void Resume(void);
     int16 calc_buffer(int16 *buf, long count);
@@ -768,7 +768,7 @@ void DigitalRenderer::WriteRegister(uint16 adr, uint8 byte)
  *  Preferences may have changed
  */
 
-void DigitalRenderer::NewPrefs(Prefs *prefs)
+void DigitalRenderer::NewPrefs(DrivePrefs *prefs)
 {
     calc_filter();
 }

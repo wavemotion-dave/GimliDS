@@ -41,7 +41,7 @@
 #include "main.h"
 #include "IEC.h"
 #include "C64.h"
-#include "Prefs.h"
+#include "1541d64.h"
 #include "Cartridge.h"
 #include "mainmenu.h"
 #include <maxmod9.h>
@@ -50,6 +50,7 @@
 
 u8 floppy_sound_counter __attribute__((section(".dtcm"))) = 0;
 u8 bDebugDisplay        __attribute__((section(".dtcm"))) = 0;
+u8 bKeyboardShowing     __attribute__((section(".dtcm"))) = 0;
 
 extern void kbd_buf_feed(const char *s);
 
@@ -97,21 +98,24 @@ void C64Display::UpdateLEDs(int l0, int l1)
     }
     else
     {
-        if (led_state[0] || led_state[1])
+        if (bKeyboardShowing)
         {
-            if (last_drive_access_type)
+            if (led_state[0] || led_state[1])
             {
-                DSPrint(24, 21, 2, (char*)"#$%"); // Blue Activity Label (write)
+                if (last_drive_access_type)
+                {
+                    DSPrint(24, 21, 2, (char*)"#$%"); // Blue Activity Label (write)
+                }
+                else
+                {
+                    DSPrint(24, 21, 2, (char*)"@AB"); // Green Activity Label (read or other access)
+                }
             }
             else
             {
-                DSPrint(24, 21, 2, (char*)"@AB"); // Green Activity Label (read or other access)
+                DSPrint(24, 21, 2, (char*)" !\""); // White Idle Drive Label
+                last_led_states = 0;
             }
-        }
-        else
-        {
-            DSPrint(24, 21, 2, (char*)" !\""); // White Idle Drive Label
-            last_led_states = 0;
         }
     }
 }
@@ -136,6 +140,7 @@ void C64Display::UpdateLEDs(int l0, int l1)
 #include <unistd.h>
 #include "diskmenu.h"
 #include "keyboard.h"
+#include "debugkbd.h"
 #include "soundbank.h"
 #include <maxmod9.h>
 
@@ -200,13 +205,25 @@ void ShowKeyboard(void)
     bg1b = bgInitSub(1, BgType_Text8bpp, BgSize_T_256x256, 29,0);
     bgSetPriority(bg0b,1); bgSetPriority(bg1b,0);
 
-    decompress(keyboardTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-    decompress(keyboardMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-    dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-    dmaCopy((void*) keyboardPal,(void*) BG_PALETTE_SUB,256*2);
+    if (bDebugDisplay)
+    {
+        decompress(debugkbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+        decompress(debugkbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+        dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+        dmaCopy((void*) debugkbdPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else
+    {
+        decompress(keyboardTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+        decompress(keyboardMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+        dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+        dmaCopy((void*) keyboardPal,(void*) BG_PALETTE_SUB,256*2);
+    }
     unsigned  short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
     dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
 
+    bKeyboardShowing = 1;
+    
     show_joysticks();
     show_shift_key();
     show_cartstatus();
@@ -253,7 +270,7 @@ C64Display::~C64Display()
  *  Prefs may have changed
  */
 
-void C64Display::NewPrefs(Prefs *prefs)
+void C64Display::NewPrefs(DrivePrefs *prefs)
 {
     floppy_sound_counter = 50; // One seconds of no floppy sound...
     dimDampen = 0;
@@ -476,55 +493,64 @@ void DSPrint(int iX,int iY,int iScr,char *szMessage)
 
 void show_joysticks(void)
 {
-    if (myConfig.joyPort)
+    if (bKeyboardShowing)
     {
-        DSPrint(1, 3, 2, (char*)"()");
-        DSPrint(1, 4, 2, (char*)"HI");
-        DSPrint(3, 3, 2, (char*)"*+");
-        DSPrint(3, 4, 2, (char*)"JK");
-    }
-    else
-    {
-        DSPrint(3, 3, 2, (char*)"()");
-        DSPrint(3, 4, 2, (char*)"HI");
-        DSPrint(1, 3, 2, (char*)"*+");
-        DSPrint(1, 4, 2, (char*)"JK");
+        if (myConfig.joyPort)
+        {
+            DSPrint(1, 3, 2, (char*)"()");
+            DSPrint(1, 4, 2, (char*)"HI");
+            DSPrint(3, 3, 2, (char*)"*+");
+            DSPrint(3, 4, 2, (char*)"JK");
+        }
+        else
+        {
+            DSPrint(3, 3, 2, (char*)"()");
+            DSPrint(3, 4, 2, (char*)"HI");
+            DSPrint(1, 3, 2, (char*)"*+");
+            DSPrint(1, 4, 2, (char*)"JK");
+        }
     }
 }
 
 void show_cartstatus(void)
 {
-    if (cart_in)
+    if (bKeyboardShowing)
     {
-        DSPrint(21, 23, 2, (char*)"PQR");
-    }
-    else
-    {
-        DSPrint(21, 23, 2, (char*)"012");
-    }
+        if (cart_in)
+        {
+            DSPrint(21, 23, 2, (char*)"PQR");
+        }
+        else
+        {
+            DSPrint(21, 23, 2, (char*)"012");
+        }
 
-    if (cart_led)
-    {
-        DSPrint(22, 21, 2, cart_led_color ? (char*)"4":(char*)"3");
-        cart_led--;
-    }
-    else
-    {
-        DSPrint(22, 21, 6, (char*)" ");
+        if (cart_led)
+        {
+            DSPrint(22, 21, 2, cart_led_color ? (char*)"4":(char*)"3");
+            cart_led--;
+        }
+        else
+        {
+            DSPrint(22, 21, 6, (char*)" ");
+        }
     }
 }
 
 void show_shift_key(void)
 {
-    if (m_Mode == KB_SHIFT)
+    if (bKeyboardShowing)
     {
-        DSPrint(1, 17, 2, (char*)",-");
-        DSPrint(1, 18, 2, (char*)"LM");
-    }
-    else
-    {
-        DSPrint(1, 17, 2, (char*)"./");
-        DSPrint(1, 18, 2, (char*)"NO");
+        if (m_Mode == KB_SHIFT)
+        {
+            DSPrint(1, 17, 2, (char*)",-");
+            DSPrint(1, 18, 2, (char*)"LM");
+        }
+        else
+        {
+            DSPrint(1, 17, 2, (char*)"./");
+            DSPrint(1, 18, 2, (char*)"NO");
+        }
     }
 }
 
@@ -546,33 +572,26 @@ int getMemFree() { // returns the amount of free memory in bytes
 }
 
 
-int i = 0;
 int debug[16]={0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0};
 void C64Display::DisplayStatusLine(int speed)
 {
     char tmp[34];
 
-    if (bDebugDisplay)
-    {
-        sprintf(tmp, "%-8d %-8d %-6d %-6d", debug[0],debug[1],debug[2],debug[3]);
-        DSPrint(0, 0, 6, tmp);
-
-        sprintf(tmp, "%-8d %-8d %-6d %-6d", debug[4],debug[5],debug[6],debug[7]);
-        DSPrint(0, 1, 6, tmp);
-
-        sprintf(tmp, "%-8d %-8d %-6d %-6d", debug[8],debug[9],debug[10],debug[11]);
-        DSPrint(0, 2, 6, tmp);
-
-        sprintf(tmp, "%-8d %-8d %-6d %-3d", debug[12],debug[13],debug[14],debug[15]);
-        DSPrint(0, 3, 6, tmp);
-
-        sprintf(tmp, "%3d", speed);
-        DSPrint(29, 3, 6, tmp);
-    }
-
     show_joysticks();
     show_shift_key();
     show_cartstatus();
+    
+    if (bDebugDisplay)
+    {
+        for (int idx=0; idx<16; idx++)
+        {
+            sprintf(tmp, "D%02d: %-9d  [%08X]", idx, debug[idx], debug[idx]);
+            DSPrint(0, 1+idx, 6, tmp);
+        }
+
+        sprintf(tmp, "FPS %3d", speed);
+        DSPrint(25, 0, 6, tmp);
+    }
 }
 
 
@@ -648,13 +667,13 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
             TheC64->InsertCart(CartFilename);
             
             // Magic Desk requires TRUE DRIVE emulation
-            Prefs *prefs = new Prefs(ThePrefs);
+            DrivePrefs *prefs = new DrivePrefs(TheDrivePrefs);
             strcpy(prefs->DrivePath[0], Drive8File);
             strcpy(prefs->DrivePath[1], Drive9File);
             myConfig.trueDrive = TheC64->TheCart->isTrueDriveRequired();
             prefs->TrueDrive = myConfig.trueDrive;
             TheC64->NewPrefs(prefs);
-            ThePrefs = *prefs;
+            TheDrivePrefs = *prefs;
             delete prefs;
             WAITVBL;WAITVBL;
             TheC64->Reset();
@@ -791,23 +810,23 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
                 if ((reload == 1) || (reload == 2))
                 {
                     // Remove any disks...
-                    Prefs *prefs = new Prefs(ThePrefs);
+                    DrivePrefs *prefs = new DrivePrefs(TheDrivePrefs);
                     strcpy(prefs->DrivePath[0], "");
                     strcpy(prefs->DrivePath[1], "");
                     prefs->TrueDrive = myConfig.trueDrive;
                     TheC64->NewPrefs(prefs);
-                    ThePrefs = *prefs;
+                    TheDrivePrefs = *prefs;
                     delete prefs;
 
                     if (reload == 1) // load cart THEN reset
                     {
-                        TheC64->PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
+                        TheC64->PatchKernal(TheDrivePrefs.TrueDrive);
                         TheC64->Reset();
                         bDelayLoadCRT = 5; // 5 frames and load the CRT file
                     }
                     else // reload is 2 - PRG file reset FIRST
                     {
-                        TheC64->PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
+                        TheC64->PatchKernal(TheDrivePrefs.TrueDrive);
                         TheC64->Reset();
                         bDelayLoadPRG = 10; // 10 frames and load the PRG file
                     }
@@ -816,7 +835,7 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
                 else if (reload == 3)
                 {
                     TheC64->RemoveCart();
-                    TheC64->PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
+                    TheC64->PatchKernal(TheDrivePrefs.TrueDrive);
                     TheC64->Reset();
                     cart_in = 0;
                 }
@@ -833,19 +852,19 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
                     kbd_buf_reset();
 
                     // Insert the new disk into the drive...
-                    Prefs *prefs = new Prefs(ThePrefs);
+                    DrivePrefs *prefs = new DrivePrefs(TheDrivePrefs);
                     strcpy(prefs->DrivePath[0], Drive8File);
                     strcpy(prefs->DrivePath[1], Drive9File);
                     prefs->TrueDrive = myConfig.trueDrive;
                     TheC64->NewPrefs(prefs);
-                    ThePrefs = *prefs;
+                    TheDrivePrefs = *prefs;
                     delete prefs;
 
                     // See if we should issue a system-wide RESET
                     if (reload == 2)
                     {
                         TheC64->RemoveCart();
-                        TheC64->PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
+                        TheC64->PatchKernal(TheDrivePrefs.TrueDrive);
                         TheC64->Reset();
                     }
                 }

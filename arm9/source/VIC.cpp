@@ -79,7 +79,7 @@
 #include "CPUC64.h"
 #include "Display.h"
 #include "mainmenu.h"
-#include "Prefs.h"
+#include "1541d64.h"
 #include "CIA.h"
 
 uint8 fast_line_buffer[512] __attribute__((section(".dtcm"))) = {0};
@@ -250,6 +250,8 @@ static u32  total_frames                __attribute__((section(".dtcm")));     /
 
 #endif
 
+uint8 vic_ultimax_mode                  __attribute__((section(".dtcm")));
+
 
 /*
  *  Constructor: Initialize variables
@@ -340,6 +342,8 @@ void MOS6569::Reset(void)
     total_frames = 0;
     frame_skipped = false;
     raster_y = 0xffff;
+    
+    vic_ultimax_mode = 0;
 
     // Clear foreground mask
     memset(fore_mask_buf, 0, DISPLAY_X/8);
@@ -357,14 +361,22 @@ void MOS6569::make_mc_table(void)
 /*
  *  Convert video address to pointer
  */
-
 uint8 *MOS6569::get_physical(uint16 adr)
 {
+    debug[1]++;
     int va = adr | cia_vabase;
     if ((va & 0x7000) == 0x1000)
+    {
         return char_rom + (va & 0x0fff);
+    }
+    else if (((va & 0x7000) == 0x3000) && vic_ultimax_mode)
+    {
+        return MemMap[0xf]+0xf000+(va&0xfff);
+    }
     else
+    {
         return ram + va;
+    }
 }
 
 

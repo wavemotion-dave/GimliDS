@@ -172,7 +172,8 @@ inline void MOS6510::TriggerCIAIRQ(void)
 
 inline void MOS6510::TriggerNMI(void)
 {
-    if (!nmi_state) {
+    if (!nmi_state) 
+    {
         nmi_state = true;
         interrupt.intr[INT_NMI] = true;
     }

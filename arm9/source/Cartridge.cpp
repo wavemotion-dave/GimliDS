@@ -49,15 +49,13 @@ namespace fs = std::filesystem;
 uint8 cart_led = 0;         // Used to briefly 'light up' the cart icon for Easy Flash 256 byte RAM access
 uint8 cart_led_color = 0;   // 0=Yellow, 1=Blue
 
-extern uint8 *MemMap[0x10];
-extern u8 myBASIC[];
-extern u8 myKERNAL[];
-
 u8 *cartROM = NULL;    // 1MB max supported cart size (not including .crt and chip headers). For DSi this gets bumped up to 2MB.
 extern C64 *gTheC64;   // Easy access to the main C64 object
 
 extern char CartType[16];   // For debug mostly
 char tmpFilename[256];      // For Flash and EE saves
+
+extern uint8_t vic_ultimax_mode;
 
 // Base class for cartridge with ROM
 ROMCartridge::ROMCartridge(unsigned num_banks, unsigned bank_size) : numBanks(num_banks), bankSize(bank_size)
@@ -101,12 +99,12 @@ ROMCartridge::~ROMCartridge()
 //   1       0      0       1       RAM           -            CARTLO       -              -             CHAR/IO         CARTHI     (Ultimax mode)
 //   1       0      0       0       RAM           -            CARTLO       -              -             CHAR/IO         CARTHI     (Ultimax mode)
 //
-//   0       1      1       1       RAM           RAM          CARTLO       BASIC          RAM           CHAR/IO         KERNAL
+//   0       1      1       1       RAM           RAM          CARTLO       BASIC          RAM           CHAR/IO         KERNAL     (8K cart mode)
 //   0       1      1       0       RAM           RAM          RAM          RAM            RAM           CHAR/IO         KERNAL
 //   0       1      0       1       RAM           RAM          RAM          RAM            RAM           CHAR/IO         RAM
 //   0       1      0       0       RAM           RAM          RAM          RAM            RAM           RAM             RAM
 //
-//   0       0      1       1       RAM           RAM          CARTLO       CARTHI         RAM           CHAR/IO         KERNAL
+//   0       0      1       1       RAM           RAM          CARTLO       CARTHI         RAM           CHAR/IO         KERNAL     (16K cart mode)
 //   0       0      1       0       RAM           RAM          RAM          CARTHI         RAM           CHAR/IO         KERNAL
 //   0       0      0       1       RAM           RAM          RAM          RAM            RAM           RAM             RAM
 //   0       0      0       0       RAM           RAM          RAM          RAM            RAM           RAM             RAM
@@ -121,6 +119,7 @@ void ROMCartridge::StandardMapping(int32 hi_bank_offset)
     if (port & 1)  portMap |= 0x01;  // LO_RAM
     
     ultimax_mode = false;
+    vic_ultimax_mode = false;
 
     switch (portMap)
     {
@@ -153,6 +152,7 @@ void ROMCartridge::StandardMapping(int32 hi_bank_offset)
             MemMap[0xe]=rom + ((uint32)bank * bankSize) + hi_bank_offset - 0xe000;
             MemMap[0xf]=rom + ((uint32)bank * bankSize) + hi_bank_offset - 0xe000;
             ultimax_mode = true;
+            vic_ultimax_mode = true;
             break;
 
         case 0x7:
@@ -269,6 +269,38 @@ void Cartridge16K::MapThyself(void)
 }
 
 
+// Ultimax ROM cartridge (EXROM = 1, GAME = 0)
+CartridgeUltimax::CartridgeUltimax() : ROMCartridge(1, 0x4000)
+{
+    notEXROM = true;
+    notGAME = false;
+    bank = 0;
+    
+    MapThyself();
+    strcpy(CartType, "ULTIMAX");
+}
+
+void CartridgeUltimax::Reset()
+{
+    if (total_cart_size <= 0x1000)  // Less than 4K and we mirror 
+    {
+        memcpy(rom+0x1000, rom, 0x1000);
+        memcpy(rom+0x2000, rom, 0x1000);
+        memcpy(rom+0x3000, rom, 0x1000);
+    }
+    else if (total_cart_size <= 0x2000) // Less than 8K and we mirror
+    {
+        memcpy(rom+0x2000, rom, 0x2000);
+    }
+  
+    MapThyself();
+}
+
+void CartridgeUltimax::MapThyself(void)
+{
+    StandardMapping(0x2000);
+}
+
 // Ocean cartridge (banked 8K/16K ROM cartridge)
 CartridgeOcean::CartridgeOcean(bool not_game) : ROMCartridge(64, 0x2000)
 {
@@ -365,6 +397,39 @@ void CartridgeC64GS::WriteIO1(uint16_t adr, uint8_t byte)
 }
 
 
+// FunPlay/PowerPlay System cartridge (banked 8K ROM cartridge)
+CartridgeFunPlay::CartridgeFunPlay() : ROMCartridge(16, 0x2000)
+{
+    notEXROM = false;
+    MapThyself();
+    strcpy(CartType, "FUNPLAY");
+}
+
+void CartridgeFunPlay::Reset()
+{
+    bank = 0;
+    MapThyself();
+}
+
+void CartridgeFunPlay::MapThyself(void)
+{
+    StandardMapping(64 * 0x2000); // HI ROM not used... map into area with 0xFFs
+}
+
+uint8_t CartridgeFunPlay::ReadIO1(uint16_t adr, uint8_t bus_byte)
+{
+    bank = 0;
+    MapThyself();
+    return bus_byte;
+}
+
+void CartridgeFunPlay::WriteIO1(uint16_t adr, uint8_t byte)
+{
+    bank = (byte >> 3) | ((byte & 1) << 3);
+    MapThyself();
+}
+
+
 // Dinamic cartridge (banked 8K ROM cartridge)
 CartridgeDinamic::CartridgeDinamic() : ROMCartridge(16, 0x2000)
 {
@@ -453,6 +518,74 @@ void CartridgeMagicDesk2::WriteIO1(uint16_t adr, uint8_t byte)
     notEXROM = byte & 0x80;
     MapThyself();
 }
+
+// Comal80 cartridge (banked 16K ROM cartridge)
+CartridgeComal80::CartridgeComal80() : ROMCartridge(4, 0x4000)
+{
+    bank = 0;
+    notEXROM = false;
+    notGAME = false;
+    MapThyself();
+    strcpy(CartType, "COMAL80");
+}
+
+void CartridgeComal80::Reset()
+{
+    bank = 0;
+    notEXROM = false;
+    notGAME = false;
+    MapThyself();
+}
+
+void CartridgeComal80::MapThyself(void)
+{
+    StandardMapping(0x2000); // HI ROM offset by 8K (16K maps)
+}
+
+void CartridgeComal80::WriteIO1(uint16_t adr, uint8_t byte)
+{
+    bank = byte & 0x03;
+    switch (byte & 0xc7)
+    {
+        case 0xe0:
+            notEXROM = true;
+            notGAME = true;
+            break;
+        default:
+        case 0x80:
+            notEXROM = false;
+            notGAME = false;
+            break;
+        case 0x40:
+            notEXROM = false;
+            notGAME = true;
+            break;
+    }
+    MapThyself();
+}
+
+// Westermann 16K ROM cartridge (EXROM = 0, GAME = 0)
+CartridgeWestermann::CartridgeWestermann() : ROMCartridge(1, 0x4000)
+{
+    notEXROM = false;
+    notGAME = false;
+    cart16Kmode = true;
+    strcpy(CartType, "WESTERMANN");
+}
+
+void CartridgeWestermann::MapThyself(void)
+{
+    StandardMapping(0x2000); // HI ROM is offset by 0x2000
+}
+
+// Read from IO2 disables the Westermann cart
+uint8_t CartridgeWestermann::ReadIO2(uint16_t adr, uint8_t bus_byte)
+{
+    notGAME = true;
+    MapThyself();
+    return bus_byte;
+}
+
 
 // -----------------------------------------------------------------------------
 // Borrowed from VICE - many thanks!!
@@ -1182,9 +1315,11 @@ Cartridge * Cartridge::FromFile(char *filename, char *errBuffer)
 
         switch (type) {
             case 0:
-                if (exrom != 0)     // Ultimax or not a ROM cartridge
-                    goto error_unsupp;
-                if (game == 0)
+                if (exrom != 0)     // Ultimax cart
+                {
+                    cart = new CartridgeUltimax;
+                }
+                else if (game == 0) // Either an 8K or 16K cart
                 {
                     cart = new Cartridge16K;
                 }
@@ -1196,8 +1331,14 @@ Cartridge * Cartridge::FromFile(char *filename, char *errBuffer)
             case 5:
                 cart = new CartridgeOcean(game);
                 break;
+            case 7:
+                cart = new CartridgeFunPlay;
+                break;
             case 8:
                 cart = new CartridgeSuperGames;
+                break;
+            case 11:
+                cart = new CartridgeWestermann;
                 break;
             case 15:
                 cart = new CartridgeC64GS;
@@ -1207,6 +1348,9 @@ Cartridge * Cartridge::FromFile(char *filename, char *errBuffer)
                 break;
             case 19:
                 cart = new CartridgeMagicDesk;
+                break;
+            case 21:
+                cart = new CartridgeComal80;
                 break;
             case 32:
                 cart = new CartridgeEasyFlash(game,exrom);
@@ -1240,12 +1384,17 @@ Cartridge * Cartridge::FromFile(char *filename, char *errBuffer)
             uint16_t chip_start = (header[0x0c] << 8) | header[0x0d];
             uint16_t chip_size  = (header[0x0e] << 8) | header[0x0f];
 
+            if (type == 7) // FunPlay / PowerPlay has odd bank mapping
+            {
+                chip_bank = (chip_bank >> 3) | ((chip_bank & 1) << 3);
+            }
+
             cart->total_cart_size += chip_size;
             if (chip_bank > cart->last_bank) cart->last_bank = chip_bank;
 
             if (memcmp(header, "CHIP", 4) != 0 || chip_type == 1  || chip_bank >= cart->numBanks || chip_size > cart->bankSize)
                 goto error_unsupp; // Chip Type of 1 is RAM - not yet supported... 0 is ROM and 2 is FLASH ROM
-
+                
             // Load packet contents
             uint32_t offset = chip_bank * cart->bankSize;
 
@@ -1260,7 +1409,7 @@ Cartridge * Cartridge::FromFile(char *filename, char *errBuffer)
 
         fclose(f);
     }
-
+    
     return cart;
 
 error_read:

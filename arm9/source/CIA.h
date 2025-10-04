@@ -38,8 +38,6 @@
 #ifndef _CIA_H
 #define _CIA_H
 
-#include "Prefs.h"
-
 
 class MOS6510;
 class MOS6502_1541;

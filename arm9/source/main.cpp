@@ -40,8 +40,6 @@
 #include "main.h"
 #include "C64.h"
 #include "Display.h"
-#include "Prefs.h"
-
 #include "mainmenu.h"
 #include "intro.h"
 #include "printf.h"

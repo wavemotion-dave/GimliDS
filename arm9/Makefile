@@ -67,7 +67,7 @@ SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
 PNGFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.png)))
 
-OSPECIALS   :=  keyboard.o mainmenu_bg.o diskmenu_bg.o cartmenu_bg.o intro.o
+OSPECIALS   :=  keyboard.o debugkbd.o mainmenu_bg.o diskmenu_bg.o cartmenu_bg.o intro.o
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -130,6 +130,9 @@ $(ARM9ELF)	:	$(OFILES)
 	@$(bin2o)
 
 keyboard.s keyboard.h : keyboard.png
+	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
+
+debugkbd.s debugkbd.h : debugkbd.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
 
 mainmenu_bg.s mainmenu_bg.h : mainmenu_bg.png

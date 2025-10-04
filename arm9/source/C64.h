@@ -42,7 +42,7 @@ const int DRIVE_ROM_SIZE  = 0x4000;
 #define MEM_TYPE_CART           0x04
 #define MEM_TYPE_OTHER          0x05
 
-class Prefs;
+class DrivePrefs;
 class C64Display;
 class MOS6510;
 class MOS6569;
@@ -69,8 +69,8 @@ public:
     void Reset(void);
     void NMI(void);
     void VBlank(bool draw_frame);
-    void NewPrefs(Prefs *prefs);
-    void PatchKernal(bool fast_reset, bool true_drive);
+    void NewPrefs(DrivePrefs *prefs);
+    void PatchKernal(bool true_drive);
     void SaveRAM(char *filename);
     bool SaveSnapshot(char *filename);
     bool LoadSnapshot(char *filename);
@@ -130,6 +130,10 @@ private:
 extern void floppy_soundfx(u8 type);
 extern uint8 cart_in;
 extern u8 *cartROM;
+
+extern uint8 *MemMap[0x10];
+extern u8 myBASIC[];
+extern u8 myKERNAL[];
 
 #define WAITVBL swiWaitForVBlank();swiWaitForVBlank();swiWaitForVBlank();
 

@@ -48,7 +48,6 @@
 #include "1541gcr.h"
 #include "Display.h"
 #include "Cartridge.h"
-#include "Prefs.h"
 #include "mainmenu.h"
 #include "lzav.h"
 #include <maxmod9.h>
@@ -199,6 +198,8 @@ C64::~C64()
 
 void C64::Reset(void)
 {
+    memset(debug, 0x00, sizeof(debug));
+    
     InitMemory();
     TheCPU->AsyncReset();
     TheCPU1541->AsyncReset();
@@ -253,12 +254,12 @@ void C64::LoadPRG(char *filename)
 
 /*
  *  The preferences have changed. prefs is a pointer to the new
- *   preferences, ThePrefs still holds the previous ones.
+ *   preferences, TheDrivePrefs still holds the previous ones.
  *   The emulation must be in the paused state!
  */
-void C64::NewPrefs(Prefs *prefs)
+void C64::NewPrefs(DrivePrefs *prefs)
 {
-    PatchKernal(prefs->FastReset, prefs->TrueDrive);
+    PatchKernal(prefs->TrueDrive);
     TheDisplay->NewPrefs(prefs);
 
     // Changed order of calls. If 1541 mode hasn't changed the order is insignificant.
@@ -278,7 +279,7 @@ void C64::NewPrefs(Prefs *prefs)
     TheSID->NewPrefs(prefs);
 
     // Reset 1541 processor if turned on or off (to bring IEC lines back to sane state)
-    if (ThePrefs.TrueDrive != prefs->TrueDrive)
+    if (TheDrivePrefs.TrueDrive != prefs->TrueDrive)
     {
         TheCPU1541->AsyncReset();
     }
@@ -289,8 +290,10 @@ void C64::NewPrefs(Prefs *prefs)
  *  Patch kernal IEC routines
  */
 
-void C64::PatchKernal(bool fast_reset, bool true_drive)
+void C64::PatchKernal(bool true_drive)
 {
+    bool fast_reset = true;
+    
     if (fast_reset) {
         Kernal[0x1d84] = 0xa0;
         Kernal[0x1d85] = 0x00;
@@ -727,7 +730,7 @@ bool C64::SaveSnapshot(char *filename)
     fprintf(f, "%s%c", SNAPSHOT_HEADER, 10);
     fputc(SNAPSHOT_VERSION, f); // Version number
     flags = 0;
-    if (ThePrefs.TrueDrive) flags |= SNAPSHOT_1541;
+    if (TheDrivePrefs.TrueDrive) flags |= SNAPSHOT_1541;
     fputc(flags, f);
     bool bVICSave  = SaveVICState(f);
     bool bSIDSave  = SaveSIDState(f);
@@ -737,9 +740,9 @@ bool C64::SaveSnapshot(char *filename)
     bool bREUSave  = SaveREUState(f);
     fputc(0, f);        // No delay
 
-    if (ThePrefs.TrueDrive)
+    if (TheDrivePrefs.TrueDrive)
     {
-        fwrite(ThePrefs.DrivePath[0], 256, 1, f);
+        fwrite(TheDrivePrefs.DrivePath[0], 256, 1, f);
         Save1541State(f);
         fputc(0, f);    // No delay
         Save1541JobState(f);
@@ -797,7 +800,7 @@ bool C64::LoadSnapshot(char *filename)
 
             if ((flags & SNAPSHOT_1541) != 0)
             {
-                Prefs *prefs = new Prefs(ThePrefs);
+                DrivePrefs *prefs = new DrivePrefs(TheDrivePrefs);
 
                 // First switch on emulation
                 int k=fread(prefs->DrivePath[0], 256, 1, f);
@@ -812,7 +815,7 @@ bool C64::LoadSnapshot(char *filename)
                 }
                 prefs->TrueDrive = true;
                 NewPrefs(prefs);
-                ThePrefs = *prefs;
+                TheDrivePrefs = *prefs;
                 delete prefs;
 
                 // Then read the context
@@ -820,11 +823,11 @@ bool C64::LoadSnapshot(char *filename)
 
                 delay = fgetc(f);   // Number of cycles the 6502 is ahead of the previous chips
                 Load1541JobState(f);
-            } else if (ThePrefs.TrueDrive) {    // No emulation in snapshot, but currently active?
-                Prefs *prefs = new Prefs(ThePrefs);
+            } else if (TheDrivePrefs.TrueDrive) {    // No emulation in snapshot, but currently active?
+                DrivePrefs *prefs = new DrivePrefs(TheDrivePrefs);
                 prefs->TrueDrive = false;
                 NewPrefs(prefs);
-                ThePrefs = *prefs;
+                TheDrivePrefs = *prefs;
                 delete prefs;
             }
 
@@ -854,7 +857,6 @@ bool C64::LoadSnapshot(char *filename)
  *  Unix stuff by Bernd Schmidt/Lutz Vieweg
  */
 
-#include "Prefs.h"
 #include "main.h"
 #include <nds.h>
 #include "nds/arm9/console.h"
@@ -930,7 +932,7 @@ void C64::Run(void)
     // Patch kernal IEC routines
     orig_kernal_1d84 = Kernal[0x1d84];
     orig_kernal_1d85 = Kernal[0x1d85];
-    PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
+    PatchKernal(TheDrivePrefs.TrueDrive);
 
     main_loop();
 }
@@ -1397,7 +1399,7 @@ void C64::main_loop(void)
         // -----------------------------------------------------------------
         // TrueDrive is more complicated as we must interleave the two CPUs
         // -----------------------------------------------------------------
-        if (ThePrefs.TrueDrive)
+        if (TheDrivePrefs.TrueDrive)
         {
             int cycles_1541 = FLOPPY_CYCLES_PER_LINE + CycleDeltas[myConfig.cpuCycles];
             TheCPU1541->CountVIATimers(cycles_1541);

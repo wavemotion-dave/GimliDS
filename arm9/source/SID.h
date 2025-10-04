@@ -45,10 +45,18 @@ extern uint8 last_sid_byte;
 extern int16_t EGDivTable[16];    // Clock divisors for A/D/R settings
 extern uint8_t EGDRShift[256];    // For exponential approximation of D/R
 
-class Prefs;
+class DrivePrefs;
 class C64;
 class SIDRenderer;
 struct MOS6581State;
+
+// SID types
+enum {
+    SIDTYPE_NONE,       // SID emulation off
+    SIDTYPE_DIGITAL,    // Digital SID emulation
+    SIDTYPE_SIDCARD     // SID card
+};
+
 
 // Class for administrative functions
 class MOS6581 {
@@ -59,7 +67,7 @@ public:
     void Reset(void);
     uint8 ReadRegister(uint16 adr);
     void WriteRegister(uint16 adr, uint8 byte);
-    void NewPrefs(Prefs *prefs);
+    void NewPrefs(DrivePrefs *prefs);
     void PauseSound(void);
     void ResumeSound(void);
     void GetState(MOS6581State *ss);
@@ -93,7 +101,7 @@ public:
     virtual void Reset(void)=0;
     virtual void EmulateLine(void)=0;
     virtual void WriteRegister(uint16 adr, uint8 byte)=0;
-    virtual void NewPrefs(Prefs *prefs)=0;
+    virtual void NewPrefs(DrivePrefs *prefs)=0;
     virtual void Pause(void)=0;
     virtual void Resume(void)=0;
 };

@@ -58,7 +58,7 @@
 #include "1541gcr.h"
 #include "CPU1541.h"
 #include "IEC.h"
-#include "Prefs.h"
+#include "1541d64.h"
 
 
 // Size of standard GCR sector encoded from D64 image
@@ -118,8 +118,8 @@ Job1541::Job1541(uint8_t *ram1541) : ram(ram1541), the_file(nullptr)
 		gcr_track_length[i] = 0;
 	}
 
-	if (ThePrefs.TrueDrive) {
-		open_image_file(ThePrefs.DrivePath[0]);
+	if (TheDrivePrefs.TrueDrive) {
+		open_image_file(TheDrivePrefs.DrivePath[0]);
 	}
 }
 
@@ -155,19 +155,19 @@ void Job1541::Reset()
  *  Preferences may have changed
  */
 
-void Job1541::NewPrefs(const Prefs * prefs)
+void Job1541::NewPrefs(const DrivePrefs * prefs)
 {
 	// 1541 emulation turned off?
 	if (!prefs->TrueDrive) {
 		close_image_file();
 
 	// 1541 emulation turned on?
-	} else if (!ThePrefs.TrueDrive && prefs->TrueDrive) {
+	} else if (!TheDrivePrefs.TrueDrive && prefs->TrueDrive) {
 		open_image_file(prefs->DrivePath[0]);
 
 	// Image file name changed?
 	}
-    else if (strcmp(ThePrefs.DrivePath[0], prefs->DrivePath[0]))
+    else if (strcmp(TheDrivePrefs.DrivePath[0], prefs->DrivePath[0]))
     {
 		close_image_file();
 		open_image_file(prefs->DrivePath[0]);

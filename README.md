@@ -45,9 +45,9 @@ and be sure they are named exactly as follows:
   * SELECT - switch between port1 and port2 that the joystick is in
   * D-Pad - Joystick directions
   * A is normally FIRE but can be remapped in Configuration
-  * B is normally SPACE but can be remapped in Configuration
+  * B is normally mapped to Joy Up to help with games in which you jump but can be remapped
+  * X is normally SPACE but can be remapped in Configuration
   * Y is normally mapped to RETURN but can be remapped in Configuration
-  * X is normally mapped to Joy Up to help with games in which you jump but can be remapped
   * Pressing and holding both shoulder buttons together will 'Turbo Warp' the emulator (runs as fast as it can until you release).
 
 ## Emulator Use
@@ -93,7 +93,11 @@ GimliDS supports the more common Cart Types up to 1MB. Included here is:
 
   * Standard 8K
   * Standard 16K
+  * Ultimax Carts (8K or 16K)
   * Super Game Carts up to 64K
+  * FunPlay/PowerPlay Carts at 64K
+  * Westermann Carts at 16K
+  * Comal80 Cart 64K
   * Dinamic up to 128K
   * C64 Games System up to 512K
   * Ocean up to 512K

@@ -33,7 +33,7 @@
 #include "mainmenu_bg.h"
 #include "diskmenu_bg.h"
 #include "cartmenu_bg.h"
-#include "Prefs.h"
+#include "1541d64.h"
 #include "C64.h"
 #include "printf.h"
 
@@ -56,6 +56,7 @@ u8          bLastFileTypeLoaded = 0;
 #define WAITVBL swiWaitForVBlank();swiWaitForVBlank();swiWaitForVBlank();
 
 extern u8 bDebugDisplay;
+extern u8 bKeyboardShowing;
 
 /*********************************************************************************
  * Show The 14 games on the list to allow the user to choose a new game.
@@ -451,6 +452,7 @@ void LoadGameConfig(void)
 
 void BottomScreenDiskette(void)
 {
+    bKeyboardShowing = 0;
     decompress(diskmenu_bgTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
     decompress(diskmenu_bgMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
     dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
@@ -461,6 +463,7 @@ void BottomScreenDiskette(void)
 
 void BottomScreenCartridge(void)
 {
+    bKeyboardShowing = 0;
     decompress(cartmenu_bgTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
     decompress(cartmenu_bgMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
     dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
@@ -471,6 +474,7 @@ void BottomScreenCartridge(void)
 
 void BottomScreenMainMenu(void)
 {
+    bKeyboardShowing = 0;
     decompress(mainmenu_bgTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
     decompress(mainmenu_bgMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
     dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
@@ -737,10 +741,10 @@ u8 DisketteMenu(C64 *the_c64)
                         GimliDSGameOptions();
                         if (last_trueDrive != myConfig.trueDrive) // Need to reload...
                         {
-                            Prefs *prefs = new Prefs(ThePrefs);
+                            DrivePrefs *prefs = new DrivePrefs(TheDrivePrefs);
                             prefs->TrueDrive = myConfig.trueDrive;
                             the_c64->NewPrefs(prefs);
-                            ThePrefs = *prefs;
+                            TheDrivePrefs = *prefs;
                             delete prefs;
                         }                        
                         DiskMenuShow(true, menuSelection);
@@ -776,8 +780,8 @@ u8 DisketteMenu(C64 *the_c64)
 
 u8 mount_disk(C64 *the_c64)
 {
-    strcpy(Drive8File, ThePrefs.DrivePath[0]);
-    strcpy(Drive9File, ThePrefs.DrivePath[1]);
+    strcpy(Drive8File, TheDrivePrefs.DrivePath[0]);
+    strcpy(Drive9File, TheDrivePrefs.DrivePath[1]);
     
     u8 retVal = DisketteMenu(the_c64);
     

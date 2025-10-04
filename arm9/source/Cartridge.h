@@ -165,6 +165,27 @@ public:
     void MapThyself(void) override;
 };
 
+// Ultimax ROM cartridge (EXROM = 1, GAME = 0)
+class CartridgeUltimax : public ROMCartridge {
+public:
+    CartridgeUltimax();
+    
+    void Reset() override;
+    void MapThyself(void) override;
+};
+
+
+// Westermann 16K ROM cartridge (EXROM = 0, GAME = 0)
+class CartridgeWestermann : public ROMCartridge {
+public:
+    CartridgeWestermann();
+
+    void MapThyself(void) override;
+    uint8_t ReadIO2(uint16_t adr, uint8_t bus_byte) override;
+protected:
+    bool cart16Kmode = true;    // Flag: cart is in 16K mode
+};
+
 
 // Ocean cartridge (banked 8K/16K ROM cartridge)
 class CartridgeOcean : public ROMCartridge {
@@ -195,6 +216,18 @@ protected:
 class CartridgeC64GS : public ROMCartridge {
 public:
     CartridgeC64GS();
+
+    void Reset() override;
+    void MapThyself(void) override;
+    uint8_t ReadIO1(uint16_t adr, uint8_t bus_byte) override;
+    void WriteIO1(uint16_t adr, uint8_t byte) override;
+};
+
+
+// FunPlay/PowerPlay cartridge (banked 8K ROM cartridge)
+class CartridgeFunPlay : public ROMCartridge {
+public:
+    CartridgeFunPlay();
 
     void Reset() override;
     void MapThyself(void) override;
@@ -234,6 +267,18 @@ public:
     void MapThyself(void) override;
     void WriteIO1(uint16_t adr, uint8_t byte) override;
 };
+
+
+// Comal80 (banked 16K ROM cartridge)
+class CartridgeComal80 : public ROMCartridge {
+public:
+    CartridgeComal80();
+
+    void Reset() override;
+    void MapThyself(void) override;
+    void WriteIO1(uint16_t adr, uint8_t byte) override;
+};
+
 
 // Easy Flash cartridge (banked 16K ROM cartridge with flash write support)
 class CartridgeEasyFlash : public ROMCartridge {

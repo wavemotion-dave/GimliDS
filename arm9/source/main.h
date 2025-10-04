@@ -26,7 +26,7 @@ class C64;
 
 // Global variables
 
-class Prefs;
+class DrivePrefs;
 
 class Frodo {
 public:

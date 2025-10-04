@@ -63,7 +63,7 @@
 #include "CPUC64.h"
 #include "CPU1541.h"
 #include "VIC.h"
-#include "Prefs.h"
+#include "1541d64.h"
 
 
 /*
@@ -383,8 +383,6 @@ void MOS6526_1::WriteRegister(uint16 adr, uint8 byte)
             break;
 
         case 0xd:
-            if (ThePrefs.CIAIRQHack)    // Hack for addressing modes that read from the address
-                icr = 0;
             if (byte & 0x80) {
 				int_mask |= byte & 0x1f;
 				if (icr & int_mask) {	// Trigger IRQ if pending
@@ -518,8 +516,6 @@ void MOS6526_2::WriteRegister(uint16 adr, uint8 byte)
             break;
 
         case 0xd:
-            if (ThePrefs.CIAIRQHack)
-                icr = 0;
             if (byte & 0x80) {
                 int_mask |= byte & 0x7f;
                 if (icr & int_mask & 0x1f) { // Trigger NMI if pending

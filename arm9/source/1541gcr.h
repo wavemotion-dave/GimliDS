@@ -48,7 +48,7 @@ constexpr unsigned MAX_NUM_HALFTRACKS = 84;
 
 
 class MOS6502_1541;
-class Prefs;
+class DrivePrefs;
 struct Job1541State;
 
 
@@ -64,7 +64,7 @@ public:
 
 	void GetState(Job1541State * s) const;
 	void SetState(const Job1541State * s);
-	void NewPrefs(const Prefs * prefs);
+	void NewPrefs(const DrivePrefs * prefs);
 
 	void SetMotor(bool on) { motor_on = on; }
 	void SetBitRate(uint8_t rate);

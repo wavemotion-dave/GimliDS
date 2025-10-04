@@ -22,7 +22,7 @@
 #include "sysconfig.h"
 #include <stdio.h>
 
-extern int debug[];
+extern int debug[16];
 
 #include <stdlib.h>
 #include <assert.h>

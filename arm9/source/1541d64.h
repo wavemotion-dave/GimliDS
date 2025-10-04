@@ -153,6 +153,20 @@ private:
 };
 
 
+// Preferences data
+class DrivePrefs {
+public:
+    DrivePrefs();
+    bool operator==(const DrivePrefs &rhs) const;
+    bool operator!=(const DrivePrefs &rhs) const;
+
+    char DrivePath[2][256]; // Path for drive 8 and 9
+    bool TrueDrive;         // Enable processor-level 1541 emulation
+};
+
+// These are the active preferences
+extern DrivePrefs TheDrivePrefs;
+
 /*
  *  Functions
  */

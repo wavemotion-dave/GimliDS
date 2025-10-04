@@ -30,7 +30,7 @@
 #include "diskmenu.h"
 #include "mainmenu.h"
 #include "mainmenu_bg.h"
-#include "Prefs.h"
+#include "1541d64.h"
 #include "Display.h"
 #include "printf.h"
 
@@ -43,7 +43,7 @@ u8 option_table = 0;
 extern void BottomScreenMainMenu(void);
 
 // Used with myConfig.cpuCycles and myConfig.badCycles
-s16 CycleDeltas[] = {0,1,2,3,4,5,6,7,8,9,-9,-8,-7,-6,-5,-4,-3,-2,-1};
+s16 CycleDeltas[] = {0,1,2,3,4,5,6,7,8,9,15,20, -9,-8,-7,-6,-5,-4,-3,-2,-1};
 
 // ----------------------------------------------------------------------
 // The Disk Menu can be called up directly from the keyboard graphic
@@ -185,7 +185,7 @@ u8 MainMenu(C64 *the_c64)
                     
                 case MENU_ACTION_RESET_EMU:
                     the_c64->RemoveCart();
-                    the_c64->PatchKernal(ThePrefs.FastReset, ThePrefs.TrueDrive);
+                    the_c64->PatchKernal(TheDrivePrefs.TrueDrive);
                     the_c64->Reset();
                     bExitMenu = true;
                     break;
@@ -198,10 +198,10 @@ u8 MainMenu(C64 *the_c64)
                         GimliDSGameOptions();
                         if (last_trueDrive != myConfig.trueDrive) // Need to reload...
                         {
-                            Prefs *prefs = new Prefs(ThePrefs);
+                            DrivePrefs *prefs = new DrivePrefs(TheDrivePrefs);
                             prefs->TrueDrive = myConfig.trueDrive;
                             the_c64->NewPrefs(prefs);
-                            ThePrefs = *prefs;
+                            TheDrivePrefs = *prefs;
                             delete prefs;
                         }                        
                         bExitMenu = true;
@@ -237,7 +237,7 @@ u8 MainMenu(C64 *the_c64)
                     }
                     else
                     {
-                        sprintf(theDrivePath,"sav/%s", ThePrefs.DrivePath[0]);
+                        sprintf(theDrivePath,"sav/%s", TheDrivePrefs.DrivePath[0]);
                     }
                     int len = strlen(theDrivePath);
                     theDrivePath[len-3] = 'g';
@@ -268,7 +268,7 @@ u8 MainMenu(C64 *the_c64)
                     }
                     else
                     {
-                        sprintf(theDrivePath,"sav/%s", ThePrefs.DrivePath[0]);
+                        sprintf(theDrivePath,"sav/%s", TheDrivePrefs.DrivePath[0]);
                     }
                     int len = strlen(theDrivePath);
                     theDrivePath[len-3] = 'g';
@@ -606,7 +606,7 @@ struct options_t
     u8           option_max;
 };
 
-#define CYCLE_DELTA_STR  "+0","+1","+2","+3","+4","+5","+6","+7","+8","+9","-9","-8","-7","-6","-5","-4","-3","-2","-1",
+#define CYCLE_DELTA_STR  "+0","+1","+2","+3","+4","+5","+6","+7","+8","+9","+15","+20","-9","-8","-7","-6","-5","-4","-3","-2","-1",
 
 #define KEY_MAP_OPTIONS "JOY FIRE", "JOY UP", "JOY DOWN", "JOY LEFT", "JOY RIGHT", "JOY AUTOFIRE",\
                         "KEY SPACE", "KEY RETURN", "RUN/STOP", "KEY C=", "KEY F1", "KEY F3", "KEY F5", "KEY F7",\
@@ -628,8 +628,8 @@ const struct options_t Option_Table[2][20] =
         {"JOY MODE",       {"NORMAL", "SLIDE-N-GLIDE", "DIAGONALS"},                                    &myConfig.joyMode,     3},
         {"LCD JITTER",     {"NONE", "LIGHT", "HEAVY"},                                                  &myConfig.jitter,      3},
         {"DISK/FLASH",     {"READ NO SFX", "READ WITH SFX", "WRITE NO SFX", "WRITE WITH SFX"},          &myConfig.diskFlash,   4},
-        {"CPU CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.cpuCycles,   19},
-        {"BAD CYCLES" ,    {CYCLE_DELTA_STR},                                                           &myConfig.badCycles,   19},
+        {"CPU CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.cpuCycles,   21},
+        {"BAD CYCLES" ,    {CYCLE_DELTA_STR},                                                           &myConfig.badCycles,   21},
         {"POUND KEY",      {"POUND", "BACK ARROW", "UP ARROW", "C= COMMODORE"},                         &myConfig.poundKey,    4},
 
         {"D-PAD UP",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[0],  71},

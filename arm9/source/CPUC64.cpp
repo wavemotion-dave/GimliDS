@@ -144,7 +144,9 @@ void MOS6510::AsyncReset(void)
 void MOS6510::AsyncNMI(void)
 {
     if (!nmi_state)
+    {
         interrupt.intr[INT_NMI] = true;
+    }
 }
 
 void MOS6510::setCharVsIO(void)

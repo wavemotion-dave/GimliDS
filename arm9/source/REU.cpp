@@ -47,7 +47,7 @@
 
 #include "REU.h"
 #include "CPUC64.h"
-#include "Prefs.h"
+#include "1541d64.h"
 
 extern u8 myRAM[];
 

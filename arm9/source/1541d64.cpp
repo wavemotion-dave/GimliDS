@@ -29,7 +29,6 @@
 
 #include "1541d64.h"
 #include "IEC.h"
-#include "Prefs.h"
 #include "C64.h"
 #include "main.h"
 #include "mainmenu.h"
@@ -2031,3 +2030,20 @@ bool CreateImageFile(const char *path)
     fclose(f);
     return true;
 }
+
+// These are the active preferences
+DrivePrefs TheDrivePrefs __attribute__((section(".dtcm")));
+
+
+/*
+ *  Constructor: Set up preferences with defaults
+ */
+
+DrivePrefs::DrivePrefs()
+{
+    strcpy(DrivePath[0], "");
+    strcpy(DrivePath[1], "");
+
+    TrueDrive = false; // True Drive Emulation when TRUE (slower emulation)
+}
+
