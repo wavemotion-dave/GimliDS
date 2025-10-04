@@ -67,7 +67,7 @@ ROMCartridge::ROMCartridge(unsigned num_banks, unsigned bank_size) : numBanks(nu
         {
             cartROM = (u8*)malloc(2*1024*1024);
         }
-        else 
+        else
         {
             cartROM = (u8*)malloc(1*1024*1024);
         }
@@ -79,7 +79,7 @@ ROMCartridge::ROMCartridge(unsigned num_banks, unsigned bank_size) : numBanks(nu
     cart_led_color = 0;
     dirtyFlash = false;
     memset(ram, 0xff, sizeof(ram));
-    
+
     strcpy(CartType, "NONE");
 }
 
@@ -117,7 +117,7 @@ void ROMCartridge::StandardMapping(int32 hi_bank_offset)
     if (notGAME)   portMap |= 0x04;  // _GAME
     if (port & 2)  portMap |= 0x02;  // HI_RAM
     if (port & 1)  portMap |= 0x01;  // LO_RAM
-    
+
     ultimax_mode = false;
     vic_ultimax_mode = false;
 
@@ -222,7 +222,9 @@ void Cartridge::CartFrame(void)
     }
 }
 
+// ======================================================
 // 8K ROM cartridge (EXROM = 0, GAME = 1)
+// ======================================================
 Cartridge8K::Cartridge8K() : ROMCartridge(1, 0x2000)
 {
     notEXROM = false;
@@ -242,7 +244,9 @@ void Cartridge8K::MapThyself(void)
 }
 
 
+// ======================================================
 // 16K ROM cartridge (EXROM = 0, GAME = 0)
+// ======================================================
 Cartridge16K::Cartridge16K() : ROMCartridge(1, 0x4000)
 {
     notEXROM = false;
@@ -269,30 +273,32 @@ void Cartridge16K::MapThyself(void)
 }
 
 
+// ======================================================
 // Ultimax ROM cartridge (EXROM = 1, GAME = 0)
+// ======================================================
 CartridgeUltimax::CartridgeUltimax() : ROMCartridge(1, 0x4000)
 {
     notEXROM = true;
     notGAME = false;
     bank = 0;
-    
+
     MapThyself();
     strcpy(CartType, "ULTIMAX");
 }
 
 void CartridgeUltimax::Reset()
 {
-    if (total_cart_size <= 0x1000)  // Less than 4K and we mirror 
+    if (total_cart_size <= 0x1000)  // 4K and we mirror
     {
         memcpy(rom+0x1000, rom, 0x1000);
         memcpy(rom+0x2000, rom, 0x1000);
         memcpy(rom+0x3000, rom, 0x1000);
     }
-    else if (total_cart_size <= 0x2000) // Less than 8K and we mirror
+    else if (total_cart_size <= 0x2000) // 8K and we mirror
     {
         memcpy(rom+0x2000, rom, 0x2000);
     }
-  
+
     MapThyself();
 }
 
@@ -301,7 +307,9 @@ void CartridgeUltimax::MapThyself(void)
     StandardMapping(0x2000);
 }
 
+// ======================================================
 // Ocean cartridge (banked 8K/16K ROM cartridge)
+// ======================================================
 CartridgeOcean::CartridgeOcean(bool not_game) : ROMCartridge(64, 0x2000)
 {
     notEXROM = false;
@@ -328,7 +336,9 @@ void CartridgeOcean::WriteIO1(uint16_t adr, uint8_t byte)
 }
 
 
+// ======================================================
 // Super Games cartridge (banked 16K ROM cartridge)
+// ======================================================
 CartridgeSuperGames::CartridgeSuperGames() : ROMCartridge(4, 0x4000)
 {
     notEXROM = false;
@@ -364,7 +374,9 @@ void CartridgeSuperGames::WriteIO2(uint16_t adr, uint8_t byte)
 }
 
 
+// ======================================================
 // C64 Games System cartridge (banked 8K ROM cartridge)
+// ======================================================
 CartridgeC64GS::CartridgeC64GS() : ROMCartridge(64, 0x2000)
 {
     notEXROM = false;
@@ -397,7 +409,9 @@ void CartridgeC64GS::WriteIO1(uint16_t adr, uint8_t byte)
 }
 
 
+// =============================================================
 // FunPlay/PowerPlay System cartridge (banked 8K ROM cartridge)
+// =============================================================
 CartridgeFunPlay::CartridgeFunPlay() : ROMCartridge(16, 0x2000)
 {
     notEXROM = false;
@@ -430,7 +444,9 @@ void CartridgeFunPlay::WriteIO1(uint16_t adr, uint8_t byte)
 }
 
 
+// =============================================================
 // Dinamic cartridge (banked 8K ROM cartridge)
+// =============================================================
 CartridgeDinamic::CartridgeDinamic() : ROMCartridge(16, 0x2000)
 {
     notEXROM = false;
@@ -457,7 +473,9 @@ uint8_t CartridgeDinamic::ReadIO1(uint16_t adr, uint8_t bus_byte)
 }
 
 
+// =============================================================
 // Magic Desk / Marina64 cartridge (banked 8K ROM cartridge)
+// =============================================================
 CartridgeMagicDesk::CartridgeMagicDesk() : ROMCartridge(128, 0x2000)
 {
     bTrueDriveRequired = true; // Magic Desk won't load properly without the true drive infrastructure
@@ -487,7 +505,9 @@ void CartridgeMagicDesk::WriteIO1(uint16_t adr, uint8_t byte)
     MapThyself();
 }
 
-// Magic Desk2 / Magic Desk 16K (mainly for SNK vs Capcom - Stronger Edition)
+// ================================================================
+// Magic Desk2 / Magic Desk 16K (SNK vs Capcom - Stronger Edition)
+// ================================================================
 CartridgeMagicDesk2::CartridgeMagicDesk2() : ROMCartridge(128, 0x4000)
 {
     bTrueDriveRequired = true; // Magic Desk won't load properly without the true drive infrastructure
@@ -519,7 +539,9 @@ void CartridgeMagicDesk2::WriteIO1(uint16_t adr, uint8_t byte)
     MapThyself();
 }
 
+// =============================================================
 // Comal80 cartridge (banked 16K ROM cartridge)
+// =============================================================
 CartridgeComal80::CartridgeComal80() : ROMCartridge(4, 0x4000)
 {
     bank = 0;
@@ -564,7 +586,9 @@ void CartridgeComal80::WriteIO1(uint16_t adr, uint8_t byte)
     MapThyself();
 }
 
+// =============================================================
 // Westermann 16K ROM cartridge (EXROM = 0, GAME = 0)
+// =============================================================
 CartridgeWestermann::CartridgeWestermann() : ROMCartridge(1, 0x4000)
 {
     notEXROM = false;
@@ -692,9 +716,9 @@ static const unsigned char eapiam29f040[768] = {
     0xff, 0xff
 };
 
-// -------------------------------------------------------------------------------------------------------
+// =======================================================================================================
 // Easyflash cartridge (banked 16K ROM cartridge with 8K LOROM and 8K HIGH ROM and flash write supported)
-// -------------------------------------------------------------------------------------------------------
+// =======================================================================================================
 CartridgeEasyFlash::CartridgeEasyFlash(bool not_game, bool not_exrom) : ROMCartridge(128, 0x2000)
 {
     notEXROM = not_exrom;
@@ -714,7 +738,7 @@ void CartridgeEasyFlash::PatchEAPI(void)
     {
         memcpy(rom+0x81800, eapiam29f040, sizeof(eapiam29f040));
     }
-    
+
     // ------------------------------------------------------------------------------------------------
     // There might be an ".ezf" flash patch file sitting on the SD card... if so read it and apply it.
     // ------------------------------------------------------------------------------------------------
@@ -724,7 +748,7 @@ void CartridgeEasyFlash::PatchEAPI(void)
         tmpFilename[strlen(tmpFilename)-3] = 'e';
         tmpFilename[strlen(tmpFilename)-2] = 'z';
         tmpFilename[strlen(tmpFilename)-1] = 'f';
-        
+
         FILE *fp = fopen(tmpFilename, "rb");
         if (fp)
         {
@@ -748,7 +772,7 @@ void CartridgeEasyFlash::Reset()
     flash_state_hi = FLASH_IDLE;
     flash_base_state_lo = FLASH_IDLE;
     flash_base_state_hi = FLASH_IDLE;
-    
+
     memset(dirtySectors, 0x00, sizeof(dirtySectors));
     bank = 0;
     MapThyself();
@@ -794,7 +818,7 @@ uint8_t CartridgeEasyFlash::ReadIO2(uint16_t adr, uint8_t bus_byte)
 // --------------------------------------------------------------------------
 // Easy Flash supports write to the flash. Erase happens on 64K sized blocks.
 // The flash chip is an AM29F040 512K chip and the EasyFlash has two of these
-// one for the LOROM and one for the HIROM. 
+// one for the LOROM and one for the HIROM.
 // --------------------------------------------------------------------------
 void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
 {
@@ -805,7 +829,7 @@ void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
     {
         cart_led=2;
         cart_led_color=1;
-        
+
         uint8 *flash_state      = ((adr & 0xE000) == 0x8000) ? &flash_state_lo : &flash_state_hi;
         uint8 *flash_base_state = ((adr & 0xE000) == 0x8000) ? &flash_base_state_lo : &flash_base_state_hi;
         uint32 flash_offset     = ((adr & 0xE000) == 0x8000) ? 0x00000000 : (64 * 0x2000);
@@ -823,7 +847,7 @@ void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
                     *flash_base_state = FLASH_IDLE;
                 }
                 break;
-                
+
             case FLASH_CHIP_ID: // Chip ID (aka AutoSelect mode)
                 if ((bank == 0) && ((adr & 0x7FF) == 0x555) && (byte == 0xAA)) // The first keyed sequence to wake up the flash controller
                 {
@@ -840,8 +864,8 @@ void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
                     }
                 }
                 break;
-                
-                
+
+
             case FLASH_x555_AA:
                 if ((bank == 0) && ((adr & 0x7FF) == 0x2AA) && (byte == 0x55)) // The second keyed sequence to wake up the flash controller
                 {
@@ -852,12 +876,12 @@ void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
                     *flash_state = *flash_base_state;
                 }
                 break;
-            
-            // -----------------------------------------------------------    
+
+            // -----------------------------------------------------------
             // Determine what kind of flash command is being requested...
             // -----------------------------------------------------------
             case FLASH_x2AA_55:
-                if (((adr & 0x7FF) == 0x555) && (byte == 0x80)) 
+                if (((adr & 0x7FF) == 0x555) && (byte == 0x80))
                 {
                     *flash_state = FLASH_x555_80;    // Sector Erase
                 }
@@ -865,7 +889,7 @@ void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
                 {
                     *flash_base_state = FLASH_CHIP_ID;
                     *flash_state = FLASH_CHIP_ID;
-                    
+
                     // ----------------------------------------------------------------
                     // We are in 'AutoSelect' mode where the program is trying to read
                     // the Chip ID / Mfr and possibly the state of the bank protection.
@@ -899,7 +923,7 @@ void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
                     *flash_state = *flash_base_state;
                 }
                 break;
-                
+
             case FLASH_x555_80: // Sector Erase
                 if (((adr & 0x7FF) == 0x555) && (byte == 0xAA))
                 {
@@ -921,7 +945,7 @@ void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
                     *flash_state = *flash_base_state;
                 }
                 break;
-            
+
             case FLASH_x2AA_SE: // Sector Erase - Key 2
                 if (byte == 0x30)
                 {
@@ -946,7 +970,7 @@ void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
                 *flash_state = FLASH_IDLE;
                 *flash_base_state = FLASH_IDLE;
                 break;
-            
+
             case FLASH_x555_A0: // Byte Write
                 // -------------------------------------------------------------------------
                 // Write the byte into the rom[] memory in the appropriate banking location
@@ -959,12 +983,12 @@ void CartridgeEasyFlash::WriteFlash(uint16_t adr, uint8_t byte)
                 *flash_state = *flash_base_state;
                 break;
         }
-        
+
         // -------------------------------------------------------
-        // In Ultimax mode, the cartridge takes over the bus and 
+        // In Ultimax mode, the cartridge takes over the bus and
         // does not allow the normal C64 write-through to RAM.
         // -------------------------------------------------------
-        if (ultimax_mode) return; 
+        if (ultimax_mode) return;
     }
 
     // --------------------------------------------------------
@@ -987,7 +1011,7 @@ void CartridgeEasyFlash::PersistFlash(void)
         tmpFilename[strlen(tmpFilename)-3] = 'e';
         tmpFilename[strlen(tmpFilename)-2] = 'z';
         tmpFilename[strlen(tmpFilename)-1] = 'f';
-        
+
         FILE *fp = fopen(tmpFilename, "wb");
         if (fp)
         {
@@ -1020,9 +1044,9 @@ void CartridgeEasyFlash::PersistFlash(void)
 #define EEPROM_STATE_WRITE_DATA             5
 #define EEPROM_STATE_READ_DATA_DUMMY_ZERO   6
 
-// ----------------------------------------------------------------------------------
+// =================================================================================
 // GMOD2 cartridge (banked 8K ROM cartridge up to 512K in size) plus Serial EEPROM
-// ----------------------------------------------------------------------------------
+// =================================================================================
 CartridgeGMOD2::CartridgeGMOD2(bool not_game, bool not_exrom) : ROMCartridge(64, 0x2000)
 {
     notEXROM = not_exrom;
@@ -1041,21 +1065,21 @@ void CartridgeGMOD2::Reset()
     eeprom_data_in = 0x0000;
     eeprom_data_out = 0x0000;
     memset(eeprom_data, 0xff, sizeof(eeprom_data));
-    
+
     flash_write_supported = 1; // Technically allowed but we don't actually perform the write
-    
+
     sprintf(tmpFilename,"sav/%s", CartFilename);
     tmpFilename[strlen(tmpFilename)-3] = 'e';
     tmpFilename[strlen(tmpFilename)-2] = 'e';
     tmpFilename[strlen(tmpFilename)-1] = 'p';
-   
+
     FILE *fp = fopen(tmpFilename, "rb");
     if (fp)
     {
         fread(eeprom_data, sizeof(eeprom_data), 1, fp);
         fclose(fp);
-    }    
-        
+    }
+
     MapThyself();
 }
 
@@ -1065,7 +1089,7 @@ void CartridgeGMOD2::MapThyself(void)
 }
 
 // -------------------------------------------------------------------------------
-// GMOD2 has a 2K byte (16K-bit) Serial EEPROM (M93C86 from STMicroelectronics). 
+// GMOD2 has a 2K byte (16K-bit) Serial EEPROM (M93C86 from STMicroelectronics).
 // This is wired in x16 mode so the addressing and data are all 16-bits wide.
 // -------------------------------------------------------------------------------
 void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
@@ -1081,7 +1105,7 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                 switch (eeprom_state)
                 {
                     case EEPROM_STATE_IDLE:
-                        if (data) 
+                        if (data)
                         {
                             eeprom_bit_count = 2;
                             eeprom_opcode = 0x00;
@@ -1091,7 +1115,7 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                     case EEPROM_STATE_CLOCK_OP:
                         if (eeprom_bit_count) eeprom_bit_count--;
                         eeprom_opcode |= (data << eeprom_bit_count);
-                        
+
                         if (!eeprom_bit_count)
                         {
                             eeprom_address = 0;
@@ -1099,7 +1123,7 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                             eeprom_state = EEPROM_STATE_CLOCK_ADDR;
                         }
                         break;
-                        
+
                     case EEPROM_STATE_CLOCK_ADDR:
                         if (eeprom_bit_count) eeprom_bit_count--;
                         eeprom_address |= (data << eeprom_bit_count);
@@ -1121,7 +1145,7 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                             }
                             if (eeprom_opcode == 3) // Erase Word
                             {
-                                cart_led=2; cart_led_color=1;                                
+                                cart_led=2; cart_led_color=1;
                                 eeprom_data[(eeprom_address<<1)+1] = 0xFF;
                                 eeprom_data[(eeprom_address<<1)+0] = 0xFF;
                                 dirtyFlash = 10;
@@ -1130,7 +1154,7 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                             if (eeprom_opcode == 0) // Special - needs top 2 bits of address to define the operation
                             {
                                 eeprom_state = EEPROM_STATE_IDLE;
-                                
+
                                 if ((eeprom_address >> 8) == 0x00)
                                 {
                                     // Write Disable - ignored for the purposes of emulation (we assume well-behaved carts)
@@ -1157,14 +1181,14 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                             }
                         }
                         break;
-                    
+
                     case EEPROM_STATE_READ_DATA_DUMMY_ZERO:
                         eeprom_bit_out = 0;
                         eeprom_state = EEPROM_STATE_READ_DATA;
                         break;
 
                     case EEPROM_STATE_READ_DATA:
-                        if (eeprom_bit_count) eeprom_bit_count--;                            
+                        if (eeprom_bit_count) eeprom_bit_count--;
                         eeprom_bit_out = (eeprom_data_out & (1<<eeprom_bit_count));
                         if (!eeprom_bit_count)
                         {
@@ -1173,7 +1197,7 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                             eeprom_data_out = (eeprom_data[(eeprom_address<<1)+0] << 8) | eeprom_data[(eeprom_address<<1)+1];
                         }
                         break;
-                        
+
                     case EEPROM_STATE_WRITE_DATA:
                         if (eeprom_bit_count) eeprom_bit_count--;
                         eeprom_data_in |= (data << eeprom_bit_count);
@@ -1181,7 +1205,7 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
                         {
                             dirtyFlash = 10;
                             cart_led=2; cart_led_color=1;
-                         
+
                             if (bWriteAll)
                             {
                                 for (int address = 0; address < 0x400; address++)
@@ -1209,17 +1233,17 @@ void CartridgeGMOD2::WriteIO1(uint16_t adr, uint8_t byte)
         eeprom_state = EEPROM_STATE_IDLE;
         eeprom_bit_out = 1;
         eeprom_bit_count = 0;
-        
+
         bank = byte & 0x3f;
         MapThyself();
-    }        
+    }
 }
 
 uint8_t CartridgeGMOD2::ReadIO1(uint16_t adr, uint8_t bus_byte)
 {
     bus_byte &= ~EEPROM_DATAOUT;
     if (eeprom_bit_out) bus_byte |= EEPROM_DATAOUT;
-    
+
     return bus_byte;
 }
 
@@ -1254,7 +1278,7 @@ void Cartridge::GetState(CartridgeState *cs)
     cs->bank = bank;
     cs->dirtyFlash = dirtyFlash;
     cs->bTrueDriveRequired = bTrueDriveRequired;
-    cs->ultimax_mode = ultimax_mode;    
+    cs->ultimax_mode = ultimax_mode;
     cs->flash_state_lo = flash_state_lo;
     cs->flash_state_hi = flash_state_hi;
     cs->flash_base_state_lo = flash_base_state_lo;
@@ -1274,11 +1298,11 @@ void Cartridge::SetState(CartridgeState *cs)
     bank = cs->bank;
     dirtyFlash = cs->dirtyFlash;
     bTrueDriveRequired = cs->bTrueDriveRequired;
-    ultimax_mode = cs->ultimax_mode;    
+    ultimax_mode = cs->ultimax_mode;
     flash_state_lo = cs->flash_state_lo;
     flash_state_hi = cs->flash_state_hi;
     flash_base_state_lo = cs->flash_base_state_lo;
-    flash_base_state_hi = cs->flash_base_state_hi;    
+    flash_base_state_hi = cs->flash_base_state_hi;
     memcpy(ram, cs->ram, 256);
 }
 
@@ -1394,7 +1418,7 @@ Cartridge * Cartridge::FromFile(char *filename, char *errBuffer)
 
             if (memcmp(header, "CHIP", 4) != 0 || chip_type == 1  || chip_bank >= cart->numBanks || chip_size > cart->bankSize)
                 goto error_unsupp; // Chip Type of 1 is RAM - not yet supported... 0 is ROM and 2 is FLASH ROM
-                
+
             // Load packet contents
             uint32_t offset = chip_bank * cart->bankSize;
 
@@ -1403,13 +1427,18 @@ Cartridge * Cartridge::FromFile(char *filename, char *errBuffer)
                 offset += (64 * 0x2000);
             }
 
+            if ((chip_bank == 0) && (chip_start == 0xe000)) // Ultimax cart
+            {
+                offset = 0x2000;
+            }
+
             if (fread(cart->ROM() + offset, chip_size, 1, f) != 1)
                 goto error_read;
         }
 
         fclose(f);
     }
-    
+
     return cart;
 
 error_read:
