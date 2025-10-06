@@ -28,7 +28,7 @@ ARCH	:=	-marm -mthumb-interwork
 
 CFLAGS	:=	-O3 -flto -Wall -Wformat=0 -Wno-sequence-point -Wno-delete-non-virtual-dtor -Wno-pointer-arith -Wno-register -Wno-narrowing -march=armv5te -mtune=arm946e-s -fomit-frame-pointer -ffast-math $(ARCH) -falign-functions=4 -frename-registers -finline-functions $(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM9 -D__NDS__=1 -DPRECISE_CPU_CYCLES=1 -DGLOBAL_VARS=1
+CFLAGS	+=	$(INCLUDE) -DARM9 -D__NDS__=1 -DPRECISE_CPU_CYCLES=1
 CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-exceptions
 
 ASFLAGS	:=	$(ARCH) -march=armv5te -mtune=arm946e-s

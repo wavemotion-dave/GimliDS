@@ -162,7 +162,6 @@ static union {
     uint32 b;
 } TextColorTable[16][16][16];
 
-#ifdef GLOBAL_VARS
 static uint16 mc_color_lookup[4]        __attribute__((section(".dtcm")));
 static uint8 text_chunky_buf[40*8]      __attribute__((section(".dtcm")));
 static uint16 mx[8]                     __attribute__((section(".dtcm")));
@@ -247,10 +246,7 @@ static u8   bad_lines_enabled           __attribute__((section(".dtcm")));     /
 static u8   lp_triggered                __attribute__((section(".dtcm")));     // Flag: Lightpen was triggered in this frame
 
 static u32  total_frames                __attribute__((section(".dtcm")));     // Total frames - used for consistent frame skip on DS-Lite
-
-#endif
-
-uint8 vic_ultimax_mode                  __attribute__((section(".dtcm")));
+uint8       vic_ultimax_mode            __attribute__((section(".dtcm")));     // Set to '1' if the VIC should respond to memory in Ultimax mode
 
 
 /*
@@ -270,21 +266,16 @@ void MOS6569::init_text_color_table(uint8 *colors)
 }
 
 MOS6569::MOS6569(C64 *c64, C64Display *disp, MOS6510 *CPU, uint8 *RAM, uint8 *Char, uint8 *Color)
-#ifndef GLOBAL_VARS
-    : char_rom(Char), color_ram(Color), the_c64(c64), the_display(disp), the_cpu(CPU)
-#endif
 {
     int i;
 
     // Set pointers
-#ifdef GLOBAL_VARS
     the_c64 = c64;
     the_display = disp;
     the_cpu = CPU;
     ram = RAM;
     char_rom = Char;
     color_ram = Color;
-#endif
     matrix_base = RAM;
     char_base = RAM;
     bitmap_base = RAM;
@@ -363,16 +354,15 @@ void MOS6569::make_mc_table(void)
  */
 uint8 *MOS6569::get_physical(uint16 adr)
 {
-    debug[1]++;
     int va = adr | cia_vabase;
     if ((va & 0x7000) == 0x1000)
     {
         return char_rom + (va & 0x0fff);
     }
-    else if (((va & 0x7000) == 0x3000) && vic_ultimax_mode)
+    else if (((va & 0x3000) == 0x3000) && vic_ultimax_mode)
     {
         return MemMap[0xf]+0xf000+(va&0xfff);
-    }
+    }    
     else
     {
         return ram + va;
@@ -901,7 +891,8 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_mc_text(uint8 *p, uint8 *
     {
         uint8 data = q[mp[i] << 3];
 
-        if (cp[i] & 8) {
+        if (cp[i] & 8)
+        {
             r[i] = (data & 0xaa) | (data & 0xaa) >> 1;
             if (!data)
             {
@@ -915,8 +906,9 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_mc_text(uint8 *p, uint8 *
                 *wp++ = mc_color_lookup[(data >> 6) & 3] | (mc_color_lookup[(data >> 4) & 3] << 16);
                 *wp++ = mc_color_lookup[(data >> 2) & 3] | (mc_color_lookup[(data >> 0) & 3] << 16);
             }
-
-        } else { // Standard mode in multicolor mode
+        } 
+        else
+        { // Standard mode in multicolor mode
             r[i] = data;
             if (!data)
             {
@@ -1179,8 +1171,9 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_sprites(uint8 *chunky_ptr
                         q[i] |= sbit;
                     }
 
-                } else {            // X-expanded standard mode
-
+                } 
+                else           // X-expanded standard mode
+                {
                     // Expand sprite data
                     sdata_l = ExpTable[sdata >> 24 & 0xff] << 16 | ExpTable[sdata >> 16 & 0xff];
                     sdata_r = ExpTable[sdata >> 8 & 0xff] << 16;

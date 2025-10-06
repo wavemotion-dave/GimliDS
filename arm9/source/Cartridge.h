@@ -88,6 +88,7 @@ public:
     static Cartridge * FromFile(char *filename, char *errBuffer);
 
     virtual void Reset() { flash_write_supported = 0; }
+    virtual void Freeze() { }
 
     bool isTrueDriveRequired(void);
     void CartFrame(void);
@@ -197,6 +198,39 @@ public:
     void WriteIO1(uint16_t adr, uint8_t byte) override;
 };
 
+// Final Cartridge III
+class CartridgeFinal3 : public ROMCartridge {
+public:
+    CartridgeFinal3();
+
+    void Reset() override;
+    void Freeze() override;
+    void MapThyself(void) override;
+    void WriteIO2(uint16_t adr, uint8_t byte) override;
+    uint8_t ReadIO1(uint16_t adr, uint8_t bus_byte) override;
+    uint8_t ReadIO2(uint16_t adr, uint8_t bus_byte) override;
+};
+
+// Action Replay
+class CartridgeActionReplay : public ROMCartridge {
+public:
+    CartridgeActionReplay();
+
+    void Reset() override;
+    void Freeze() override;
+    void MapThyself(void) override;
+    void WriteIO1(uint16_t adr, uint8_t byte) override;
+    void WriteIO2(uint16_t adr, uint8_t byte) override;
+    uint8_t ReadIO1(uint16_t adr, uint8_t bus_byte) override;
+    uint8_t ReadIO2(uint16_t adr, uint8_t bus_byte) override;
+    void WriteFlash(uint16_t adr, uint8_t byte) override;
+    
+protected:
+    uint8_t ar_ram_in = 0;
+    uint8_t ar_enabled = 1;
+    uint8_t ar_control = 0x00;
+    uint8_t *ar_ram;
+};
 
 // Super Games cartridge (banked 16K ROM cartridge)
 class CartridgeSuperGames : public ROMCartridge {

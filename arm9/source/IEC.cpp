@@ -65,6 +65,9 @@
 #include "main.h"
 #include "printf.h"
 
+void debug_printf(const char * str, ...);
+
+
 // IEC command codes
 enum {
     CMD_DATA = 0x60,    // Data transfer
@@ -501,7 +504,8 @@ void Drive::set_error(int error, int track, int sector)
     error_ptr = error_buf;
     error_len = strlen(error_buf);
     current_error = error;
-    //DSPrint(0,1,6,error_buf);
+
+    //debug_printf(error_buf);    
 
     // Set drive condition
     if (error != ERR_OK && error != ERR_SCRATCHED)
@@ -904,7 +908,6 @@ void Drive::validate_cmd(void)
 
 void Drive::unsupp_cmd(void)
 {
-    void debug_printf(const char * str, ...);
     debug_printf("Drive::unsupp_cmd");
 }
 

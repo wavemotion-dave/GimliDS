@@ -358,18 +358,18 @@ ITCM_CODE void vblankDS(void)
 }
 
 // Toggle full 320x256
-static s16 last_xScale = 0;
-static s16 last_yScale = 0;
-static s16 last_xOffset = 0;
-static s16 last_yOffset = 0;
+static s16 saved_sXcale = 0;
+static s16 saved_yScale = 0;
+static s16 saved_xOffset = 0;
+static s16 saved_yOffset = 0;
 __attribute__ ((noinline)) void toggle_zoom(void)
 {
-  if (last_xScale == 0)
+  if (saved_sXcale == 0)
   {
-      last_xScale  = myConfig.scaleX;
-      last_yScale  = myConfig.scaleY;
-      last_xOffset = myConfig.offsetX;
-      last_yOffset = myConfig.offsetY;
+      saved_sXcale  = myConfig.scaleX;
+      saved_yScale  = myConfig.scaleY;
+      saved_xOffset = myConfig.offsetX;
+      saved_yOffset = myConfig.offsetY;
       myConfig.scaleX  = 320;
       myConfig.scaleY  = 200;
       myConfig.offsetX = 60;
@@ -377,12 +377,12 @@ __attribute__ ((noinline)) void toggle_zoom(void)
   }
   else
   {
-      myConfig.scaleX = last_xScale;
-      myConfig.scaleY = last_yScale;
-      myConfig.offsetX = last_xOffset;
-      myConfig.offsetY = last_yOffset;
-      last_xScale = last_yScale = 0;
-      last_xOffset = last_yOffset = 0;
+      myConfig.scaleX = saved_sXcale;
+      myConfig.scaleY = saved_yScale;
+      myConfig.offsetX = saved_xOffset;
+      myConfig.offsetY = saved_yOffset;
+      saved_sXcale = saved_yScale = 0;
+      saved_xOffset = saved_yOffset = 0;
   }
 }
 
@@ -1008,6 +1008,15 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
                         KeyPress(MATRIX(7,1) | 0x80, key_matrix, rev_matrix);
                     }
                 }
+            }
+        }
+        else
+        {
+            if (saved_sXcale) // If we are in zoom-mode
+            {
+                if (tilex < 85)         myConfig.offsetX = 20;
+                else if (tilex < 160)   myConfig.offsetX = 60;
+                else                    myConfig.offsetX = 100;
             }
         }
     }

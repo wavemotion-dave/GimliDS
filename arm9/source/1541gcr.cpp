@@ -745,12 +745,13 @@ void Job1541::rotate_disk(uint32_t cycle_counter)
 {
 	advance_disk_change_seq(cycle_counter);
 
-	if (motor_on && disk_change_seq == 0 && gcr_data[current_halftrack] != nullptr) {
-
+	if (motor_on && disk_change_seq == 0 && gcr_data[current_halftrack] != nullptr)
+    {
 		uint32_t elapsed = cycle_counter - last_byte_cycle;
 		uint32_t advance = elapsed / cycles_per_byte;
 
-		if (advance > 0) {
+		if (advance > 0) 
+        {
 			size_t track_length = gcr_track_length[current_halftrack];
 
 			gcr_offset += advance;
@@ -780,8 +781,9 @@ void Job1541::rotate_disk(uint32_t cycle_counter)
 			last_byte_cycle += advance * cycles_per_byte;
 		}
 
-	} else {
-
+	} 
+    else 
+    {
 		last_byte_cycle = cycle_counter;
 		on_sync = false;
 		byte_ready = false;

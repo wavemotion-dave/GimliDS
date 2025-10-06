@@ -44,7 +44,6 @@
 #include "diskmenu.h"
 #include "printf.h"
 #include <filesystem>
-namespace fs = std::filesystem;
 
 uint8 cart_led = 0;         // Used to briefly 'light up' the cart icon for Easy Flash 256 byte RAM access
 uint8 cart_led_color = 0;   // 0=Yellow, 1=Blue
@@ -335,6 +334,154 @@ void CartridgeOcean::WriteIO1(uint16_t adr, uint8_t byte)
     MapThyself();
 }
 
+// ======================================================
+// Final Cartridge III (4 banks of 16K - Freezer Cart)
+// ======================================================
+CartridgeFinal3::CartridgeFinal3(void) : ROMCartridge(4, 0x4000)
+{
+    notEXROM = false;
+    notGAME = false;
+    Reset();
+    strcpy(CartType, "FINAL III");
+}
+
+void CartridgeFinal3::Reset()
+{
+    bank = 0;
+    MapThyself();
+}
+
+void CartridgeFinal3::Freeze()
+{
+    notGAME = false; // Enter Ultimax Mode
+    MapThyself();
+
+    gTheC64->TheCPU->AsyncNMI();
+}
+
+void CartridgeFinal3::MapThyself(void)
+{
+    StandardMapping(0x2000);
+}
+
+void CartridgeFinal3::WriteIO2(uint16_t adr, uint8_t byte)
+{
+    if ((adr & 0xFF) == 0xFF)
+    {
+        notEXROM = (byte & 0x10) ? true:false;
+        notGAME  = (byte & 0x20) ? true:false;
+        bank = byte & 0x0f;
+        MapThyself();
+        
+        if (byte & 0x40) gTheC64->TheCPU->AsyncNMI();
+    }
+}
+
+uint8_t CartridgeFinal3::ReadIO1(uint16_t adr, uint8_t bus_byte)
+{
+    return rom[(bank * bankSize) | 0x1E00 | (adr & 0xff)];
+}
+
+uint8_t CartridgeFinal3::ReadIO2(uint16_t adr, uint8_t bus_byte)
+{
+    return rom[(bank * bankSize) | 0x1F00 | (adr & 0xff)];
+}
+
+// ======================================================
+// Action Replay (4 banks of 8K - Freezer Cart)
+// ======================================================
+CartridgeActionReplay::CartridgeActionReplay(void) : ROMCartridge(4, 0x2000)
+{
+    flash_write_supported = 1;
+    notEXROM = false;
+    notGAME = true;
+    ar_ram = rom + (512 * 1024); // Steal 8K of RAM from an unused part of the ROM buffer
+    Reset();
+    strcpy(CartType, "ACTION REPLAY");
+}
+
+void CartridgeActionReplay::Reset()
+{
+    bank = 0;
+    ar_ram_in = 0;
+    ar_enabled = 1;
+    memset(ar_ram, 0x00, 0x2000);   // RAM is 8K
+    MapThyself();
+}
+
+void CartridgeActionReplay::Freeze()
+{
+    notGAME = false; // Enter Ultimax Mode
+    MapThyself();
+
+    gTheC64->TheCPU->AsyncNMI();
+}
+
+void CartridgeActionReplay::MapThyself(void)
+{
+    StandardMapping(0);
+    if (ar_ram_in)
+    {
+        MemMap[0x8] = ar_ram - 0x8000;
+        MemMap[0x9] = ar_ram - 0x8000;
+    }
+}
+
+void CartridgeActionReplay::WriteFlash(uint16_t adr, uint8_t byte)
+{
+    if (ar_ram_in && (adr >= 0x8000) && (adr < 0xA000))
+    {
+        MemMap[adr>>12][adr] = byte;
+    }
+    else // Check if C64 RAM is mapped... if so, allow the write
+    {
+        if (MemMap[adr>>12] == myRAM)
+        {
+            MemMap[adr>>12][adr] = byte;
+        }
+    }
+}
+
+void CartridgeActionReplay::WriteIO1(uint16_t adr, uint8_t byte)
+{
+//   7    extra ROM bank selector (A15) (unused)
+//   6    1 = resets FREEZE-mode (turns back to normal mode)
+//   5    1 = enable RAM at ROML ($8000-$9FFF) &
+//            I/O-2 ($DF00-$DFFF = $9F00-$9FFF)
+//   4    ROM bank selector high (A14)
+//   3    ROM bank selector low  (A13)
+//   2    1 = disable cartridge (turn off $DE00)
+//   1    1 = /EXROM high
+//   0    1 = /GAME low
+    
+    if (ar_enabled)
+    {
+        ar_control = byte;
+        
+        notGAME     = (byte & 0x01) ? false:true;
+        notEXROM    = (byte & 0x02) ? true:false;
+        ar_enabled  = (byte & 0x04) ? false:true;
+        ar_ram_in   = (byte & 0x20) ? true:false;
+        bank        = (byte >> 3) & 0x03;
+        MapThyself();
+    }
+}
+
+void CartridgeActionReplay::WriteIO2(uint16_t adr, uint8_t byte)
+{
+    if (ar_ram_in) ar_ram[0x1F00 | (adr & 0xff)] = byte;
+}
+
+uint8_t CartridgeActionReplay::ReadIO1(uint16_t adr, uint8_t bus_byte)
+{
+    return ar_control;
+}
+
+uint8_t CartridgeActionReplay::ReadIO2(uint16_t adr, uint8_t bus_byte)
+{
+    if (ar_ram_in) return ar_ram[0x1F00 | (adr & 0xff)];
+    else return rom[0x1F00 | (adr & 0xff)];
+}
 
 // ======================================================
 // Super Games cartridge (banked 16K ROM cartridge)
@@ -1352,6 +1499,12 @@ Cartridge * Cartridge::FromFile(char *filename, char *errBuffer)
                     cart = new Cartridge8K;
                 }
                 break;
+            case 1:
+                cart = new CartridgeActionReplay();
+                break;
+            case 3:
+                cart = new CartridgeFinal3();
+                break;
             case 5:
                 cart = new CartridgeOcean(game);
                 break;
@@ -1413,11 +1566,12 @@ Cartridge * Cartridge::FromFile(char *filename, char *errBuffer)
                 chip_bank = (chip_bank >> 3) | ((chip_bank & 1) << 3);
             }
 
-            cart->total_cart_size += chip_size;
             if (chip_bank > cart->last_bank) cart->last_bank = chip_bank;
 
             if (memcmp(header, "CHIP", 4) != 0 || chip_type == 1  || chip_bank >= cart->numBanks || chip_size > cart->bankSize)
+            {
                 goto error_unsupp; // Chip Type of 1 is RAM - not yet supported... 0 is ROM and 2 is FLASH ROM
+            }
 
             // Load packet contents
             uint32_t offset = chip_bank * cart->bankSize;
@@ -1427,10 +1581,12 @@ Cartridge * Cartridge::FromFile(char *filename, char *errBuffer)
                 offset += (64 * 0x2000);
             }
 
-            if ((chip_bank == 0) && (chip_start == 0xe000)) // Ultimax cart
+            if ((cart->total_cart_size > 0) && (chip_bank == 0) && (chip_start == 0xe000)) // 16K Ultimax cart
             {
                 offset = 0x2000;
             }
+            
+            cart->total_cart_size += chip_size;
 
             if (fread(cart->ROM() + offset, chip_size, 1, f) != 1)
                 goto error_read;

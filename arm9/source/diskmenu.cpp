@@ -34,6 +34,7 @@
 #include "diskmenu_bg.h"
 #include "cartmenu_bg.h"
 #include "1541d64.h"
+#include "Cartridge.h"
 #include "C64.h"
 #include "printf.h"
 
@@ -41,6 +42,8 @@ char Drive8File[MAX_FILENAME_LEN];
 char Drive9File[MAX_FILENAME_LEN];
 char CartFilename[MAX_FILENAME_LEN];
 char CartType[16] = {'N','O','N','E', 0};
+
+extern C64 *gTheC64;   // Easy access to the main C64 object
 
 extern int bg0b, bg1b;
 int         diskCount=0;
@@ -537,14 +540,14 @@ void DisplayFileNameCartridge(void)
             strncpy(tmp, CartFilename+24, 25); tmp[24]=0;
             DSPrint(7,8,6, tmp);
         }
+        
+        sprintf(tmp, "TYPE: %s", CartType);
+        DSPrint(16-(strlen(tmp)/2),22,6, tmp);
     }
     else
     {
         DSPrint(7,5,6, (char *)"CARTRIDGE IS NOT MOUNTED");
     }
-    
-    sprintf(tmp, "TYPE: %s", CartType);
-    DSPrint(16-(strlen(tmp)/2),22,6, tmp);
 }
 
 // ----------------------------------------------------------------------
@@ -562,6 +565,7 @@ void DisplayFileNameCartridge(void)
 
 #define MENU_ACTION_INSERT_CART     10
 #define MENU_ACTION_REMOVE_CART     11
+#define MENU_ACTION_FREEZE_CART     12
 
 #define MENU_ACTION_SKIP            99  // Skip this MENU choice
 
@@ -599,6 +603,7 @@ DiskMenu_t cart_menu =
     {
         {(char *)"  INSERT  CARTRIDGE ",      MENU_ACTION_INSERT_CART},
         {(char *)"  REMOVE  CARTRIDGE ",      MENU_ACTION_REMOVE_CART},
+        {(char *)"  FREEZE  CARTRIDGE ",      MENU_ACTION_FREEZE_CART},
         {(char *)"  EXIT    MENU      ",      MENU_ACTION_EXIT},
         {(char *)"  NULL              ",      MENU_ACTION_END},
     },
@@ -898,6 +903,11 @@ u8 CartMenu(C64 *the_c64)
                     BottomScreenMainMenu();
                     retVal = 3;
                     strcpy(CartFilename, "");
+                    bExitMenu = true;
+                    break;
+                
+                case MENU_ACTION_FREEZE_CART:
+                    gTheC64->TheCart->Freeze();
                     bExitMenu = true;
                     break;
             }

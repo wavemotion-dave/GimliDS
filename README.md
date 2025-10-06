@@ -94,6 +94,8 @@ GimliDS supports the more common Cart Types up to 1MB. Included here is:
   * Standard 8K
   * Standard 16K
   * Ultimax Carts (8K or 16K)
+  * Final Cartridge III up to 256K
+  * Action Replay Carts (v4.x, 5.x) up to 32K
   * Super Game Carts up to 64K
   * FunPlay/PowerPlay Carts at 64K
   * Westermann Carts at 16K
