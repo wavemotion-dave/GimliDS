@@ -91,6 +91,7 @@ private:
     uint8 read_byte_fast(uint16 adr);
     uint8 read_byte_io(uint16 adr);
     uint16 read_word(uint16 adr);
+    uint16 read_word_pc(void);
     void write_byte(uint16 adr, uint8 byte);
     void write_byte_io(uint16 adr, uint8 byte);
 

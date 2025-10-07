@@ -201,7 +201,7 @@ __attribute__ ((noinline)) void MOS6510::new_config(void)
  */
 __attribute__ ((noinline)) uint8_t  MOS6510::read_byte_io(uint16 adr)
 {    
-    if (io_in)
+    if (io_in || vic_ultimax_mode)
     {
         switch ((adr >> 8) & 0x0f) 
         {
@@ -253,9 +253,16 @@ inline __attribute__((always_inline)) uint8 MOS6510::read_byte(uint16 adr)
 /*
  *  Read a word (little-endian) from the CPU's address space
  */
-__attribute__ ((noinline)) uint16 MOS6510::read_word(uint16 adr)
+__attribute__ ((noinline)) ITCM_CODE uint16 MOS6510::read_word(uint16 adr)
 {
-    return read_byte(adr) | (read_byte(adr+1) << 8);
+    if ((adr>>12) == 0xd) return (read_byte_io(adr) | (read_byte_io(adr+1) << 8));
+    else return (MemMap[adr>>12][adr] | (MemMap[adr>>12][adr+1] << 8));
+}
+
+__attribute__ ((noinline)) ITCM_CODE uint16 MOS6510::read_word_pc(void)
+{
+    if ((pc>>12) == 0xd) return (read_byte_io(pc) | (read_byte_io(pc+1) << 8));
+    else return (MemMap[pc>>12][pc] | (MemMap[pc>>12][pc+1] << 8));
 }
 
 /*
@@ -283,7 +290,7 @@ void MOS6510::REUWriteByte(uint16_t adr, uint8_t byte)
 
 __attribute__ ((noinline)) void MOS6510::write_byte_io(uint16 adr, uint8 byte)
 {
-    if (io_in)
+    if (io_in || vic_ultimax_mode)
     {
         switch ((adr >> 8) & 0x0f) 
         {
@@ -515,6 +522,11 @@ void MOS6510::GetState(MOS6510State *s)
             s->MemMap_Type[i] = MEM_TYPE_CART;
             s->MemMap_Offset[i] = MemMap[i] - cartROM;
         }
+        else  // None one of the above... save raw address
+        {
+            s->MemMap_Type[i] = MEM_TYPE_OTHER;
+            s->MemMap_Offset[i] = (u32)MemMap[i];
+        }
     }
     
     s->spare1 = 0;
@@ -573,7 +585,7 @@ void MOS6510::SetState(MOS6510State *s)
         {
             MemMap[i] = cartROM + s->MemMap_Offset[i];
         }
-        else
+        else // MEM_TYPE_OTHER
         {
             MemMap[i] = (uint8_t *)s->MemMap_Offset[i];
         }
@@ -738,7 +750,6 @@ ITCM_CODE int MOS6510::EmulateLine(int cycles_left)
     uint8 tmp, tmp2;
     uint16 adr;     // Used by read_adr_abs()!
     int last_cycles = 0;
-    uint16 page_plus_cyc = 0;
 
     // Any pending interrupts?
     if (interrupt.intr_any)

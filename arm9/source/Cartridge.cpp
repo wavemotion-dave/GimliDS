@@ -40,6 +40,7 @@
 #include "C64.h"
 #include "CPUC64.h"
 #include "Cartridge.h"
+#include "VIC.h"
 #include "mainmenu.h"
 #include "diskmenu.h"
 #include "printf.h"
@@ -54,7 +55,7 @@ extern C64 *gTheC64;   // Easy access to the main C64 object
 extern char CartType[16];   // For debug mostly
 char tmpFilename[256];      // For Flash and EE saves
 
-extern uint8_t vic_ultimax_mode;
+#define DEAD_IO_MEMORY (u8*)0x04F00000
 
 // Base class for cartridge with ROM
 ROMCartridge::ROMCartridge(unsigned num_banks, unsigned bank_size) : numBanks(num_banks), bankSize(bank_size)
@@ -120,6 +121,13 @@ void ROMCartridge::StandardMapping(int32 hi_bank_offset)
     ultimax_mode = false;
     vic_ultimax_mode = false;
 
+    MemMap[0x1]=myRAM;
+    MemMap[0x2]=myRAM;
+    MemMap[0x3]=myRAM;
+    MemMap[0x4]=myRAM;
+    MemMap[0x5]=myRAM;
+    MemMap[0x6]=myRAM;
+    MemMap[0x7]=myRAM;
     switch (portMap)
     {
         case 0xF:
@@ -146,10 +154,15 @@ void ROMCartridge::StandardMapping(int32 hi_bank_offset)
             // Cart Lo at 8000, Cart Hi at E000 (UltiMax mode)
             MemMap[0x8]=rom + ((uint32)bank * bankSize) - 0x8000;
             MemMap[0x9]=rom + ((uint32)bank * bankSize) - 0x8000;
-            MemMap[0xa]=myRAM; // Technically N/C but for now...
-            MemMap[0xb]=myRAM; // Technically N/C but for now...
             MemMap[0xe]=rom + ((uint32)bank * bankSize) + hi_bank_offset - 0xe000;
             MemMap[0xf]=rom + ((uint32)bank * bankSize) + hi_bank_offset - 0xe000;
+            MemMap[0x1]=DEAD_IO_MEMORY;
+            MemMap[0x2]=DEAD_IO_MEMORY;
+            MemMap[0x3]=DEAD_IO_MEMORY;
+            MemMap[0x4]=DEAD_IO_MEMORY;
+            MemMap[0x5]=DEAD_IO_MEMORY;
+            MemMap[0x6]=DEAD_IO_MEMORY;
+            MemMap[0x7]=DEAD_IO_MEMORY;
             ultimax_mode = true;
             vic_ultimax_mode = true;
             break;
@@ -433,7 +446,7 @@ void CartridgeActionReplay::WriteFlash(uint16_t adr, uint8_t byte)
     {
         MemMap[adr>>12][adr] = byte;
     }
-    else // Check if C64 RAM is mapped... if so, allow the write
+    else if (!ultimax_mode) // Check if C64 RAM is mapped... if so, allow the write
     {
         if (MemMap[adr>>12] == myRAM)
         {

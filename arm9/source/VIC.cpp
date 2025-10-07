@@ -234,20 +234,15 @@ static uint16 cia_vabase                __attribute__((section(".dtcm")));     /
 static int display_idx                  __attribute__((section(".dtcm")));     // Index of current display mode
 static uint32 mc[8]                     __attribute__((section(".dtcm")));     // Sprite data counters
 static uint8 sprite_on                  __attribute__((section(".dtcm")));     // 8 Flags: Sprite display/DMA active
-
-static uint8 spr_coll_buf[DISPLAY_X]    __attribute__((section(".dtcm")));     // Buffer for sprite-sprite collisions and priorities
 static uint8 fore_mask_buf[DISPLAY_X/8] __attribute__((section(".dtcm")));     // Foreground mask for sprite-graphics collisions and priorities
-
 static u8   display_state               __attribute__((section(".dtcm")));     // true: Display state, false: Idle state
 static u8   border_on                   __attribute__((section(".dtcm")));     // Flag: Upper/lower border on
 static u8   border_40_col               __attribute__((section(".dtcm")));     // Flag: 40 column border
 static u8   frame_skipped               __attribute__((section(".dtcm")));     // Flag: Frame is being skipped
 static u8   bad_lines_enabled           __attribute__((section(".dtcm")));     // Flag: Bad Lines enabled for this frame
 static u8   lp_triggered                __attribute__((section(".dtcm")));     // Flag: Lightpen was triggered in this frame
-
 static u32  total_frames                __attribute__((section(".dtcm")));     // Total frames - used for consistent frame skip on DS-Lite
 uint8       vic_ultimax_mode            __attribute__((section(".dtcm")));     // Set to '1' if the VIC should respond to memory in Ultimax mode
-
 
 /*
  *  Constructor: Initialize variables
@@ -355,6 +350,7 @@ void MOS6569::make_mc_table(void)
 uint8 *MOS6569::get_physical(uint16 adr)
 {
     int va = adr | cia_vabase;
+    
     if ((va & 0x7000) == 0x1000)
     {
         return char_rom + (va & 0x0fff);
@@ -842,10 +838,7 @@ inline void MOS6569::vblank(void)
     else
     {
         frame_skipped = (total_frames & 1); // Skip every other...
-        if (frame_skipped)
-        {
-            if ((total_frames % 3) == 0) frame_skipped = 0; // But every so often toss in an odd frame to smooth out the display
-        }
+        if ((total_frames % 3) == 0) frame_skipped = 0; // But toss in the odd frame to smooth out the display
     }
 
     the_c64->VBlank(!frame_skipped);
@@ -890,33 +883,26 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_mc_text(uint8 *p, uint8 *
     for (int i=0; i<40; i++)
     {
         uint8 data = q[mp[i] << 3];
-
-        if (cp[i] & 8)
+        
+        if (!data)
         {
-            r[i] = (data & 0xaa) | (data & 0xaa) >> 1;
-            if (!data)
+            r[i] = 0x00;
+            *wp++ = b0c_color32;
+            *wp++ = b0c_color32;
+        }
+        else
+        {
+            if (cp[i] & 8)
             {
-                *wp++ = b0c_color32;
-                *wp++ = b0c_color32;
-            }
-            else
-            {
+                r[i] = (data & 0xaa) | (data & 0xaa) >> 1;
                 uint8 color = colors[cp[i] & 7];
                 mc_color_lookup[3] = color | (color << 8);
                 *wp++ = mc_color_lookup[(data >> 6) & 3] | (mc_color_lookup[(data >> 4) & 3] << 16);
                 *wp++ = mc_color_lookup[(data >> 2) & 3] | (mc_color_lookup[(data >> 0) & 3] << 16);
-            }
-        } 
-        else
-        { // Standard mode in multicolor mode
-            r[i] = data;
-            if (!data)
-            {
-                *wp++ = b0c_color32;
-                *wp++ = b0c_color32;
-            }
+            } 
             else
-            {
+            { // Standard mode in multicolor mode
+                r[i] = data;
                 uint8 color = cp[i];
                 *wp++ = TextColorTable[color][b0c][data>>4].b;
                 *wp++ = TextColorTable[color][b0c][data&0xf].b;
@@ -960,15 +946,16 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_mc_bitmap(uint8 *p, uint8
         uint8 color, acolor, bcolor;
 
         uint8 data = *q;
-        r[i] = (data & 0xaa) | (data & 0xaa) >> 1;
 
         if (!data)
         {
+            r[i] = 0x00;
             *wp++ = bg32;
             *wp++ = bg32;
         }
         else
         {
+            r[i] = (data & 0xaa) | (data & 0xaa) >> 1;
             color = mp[i] >> 4;
             lookup[1] = (color << 8) | color;
             bcolor = mp[i] & 0xf;
@@ -1052,6 +1039,13 @@ ITCM_CODE void MOS6569::el_mc_idle(uint8 *p, uint8 *r)
 __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_sprites(uint8 *chunky_ptr)
 {
     unsigned spr_coll=0, gfx_coll=0;
+
+    // -----------------------------------------
+    // Allocate and zero sprite collision buffer
+    // -----------------------------------------
+    uint8 spr_coll_buf[DISPLAY_X];
+    u64* dest = (u64*)spr_coll_buf;
+    for (int i=0; i<DISPLAY_X/16; i++) {*dest++ = 0;*dest++ = 0;}
 
     // Draw each active sprite
     for (unsigned snum = 0; snum < 8; ++snum)
@@ -1384,12 +1378,11 @@ spr_off:
 /*
  *  Emulate one raster line
  */
-
 int MOS6569::EmulateLine(void)
 {
     int cycles_left = CPU_CYCLES_PER_LINE + CycleDeltas[myConfig.cpuCycles];    // Cycles left for CPU
-    bool is_bad_line = false;
-
+    u8 is_bad_line = false;
+    
     // Get raster counter into local variable for faster access and increment
     unsigned int raster = raster_y+1;
 
@@ -1604,11 +1597,9 @@ int MOS6569::EmulateLine(void)
                 }
             }
 
-            // Draw sprites
-            // Clear sprite collision buffer - but only if we have spites to draw on this line
+            // Draw sprites - but only if we have spites to draw on this line
             if (sprite_on)
             {
-                memset((uint32 *)spr_coll_buf, 0x00, sizeof(spr_coll_buf));
                 el_sprites(chunky_ptr);
             }
 
@@ -1666,8 +1657,10 @@ int MOS6569::EmulateLine(void)
         {
             // Display border - directly to screen!
             bSkipDraw = 1;
-            for (int i=0; i<87; i++) // 352 pixels is 320 main pixels and 16 pixel borders. Good enough for DS since we can't really show much of the border anyway.
+            for (int i=0; i<29; i++) // 352 pixels is 320 main pixels and 16 pixel borders. Good enough for DS since we can't really show much of the border anyway.
             {
+                *direct_scr_ptr++ = ec_color_long;
+                *direct_scr_ptr++ = ec_color_long;
                 *direct_scr_ptr++ = ec_color_long;
             }
         }
@@ -1687,12 +1680,9 @@ int MOS6569::EmulateLine(void)
             rc = 0;
 
         // Not end of screen... output scanline we just rendered directly to the NDS LCD Screen buffer...
-        if (!frame_skipped)
+        if (!bSkipDraw)
         {
-            if (!bSkipDraw)
-            {
-                the_display->UpdateRasterLine(raster, (u8*)(fast_line_buffer));
-            }
+            the_display->UpdateRasterLine(raster, (u8*)(fast_line_buffer));
         }
     }
 

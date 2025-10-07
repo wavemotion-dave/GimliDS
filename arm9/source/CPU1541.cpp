@@ -269,6 +269,11 @@ inline uint16 MOS6502_1541::read_word(uint16 adr)
     return read_byte(adr) | (read_byte(adr+1) << 8);
 }
 
+inline uint16 MOS6502_1541::read_word_pc(void)
+{
+    return read_byte(pc) | (read_byte(pc+1) << 8);
+}
+
 
 /*
  *  Write a byte to I/O space
@@ -742,7 +747,6 @@ int MOS6502_1541::EmulateLine(int cycles_left, int cpu_cycles)
     uint8 tmp, tmp2;
     uint16 adr;
     int last_cycles = 0;
-    uint16 page_plus_cyc = 0;
 
     // Any pending interrupts?
     if (interrupt.intr_any) {

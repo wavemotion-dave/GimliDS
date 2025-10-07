@@ -37,7 +37,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 /*
  *  Addressing mode macros
  */
@@ -59,7 +58,7 @@
 #define read_adr_zero_y() ((read_byte_imm() + y) & 0xff)
 
 // Read absolute operand address (uses adr!)
-#define read_adr_abs() (adr = read_word(pc), pc+=2, adr)
+#define read_adr_abs() (adr = read_word_pc(), pc+=2, adr)
 
 // Read absolute x-indexed operand address
 #define read_adr_abs_x() (read_adr_abs() + x)
@@ -134,7 +133,6 @@
 
     while (true)
     {
-        if (page_plus_cyc) {last_cycles++; page_plus_cyc=0;}
         if ((cycles_left -= last_cycles) <= 0) 
         {
             borrowed_cycles = cycles_left;
@@ -142,9 +140,8 @@
         }
 #else // CPU is 1541
     cpu_cycles += CycleDeltas[myConfig.cpuCycles];
-    MOS6510 *localCPU = the_c64->TheCPU;
+    MOS6510 *mainC64CPU = the_c64->TheCPU;
     
-    if (page_plus_cyc) {last_cycles++; page_plus_cyc=0;}
     cycle_counter += last_cycles; // In case we have any initial interrupt cycles
     
     while ((cycles_left -= last_cycles) > 0)
@@ -152,7 +149,7 @@
         // If we are 1541CPU, we want to alternate running instructions with the main CPU ...
         while (cpu_cycles > cycles_left)
         {
-            cpu_cycles -= localCPU->EmulateLine(1);
+            cpu_cycles -= mainC64CPU->EmulateLine(1);
         }
 #endif
 
@@ -234,11 +231,11 @@
 
         // Store group
         case 0x85:  // STA zero
-            write_byte(read_adr_zero(), a);
+            write_zp(read_adr_zero(), a);
             ENDOP(3);
 
         case 0x95:  // STA zero,X
-            write_byte(read_adr_zero_x(), a);
+            write_zp(read_adr_zero_x(), a);
             ENDOP(4);
 
         case 0x8d:  // STA abs
@@ -262,11 +259,11 @@
             ENDOP(6);
 
         case 0x86:  // STX zero
-            write_byte(read_adr_zero(), x);
+            write_zp(read_adr_zero(), x);
             ENDOP(3);
 
         case 0x96:  // STX zero,Y
-            write_byte(read_adr_zero_y(), x);
+            write_zp(read_adr_zero_y(), x);
             ENDOP(4);
 
         case 0x8e:  // STX abs
@@ -274,11 +271,11 @@
             ENDOP(4);
 
         case 0x84:  // STY zero
-            write_byte(read_adr_zero(), y);
+            write_zp(read_adr_zero(), y);
             ENDOP(3);
 
         case 0x94:  // STY zero,X
-            write_byte(read_adr_zero_x(), y);
+            write_zp(read_adr_zero_x(), y);
             ENDOP(4);
 
         case 0x8c:  // STY abs
@@ -538,72 +535,72 @@
         // Compare group
         case 0xc9:  // CMP #imm
             set_nz(adr = a - read_byte_imm());
-            c_flag = adr < 0x100;
+            c_flag = !(adr&0xFF00);
             ENDOP(2);
 
         case 0xc5:  // CMP zero
             set_nz(adr = a - read_byte_zero());
-            c_flag = adr < 0x100;
+            c_flag = !(adr&0xFF00);
             ENDOP(3);
 
         case 0xd5:  // CMP zero,X
             set_nz(adr = a - read_byte_zero_x());
-            c_flag = adr < 0x100;
+            c_flag = !(adr&0xFF00);
             ENDOP(4);
 
         case 0xcd:  // CMP abs
             set_nz(adr = a - read_byte_abs());
-            c_flag = adr < 0x100;
+            c_flag = !(adr&0xFF00);
             ENDOP(4);
 
         case 0xdd:  // CMP abs,X
             set_nz(adr = a - read_byte_abs_x());
-            c_flag = adr < 0x100;
+            c_flag = !(adr&0xFF00);
             ENDOP(4);
 
         case 0xd9:  // CMP abs,Y
             set_nz(adr = a - read_byte_abs_y());
-            c_flag = adr < 0x100;
+            c_flag = !(adr&0xFF00);
             ENDOP(4);
 
         case 0xc1:  // CMP (ind,X)
             set_nz(adr = a - read_byte_ind_x());
-            c_flag = adr < 0x100;
+            c_flag = !(adr&0xFF00);
             ENDOP(6);
 
         case 0xd1:  // CMP (ind),Y
             set_nz(adr = a - read_byte_ind_y());
-            c_flag = adr < 0x100;
+            c_flag = !(adr&0xFF00);
             ENDOP(5);
 
         case 0xe0:  // CPX #imm
             set_nz(adr = x - read_byte_imm());
-            c_flag = adr < 0x100;
+            c_flag = !(adr&0xFF00);
             ENDOP(2);
 
         case 0xe4:  // CPX zero
             set_nz(adr = x - read_byte_zero());
-            c_flag = adr < 0x100;
+            c_flag = !(adr&0xFF00);
             ENDOP(3);
 
         case 0xec:  // CPX abs
             set_nz(adr = x - read_byte_abs());
-            c_flag = adr < 0x100;
+            c_flag = !(adr&0xFF00);
             ENDOP(4);
 
         case 0xc0:  // CPY #imm
             set_nz(adr = y - read_byte_imm());
-            c_flag = adr < 0x100;
+            c_flag = !(adr&0xFF00);
             ENDOP(2);
 
         case 0xc4:  // CPY zero
             set_nz(adr = y - read_byte_zero());
-            c_flag = adr < 0x100;
+            c_flag = !(adr&0xFF00);
             ENDOP(3);
 
         case 0xcc:  // CPY abs
             set_nz(adr = y - read_byte_abs());
-            c_flag = adr < 0x100;
+            c_flag = !(adr&0xFF00);
             ENDOP(4);
 
 
@@ -983,11 +980,11 @@
 
         // Store A/X group
         case 0x87:  // SAX zero
-            write_byte(read_adr_zero(), a & x);
+            write_zp(read_adr_zero(), a & x);
             ENDOP(3);
 
         case 0x97:  // SAX zero,Y
-            write_byte(read_adr_zero_y(), a & x);
+            write_zp(read_adr_zero_y(), a & x);
             ENDOP(4);
 
         case 0x8f:  // SAX abs
@@ -1199,7 +1196,7 @@
         // DEC/CMP group
 #define DecCompare \
     set_nz(adr = a - tmp); \
-    c_flag = adr < 0x100;
+    c_flag = !(adr&0xFF00);
 
         case 0xc7:  // DCP zero
             tmp = read_zp(adr = read_adr_zero()) - 1;
@@ -1382,7 +1379,7 @@
         case 0xcb:  // SBX #imm
             x &= a;
             adr = x - read_byte_imm();
-            c_flag = adr < 0x100;
+            c_flag = !(adr&0xFF00);
             set_nz(x = adr);
             ENDOP(2);
 

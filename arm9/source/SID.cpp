@@ -278,7 +278,7 @@ const uint32 SAMPLE_FREQ        = 15600;                                  // NDS
 const uint32 SID_FREQ           = 985248;                                 // SID frequency in Hz
 const uint32 SID_CYCLES_FIX     = ((SID_FREQ << 11)/SAMPLE_FREQ)<<5;      // # of SID clocks per sample frame * 65536
 
-const uint32 SAMPLE_FREQ_DSI    = 2*15600;                                // NDS Sample Rate - 50 frames x 312 scanlines = 15600 samples per second - doubled sample rate
+const uint32 SAMPLE_FREQ_DSI    = 3*15600;                                // NDS Sample Rate - 50 frames x 312 scanlines = 15600 samples per second - doubled sample rate
 const uint32 SID_CYCLES_FIX_DSI = ((SID_FREQ << 11)/SAMPLE_FREQ_DSI)<<5;  // # of SID clocks per sample frame * 65536
 
 const int SAMPLE_BUF_SIZE       = 0x138*4;                                // Size of buffer for sampled voice (double buffered)

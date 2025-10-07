@@ -455,11 +455,12 @@ int init_graphics(void)
 __attribute__ ((noinline)) ITCM_CODE void C64Display::UpdateRasterLine(int raster, u8 *src)
 {
     // Output the raster line to the LCD...
-    u32 *dest = (uint32*)((u32)0x06000010 + (512*(raster-FIRST_DISP_LINE)));
-    u32 *source = (u32*) (src+16);
+    u64 *dest = (uint64_t*)((u32)0x06000010 + (512*(raster-FIRST_DISP_LINE)));
+    u64 *source = (u64*) (src+16);
 
-    for (int i=0; i<88; i++) // 352 pixels is 320 main pixels and 16 pixel borders. Good enough for DS since we can't really show much of the border anyway.
+    for (int i=0; i<22; i++) // 352 pixels is 320 main pixels and 16 pixel borders. Good enough for DS since we can't really show much of the border anyway.
     {
+        *dest++ = *source++;
         *dest++ = *source++;
     }
 }
@@ -585,7 +586,7 @@ void C64Display::DisplayStatusLine(int speed)
     {
         for (int idx=0; idx<16; idx++)
         {
-            sprintf(tmp, "D%02d: %-9d  [%08X]", idx, debug[idx], debug[idx]);
+            sprintf(tmp, "D%02d: %-9d        [%08X]", idx, debug[idx], debug[idx]);
             DSPrint(0, 1+idx, 6, tmp);
         }
 

@@ -69,6 +69,7 @@ class C64Display;
 class C64;
 struct MOS6569State;
 
+extern uint8 vic_ultimax_mode;
 
 class MOS6569 {
 public:
