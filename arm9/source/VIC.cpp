@@ -1011,7 +1011,7 @@ __attribute__ ((noinline))  ITCM_CODE  void MOS6569::el_std_idle(uint8 *p, uint8
 }
 
 
-ITCM_CODE void MOS6569::el_mc_idle(uint8 *p, uint8 *r)
+__attribute__ ((noinline))  ITCM_CODE void MOS6569::el_mc_idle(uint8 *p, uint8 *r)
 {
     uint8 data = *get_physical(0x3fff);
     uint32 *lp = (uint32 *)p - 1;
@@ -1490,7 +1490,7 @@ int MOS6569::EmulateLine(void)
                         {
                             el_std_text(text_chunky_buf, char_base + rc, r);
                             // Experimentally, this is slightly faster than memcpy()
-                            u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
+                            u64 *dest=(u64*)p;  u64 *src=(u64*)text_chunky_buf; for (int i=0; i<40; i++) *dest++ = *src++;
                         }
                         else
                         {
@@ -1503,7 +1503,7 @@ int MOS6569::EmulateLine(void)
                         {
                             el_mc_text(text_chunky_buf, char_base + rc, r);
                             // Experimentally, this is slightly faster than memcpy()
-                            u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
+                            u64 *dest=(u64*)p;  u64 *src=(u64*)text_chunky_buf; for (int i=0; i<40; i++) *dest++ = *src++;
                         }
                         else
                         {
@@ -1516,7 +1516,7 @@ int MOS6569::EmulateLine(void)
                         {
                             el_std_bitmap(text_chunky_buf, bitmap_base + (vc << 3) + rc, r);
                             // Experimentally, this is slightly faster than memcpy()
-                            u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
+                            u64 *dest=(u64*)p;  u64 *src=(u64*)text_chunky_buf; for (int i=0; i<40; i++) *dest++ = *src++;
                         }
                         else
                         {
@@ -1529,7 +1529,7 @@ int MOS6569::EmulateLine(void)
                         {
                             el_mc_bitmap(text_chunky_buf, bitmap_base + (vc << 3) + rc, r);
                             // Experimentally, this is slightly faster than memcpy()
-                            u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
+                            u64 *dest=(u64*)p;  u64 *src=(u64*)text_chunky_buf; for (int i=0; i<40; i++) *dest++ = *src++;
                         }
                         else
                         {
@@ -1542,7 +1542,7 @@ int MOS6569::EmulateLine(void)
                         {
                             el_ecm_text(text_chunky_buf, char_base + rc, r);
                             // Experimentally, this is slightly faster than memcpy()
-                            u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
+                            u64 *dest=(u64*)p;  u64 *src=(u64*)text_chunky_buf; for (int i=0; i<40; i++) *dest++ = *src++;
                         }
                         else
                         {
@@ -1569,7 +1569,7 @@ int MOS6569::EmulateLine(void)
                         {
                             el_std_idle(text_chunky_buf, r);
                             // Experimentally, this is slightly faster than memcpy()
-                            u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
+                            u64 *dest=(u64*)p;  u64 *src=(u64*)text_chunky_buf; for (int i=0; i<40; i++) *dest++ = *src++;
                         }
                         else
                         {
@@ -1582,7 +1582,7 @@ int MOS6569::EmulateLine(void)
                         {
                             el_mc_idle(text_chunky_buf, r);
                             // Experimentally, this is slightly faster than memcpy()
-                            u32 *dest=(u32*)p;  u32 *src=(u32*)text_chunky_buf; for (int i=0; i<80; i++) *dest++ = *src++;
+                            u64 *dest=(u64*)p;  u64 *src=(u64*)text_chunky_buf; for (int i=0; i<40; i++) *dest++ = *src++;
                         }
                         else
                         {

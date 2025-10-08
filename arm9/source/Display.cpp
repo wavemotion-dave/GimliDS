@@ -68,8 +68,9 @@ uint8_t palette_blue[16] = {
 };
 
 uint16 dimDampen = 0;
-
+u8 dampen_drive_led = 1;
 u8 last_drive_access_type = 0;
+
 void floppy_soundfx(u8 type)
 {
     last_drive_access_type = type;
@@ -113,8 +114,7 @@ void C64Display::UpdateLEDs(int l0, int l1)
             }
             else
             {
-                DSPrint(24, 21, 2, (char*)" !\""); // White Idle Drive Label
-                last_led_states = 0;
+                dampen_drive_led = 25; // Turn off drive LED (back to white) in half a second
             }
         }
     }
@@ -355,6 +355,16 @@ ITCM_CODE void vblankDS(void)
     {
         HandleBrightness();
     }
+    
+    // We allow the drive icon to stay on for 1-2 seconds for better visibility
+    if (dampen_drive_led)
+    {
+        if (--dampen_drive_led == 0)
+        {
+            DSPrint(24, 21, 2, (char*)" !\""); // White Idle Drive Label
+            last_led_states = 0;
+        }        
+    }    
 }
 
 // Toggle full 320x256

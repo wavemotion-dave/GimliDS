@@ -70,6 +70,7 @@ public:
 // Exported functions
 extern long ShowRequester(const char *str, const char *button1, const char *button2 = NULL);
 extern u8 issue_commodore_key;
+extern u8 dampen_drive_led;
 extern int8 currentBrightness;
 extern uint16 dimDampen;
 extern void toggle_zoom(void);
