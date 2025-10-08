@@ -1055,7 +1055,7 @@ void DigitalRenderer::init_sound(void)
     mm_stream mstream;
     memset(&mstream, 0, sizeof(mstream));
     mstream.sampling_rate = (isDSiMode() ? SAMPLE_FREQ_DSI : SAMPLE_FREQ);
-    mstream.buffer_length = 0x138 * 2; // Even for DSi we keep the buffer small so we get faster sampling
+    mstream.buffer_length = 0x138 * 2;
     mstream.callback = SoundMixCallback;
     mstream.format = MM_STREAM_16BIT_MONO;
     mstream.timer = MM_TIMER2;

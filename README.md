@@ -178,6 +178,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
 
+Version 1.5 release 08-Oct-2025 by wavemotion-dave
+  * Added Ultimax support plus the first pass at some of the Freezer carts.
+  * Improved speed almost 15% across the board - helps DS-Lite run at the right speed and DSi gets additional sound improvements.
+  * Improved floppy icon handling - cosmetic change only on green/blue/red LED handling.
+  * Other minor tweaks and improvements under the hood as timer permitted.
+
+
 Version 1.4 release 29-Sep-2025 by wavemotion-dave
   * Easyflash now supports flash writes with auto-persist to the SD card.
   * GMOD2 cart type (60) supported with Serial EEPROM write to the SD card.

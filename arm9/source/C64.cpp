@@ -213,7 +213,7 @@ void C64::Reset(void)
     if (myConfig.reuType) TheREU->Reset();
 
     bTurboWarp = 0;
-   
+    dampen_drive_led = 1;
 }
 
 /*
