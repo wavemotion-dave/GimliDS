@@ -402,7 +402,7 @@ bool Job1541::load_gcr_file()
 
 void Job1541::WriteSector()
 {
-    floppy_soundfx(0);   // Play floppy SFX if needed
+    floppy_soundfx(1);   // Play floppy SFX if needed
     
 	unsigned track = ram[0x18];
 	unsigned halftrack = (track - 1) * 2;
@@ -425,6 +425,8 @@ void Job1541::FormatTrack()
 {
 	unsigned track = ram[0x51];
 	unsigned halftrack = (track - 1) * 2;
+    
+    floppy_soundfx(1);   // Play floppy SFX if needed
 
 	// Get new ID
 	uint8_t bufnum = ram[0x3d];

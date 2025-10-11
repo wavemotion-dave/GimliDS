@@ -69,15 +69,34 @@ uint8_t palette_blue[16] = {
 
 uint16 dimDampen = 0;
 u8 dampen_drive_led = 1;
-u8 last_drive_access_type = 0;
+u8 last_drive_access_write = 0;
 
-void floppy_soundfx(u8 type)
+void floppy_soundfx(u8 is_write)
 {
-    last_drive_access_type = type;
     if (myConfig.diskFlash & 1)
     {
         if (floppy_sound_counter == 0) floppy_sound_counter = 250;
     }
+
+    if (is_write)
+    {
+        DSPrint(24, 21, 2, (char*)"#$%"); // Blue Activity Label (write)
+        dampen_drive_led = 40; // Turn off drive LED (back to white) in 3/4 a second
+    }
+    else
+    {
+        if (last_drive_access_write && dampen_drive_led)
+        {
+            // Do nothing - last access was write so leave the blue label showing.
+        }
+        else
+        {
+            DSPrint(24, 21, 2, (char*)"@AB"); // Green Activity Label (read or other access)
+            dampen_drive_led = 40; // Turn off drive LED (back to white) in 3/4 a second
+        }
+    }
+    
+    last_drive_access_write = is_write;
 }
 
 
@@ -91,30 +110,24 @@ void C64Display::UpdateLEDs(int l0, int l1)
     led_state[0] = l0;
     led_state[1] = l1;
 
-    last_led_states = l0;
-
     if (led_state[0] == DRVLED_ERROR)
-    {
-        DSPrint(24, 21, 2, (char*)"CDE");   // Red Error Label
-    }
-    else
     {
         if (bKeyboardShowing)
         {
-            if (led_state[0] || led_state[1])
+            DSPrint(24, 21, 2, (char*)"CDE");   // Red Error Label
+        }
+        last_led_states = DRVLED_ERROR;
+    }
+    else
+    {
+        // Do nothing... unless last disk LED showing was a RED error. 
+        // Main disk activity light is handled directly in floppy_soundfx();
+        if (bKeyboardShowing)
+        {
+            if (last_led_states == DRVLED_ERROR)
             {
-                if (last_drive_access_type)
-                {
-                    DSPrint(24, 21, 2, (char*)"#$%"); // Blue Activity Label (write)
-                }
-                else
-                {
-                    DSPrint(24, 21, 2, (char*)"@AB"); // Green Activity Label (read or other access)
-                }
-            }
-            else
-            {
-                dampen_drive_led = 25; // Turn off drive LED (back to white) in half a second
+                dampen_drive_led = 5; // Turn off drive LED (back to white) in 5 frames
+                last_led_states = 0;
             }
         }
     }

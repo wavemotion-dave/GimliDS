@@ -253,10 +253,10 @@ void MOS6569::init_text_color_table(uint8 *colors)
     for (int i = 0; i < 16; i++)
         for (int j = 0; j < 16; j++)
             for (int k = 0; k < 16; k++) {
-                TextColorTable[i][j][k].a.a = colors[k & 8 ? i : j];
-                TextColorTable[i][j][k].a.b = colors[k & 4 ? i : j];
-                TextColorTable[i][j][k].a.c = colors[k & 2 ? i : j];
-                TextColorTable[i][j][k].a.d = colors[k & 1 ? i : j];
+                TextColorTable[i][j][k].a.a = colors[k & 8 ? j : i];
+                TextColorTable[i][j][k].a.b = colors[k & 4 ? j : i];
+                TextColorTable[i][j][k].a.c = colors[k & 2 ? j : i];
+                TextColorTable[i][j][k].a.d = colors[k & 1 ? j : i];
             }
 }
 
@@ -866,8 +866,8 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_std_text(uint8 *p, uint8 
         else
         {
             uint8 color = cp[i];
-            *lp++ = TextColorTable[color][b0cc][data>>4].b;
-            *lp++ = TextColorTable[color][b0cc][data&0xf].b;
+            *lp++ = TextColorTable[b0cc][color][data>>4].b;
+            *lp++ = TextColorTable[b0cc][color][data&0xf].b;
         }
     }
 }
@@ -904,8 +904,8 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_mc_text(uint8 *p, uint8 *
             { // Standard mode in multicolor mode
                 r[i] = data;
                 uint8 color = cp[i];
-                *wp++ = TextColorTable[color][b0c][data>>4].b;
-                *wp++ = TextColorTable[color][b0c][data&0xf].b;
+                *wp++ = TextColorTable[b0c][color][data>>4].b;
+                *wp++ = TextColorTable[b0c][color][data&0xf].b;
             }
         }
     }
@@ -924,8 +924,8 @@ ITCM_CODE void MOS6569::el_std_bitmap(uint8 *p, uint8 *q, uint8 *r)
         uint8 color = mp[i] >> 4;
         uint8 bcolor = mp[i] & 15;
 
-        *lp++ = TextColorTable[color][bcolor][data>>4].b;
-        *lp++ = TextColorTable[color][bcolor][data&0xf].b;
+        *lp++ = TextColorTable[bcolor][color][data>>4].b;
+        *lp++ = TextColorTable[bcolor][color][data&0xf].b;
     }
 }
 
@@ -985,8 +985,8 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_ecm_text(uint8 *p, uint8 
         uint8 bcolor = bcp[(data >> 6) & 3];
 
         data = q[(data & 0x3f) << 3];
-        *lp++ = TextColorTable[color][bcolor][data>>4].b;
-        *lp++ = TextColorTable[color][bcolor][data&0xf].b;
+        *lp++ = TextColorTable[bcolor][color][data>>4].b;
+        *lp++ = TextColorTable[bcolor][color][data&0xf].b;
     }
 }
 
@@ -995,19 +995,19 @@ __attribute__ ((noinline))  ITCM_CODE  void MOS6569::el_std_idle(uint8 *p, uint8
 {
     uint8 data = *get_physical(ctrl1 & 0x40 ? 0x39ff : 0x3fff);
     uint32 *lp = (uint32 *)p;
-    uint32 conv0 = TextColorTable[0][b0c][data>>4].b;
-    uint32 conv1 = TextColorTable[0][b0c][data&0xf].b;
+    uint32 conv0 = TextColorTable[b0c][0][data>>4].b;
+    uint32 conv1 = TextColorTable[b0c][0][data&0xf].b;
     uint32 data32 = (data << 24) | (data << 16) | (data << 8) | data;
 
-    for (int i=0; i<40; i++)
-    {
-        *lp++ = conv0;
-        *lp++ = conv1;
-    }
-
     u32 *r32 = (uint32 *)r;
-    *r32++ = data32; *r32++ = data32; *r32++ = data32; *r32++ = data32; *r32++ = data32;
-    *r32++ = data32; *r32++ = data32; *r32++ = data32; *r32++ = data32; *r32   = data32;
+    for (int i=0; i<10; i++)
+    {
+        *lp++ = conv0; *lp++ = conv1;
+        *lp++ = conv0; *lp++ = conv1;
+        *lp++ = conv0; *lp++ = conv1;
+        *lp++ = conv0; *lp++ = conv1;
+        *r32++ = data32;        
+    }
 }
 
 

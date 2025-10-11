@@ -127,7 +127,7 @@ private:
           orig_kernal_1d85; // (for undoing the Fast Reset patch)
 };
 
-extern void floppy_soundfx(u8 type);
+extern void floppy_soundfx(u8 is_write);
 extern uint8 cart_in;
 extern u8 *cartROM;
 
