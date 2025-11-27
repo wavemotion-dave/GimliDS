@@ -74,12 +74,12 @@ use a different port... and sometimes the game loaders/crackers use one port whe
 Also understand that the DS screen resolution of 256x192 is not ideal for the Commodore screen output resolution of 320x200 plus the borders.
 To that end, you will be using the L/R shoulder buttons with the D-Pad to scale and offset the screen to get it to look as good as you can.
 When you save your configuration for that game, it will remember the scale/offset values you last used. Also, experiement with remapping one
-of the DS keys to 'PAN UP' or 'PAN DOWN' which can be used to temporarlily shift the screen by 16 pixels up/down and then the system will
+of the DS keys to 'PAN UP' or 'PAN DOWN' which can be used to temporarily shift the screen by 16 pixels up/down and then the system will
 smooth scroll that back into place. That works really well for games that have a high score or status indicator at the very top or bottom
 of the screen... you can enjoy nearly full resolution output and just occasionally hit a PAN UP/DN button to see your score. Experiment and
 have fun - just like we did in 1982!
 
-There is also a mechanism to temporarily zoom the sceren to a 1:1 ratio. Assign "TOGGLE ZOOM" to any key in configuration and when you press 
+There is also a mechanism to temporarily zoom the screen to a 1:1 ratio. Assign "TOGGLE ZOOM" to any key in configuration and when you press
 that key, the screen will shift into zoomed 1:1 mode for easy text reading. Of course, some of the top/sides will be cut-off but you can use
 the L/R shoulder buttons to pan around if needed. Press the same TOGGLE ZOOM button again and the screen will snap back to the pre-zoom settings.
 
@@ -143,7 +143,7 @@ To get some of the more popular games running as good as possible on the venerab
 
 ## Acknowledgements
 
-  * The opening jingle was done by DeNL and comes courtesy of the roalty free jingles at pixabay.
+  * The opening jingle was done by DeNL and comes courtesy of the royalty free jingles at pixabay.
   * The dwarf icon on the title screen was submitted online by 'anonymous' to an artwork site.  If this is yours and you would like to be credited, please contact me.
   * Christian Bauer - Original Frodo author - without whom none of this exists!
   * Troy Davis(GPF) http://gpf.dcemu.co.uk - FrodoDS initial porter and others who have contributed over the years.
@@ -152,9 +152,9 @@ To get some of the more popular games running as good as possible on the venerab
 
 ## Why GimliDS?
 
-Well - this is not enitrely a classic Frodo emulator but is clearly derived from those sources. Mainline Frodo has taken many great steps forward in recent years to be 
+Well - this is not entirely a classic Frodo emulator but is clearly derived from those sources. Mainline Frodo has taken many great steps forward in recent years to be 
 more accurate and generally is a couple of full notches above where this port sits. My emulator is largely taken from older DS ports that used Frodo 4.2 (circa 2007) as
-a codebase and numerous tweaks and hacks were done to get it running on the venerable DS hardwarwe. I've taken that and tried to back-port some of the newer Frodo mainline
+a codebase and numerous tweaks and hacks were done to get it running on the venerable DS hardware. I've taken that and tried to back-port some of the newer Frodo mainline
 improvements but also add my own tweaks and hacks to make it fully playable on the little handheld. As such, the GimliDS naming is a clear nod to the original emulator
 but also distinguishes it as a bit rough around the edges...
 
