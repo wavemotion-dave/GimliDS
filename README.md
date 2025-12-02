@@ -178,12 +178,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
 
+Version 1.5b release 02-Dec-2025 by wavemotion-dave
+  * Reverted CPU Adjustment to +0 (the +3 was too aggressive for some games - such as the new Sherwood!)
+  * Slight tweaks to disk icon flashing for read/writes.
+  * Slight optimization for another frame of performance.
+
 Version 1.5 release 08-Oct-2025 by wavemotion-dave
   * Added Ultimax support plus the first pass at some of the Freezer carts.
   * Improved speed almost 15% across the board - helps DS-Lite run at the right speed and DSi gets additional sound improvements.
   * Improved floppy icon handling - cosmetic change only on green/blue/red LED handling.
-  * Other minor tweaks and improvements under the hood as timer permitted.
-
+  * Other minor tweaks and improvements under the hood as time permitted.
 
 Version 1.4 release 29-Sep-2025 by wavemotion-dave
   * Easyflash now supports flash writes with auto-persist to the SD card.

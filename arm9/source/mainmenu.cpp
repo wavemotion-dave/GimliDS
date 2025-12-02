@@ -417,8 +417,8 @@ void SetDefaultGameConfig(void)
     myConfig.reserved2   = 0;
     myConfig.reserved3   = 0;
     myConfig.reserved4   = 0xA5;             // So it's easy to spot on an "upgrade" and we can re-default it
-    myConfig.cpuCycles   = 3;                // Normal 63 - this is the delta adjustment to that
-    myConfig.badCycles   = 3;                // Normal 23 - this is the delta adjustment to that
+    myConfig.cpuCycles   = 0;                // Normal 63 - this is the delta adjustment to that
+    myConfig.badCycles   = 0;                // Normal 23 - this is the delta adjustment to that
     
     myConfig.offsetX     = 32;              // Push the side border off the main display
     myConfig.offsetY     = 19;              // Push the top border off the main display
