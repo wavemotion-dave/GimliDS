@@ -1,13 +1,13 @@
 
-#define MAX_CONFIGS                 1920
-#define CONFIG_VERSION              0x000A
+#define MAX_CONFIGS                 2048
+#define CONFIG_VERSION              0x000B
 
 extern s16 CycleDeltas[];
 
 struct __attribute__((__packed__)) Config_t
 {
     u32 game_crc;
-    u8  key_map[10];  // U,D,L,R, A,B,X,Y, +2 spares
+    u8  key_map[8];  // U,D,L,R, A,B,X,Y
     u8  trueDrive;
     u8  jitter;
     u8  diskFlash;
@@ -16,12 +16,12 @@ struct __attribute__((__packed__)) Config_t
     u8  poundKey;
     u8  reuType;
     u8  cpuCycles;
-    u8  badCycles;
     u8  reserved0;
     u8  reserved1;
     u8  reserved2;
     u8  reserved3;
     u8  reserved4;
+    u8  reserved5;
     s8  offsetX;
     s8  offsetY;
     s16 scaleX;
@@ -49,6 +49,8 @@ struct __attribute__((__packed__)) GlobalConfig_t
     u8  reserved9;
     u8  reserved10;
     u8  spare_A[128];
+    u8  spare_B[128];
+    u8  spare_C[128];
 };
 
 extern struct Config_t        myConfig;
@@ -145,6 +147,7 @@ extern struct GlobalConfig_t  myGlobalConfig;
 extern u32 getCRC32(u8 *buf, int size);
 extern u32 file_crc;
 void LoadConfig(void);
+void LoadFavorites(void);
 void SaveConfig(void);
 void FindConfig(void);
 void GimliDSGameOptions(void);

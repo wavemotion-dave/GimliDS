@@ -32,6 +32,7 @@
 #include "mainmenu_bg.h"
 #include "1541d64.h"
 #include "Display.h"
+#include "lzav.h"
 #include "printf.h"
 
 extern C64 *TheC64;
@@ -42,8 +43,10 @@ u32 file_crc = 0x00000000;
 u8 option_table = 0;
 extern void BottomScreenMainMenu(void);
 
-// Used with myConfig.cpuCycles and myConfig.badCycles
+// Used with myConfig.cpuCycles
 s16 CycleDeltas[] = {0,1,2,3,4,5,6,7,8,9,15,20, -9,-8,-7,-6,-5,-4,-3,-2,-1};
+
+extern u8 CompressBuffer[]; // Needed for config compression
 
 // ----------------------------------------------------------------------
 // The Disk Menu can be called up directly from the keyboard graphic
@@ -412,13 +415,13 @@ void SetDefaultGameConfig(void)
     myConfig.jitter      = 1;                // Medium level of jitter
     myConfig.joyMode     = 0;                // Default is normal joypad / dpad
     myConfig.reuType     = 0;                // No REU by default
+    myConfig.cpuCycles   = 0;                // Normal 63 - this is the delta adjustment to that
     myConfig.reserved0   = 0;
     myConfig.reserved1   = 0;
     myConfig.reserved2   = 0;
     myConfig.reserved3   = 0;
-    myConfig.reserved4   = 0xA5;             // So it's easy to spot on an "upgrade" and we can re-default it
-    myConfig.cpuCycles   = 0;                // Normal 63 - this is the delta adjustment to that
-    myConfig.badCycles   = 0;                // Normal 23 - this is the delta adjustment to that
+    myConfig.reserved4   = 0;             // So it's easy to spot on an "upgrade" and we can re-default it
+    myConfig.reserved5   = 1;
     
     myConfig.offsetX     = 32;              // Push the side border off the main display
     myConfig.offsetY     = 19;              // Push the top border off the main display
@@ -522,7 +525,16 @@ void SaveConfig(bool bShow)
         u16 ver = CONFIG_VERSION;
         fwrite(&ver, sizeof(ver), 1, fp);                       // Write the config version
         fwrite(&myGlobalConfig, sizeof(myGlobalConfig), 1, fp); // Write the global configuration
-        fwrite(&AllConfigs, sizeof(AllConfigs), 1, fp);         // Write the array of all configurations
+        
+        // --------------------------------------------------------------------
+        // Compress the configuration data - this shrinks down quite nicely...
+        // --------------------------------------------------------------------
+        int max_len = lzav_compress_bound_hi( sizeof(AllConfigs) );
+        int comp_len = lzav_compress_hi( &AllConfigs, CompressBuffer, sizeof(AllConfigs), max_len );
+
+        fwrite(&comp_len,          sizeof(comp_len), 1, fp);
+        fwrite(CompressBuffer,     comp_len,         1, fp);
+
         fclose(fp);
     } else DSPrint(4,3,0, (char*)"ERROR SAVING CONFIG FILE");
 
@@ -545,21 +557,29 @@ void LoadConfig(void)
     SetDefaultGameConfig();
 
     u16 ver = 0x0000;
+    u8 bInitDatabase = 0;
     if (ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&ver, sizeof(ver), 0))  // Read Global Config
     {
         ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&myGlobalConfig, sizeof(myGlobalConfig), sizeof(ver));                  // Read the global config 
-        ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&AllConfigs, sizeof(AllConfigs), sizeof(ver) + sizeof(myGlobalConfig)); // Read the full game array of configs
         
         if (ver != CONFIG_VERSION)
         {
-            memset(&myGlobalConfig, 0x00, sizeof(myGlobalConfig));
-            SetDefaultGlobalConfig();
-            memset(&AllConfigs, 0x00, sizeof(AllConfigs));
-            SetDefaultGameConfig();
-            SaveConfig(FALSE);
+            bInitDatabase = 1;
         }
+        else // Read in the compressed buffer... we will uncompress this back into the AllConfigs[] array...
+        {
+            u32 comp_len = 0;
+            ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&comp_len, sizeof(comp_len), sizeof(ver) + sizeof(myGlobalConfig));
+            ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)CompressBuffer, comp_len, sizeof(ver) + sizeof(myGlobalConfig)+ sizeof(comp_len));
+            (void)lzav_decompress( CompressBuffer, AllConfigs, comp_len, sizeof(AllConfigs) );
+        }        
     }
     else    // Not found... init the entire database...
+    {
+        bInitDatabase = 1;
+    }
+    
+    if (bInitDatabase)
     {
         memset(&myGlobalConfig, 0x00, sizeof(myGlobalConfig));
         SetDefaultGlobalConfig();
@@ -629,7 +649,6 @@ const struct options_t Option_Table[2][20] =
         {"LCD JITTER",     {"NONE", "LIGHT", "HEAVY"},                                                  &myConfig.jitter,      3},
         {"DISK/FLASH",     {"READ NO SFX", "READ WITH SFX", "WRITE NO SFX", "WRITE WITH SFX"},          &myConfig.diskFlash,   4},
         {"CPU CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.cpuCycles,   21},
-        {"BAD CYCLES" ,    {CYCLE_DELTA_STR},                                                           &myConfig.badCycles,   21},
         {"POUND KEY",      {"POUND", "BACK ARROW", "UP ARROW", "C= COMMODORE"},                         &myConfig.poundKey,    4},
 
         {"D-PAD UP",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[0],  71},

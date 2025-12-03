@@ -61,6 +61,98 @@ u8          bLastFileTypeLoaded = 0;
 extern u8 bDebugDisplay;
 extern u8 bKeyboardShowing;
 
+#define MAX_FAVS  1024
+
+typedef struct
+{
+  u32   name_hash;  // Repurpose the lower bit for love vs like
+} Favorites_t;
+
+Favorites_t myFavs[MAX_FAVS]; // Total of 4K of space with 32 bit hash
+
+// --------------------------------------------------------------
+// Provide an array of filename hashes to store game "Favorites"
+// --------------------------------------------------------------
+void LoadFavorites(void)
+{
+    memset(myFavs, 0x00, sizeof(myFavs));
+    FILE *fp = fopen("/data/GimliDS.fav", "rb");
+    if (fp)
+    {
+        fread(&myFavs, sizeof(myFavs), 1, fp);
+        fclose(fp);
+    }
+}
+
+void SaveFavorites(void)
+{
+    // --------------------------------------------------
+    // Now save the favorites file out o the SD card...
+    // --------------------------------------------------
+    DIR* dir = opendir("/data");
+    if (dir)
+    {
+        closedir(dir);  // directory exists.
+    }
+    else
+    {
+        mkdir("/data", 0777);   // Doesn't exist - make it...
+    }
+
+    FILE *fp = fopen("/data/GimliDS.fav", "wb");
+    if (fp)
+    {
+        fwrite(&myFavs, sizeof(myFavs), 1, fp);
+        fclose(fp);
+    }
+}
+
+u8 IsFavorite(char *name)
+{
+    u32 filename_crc32 = getCRC32((u8 *)name, strlen(name));
+
+    for (int i=0; i<MAX_FAVS; i++)
+    {
+        if ((myFavs[i].name_hash & 0xFFFFFFFE) == (filename_crc32 & 0xFFFFFFFE)) return (1 + (myFavs[i].name_hash&1));
+    }
+    return 0;
+}
+
+void ToggleFavorite(char *name)
+{
+    int firstZero = 0;
+    u32 filename_crc32 = getCRC32((u8 *)name, strlen(name));
+
+    for (int i=0; i<MAX_FAVS; i++)
+    {
+        // We use the lower bit of the filename hash (CRC32) as the flag for 'like' vs 'love'
+        // Basically there are 3 states:
+        //    - No hash found... not a favorite
+        //    - Hash found with lower bit 0... Love
+        //    - Hash found with lower bit 1... Like
+        if ((myFavs[i].name_hash & 0xFFFFFFFE) == (filename_crc32 & 0xFFFFFFFE))
+        {
+            if ((myFavs[i].name_hash & 1) == 0)
+            {
+                myFavs[i].name_hash |= 1;
+                return;
+            }
+            else
+            {
+                myFavs[i].name_hash = 0x00000000;
+                return;
+            }
+        }
+
+        if (myFavs[i].name_hash == 0x00000000)
+        {
+            if (!firstZero) firstZero = i;
+        }
+    }
+
+    myFavs[firstZero].name_hash = (filename_crc32 & 0xFFFFFFFE);
+}
+
 /*********************************************************************************
  * Show The 14 games on the list to allow the user to choose a new game.
  ********************************************************************************/
@@ -70,8 +162,8 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
   u16 ucBcl,ucGame;
   u8 maxLen;
 
-  DSPrint(31,5,0,(NoDebGame>0 ? (char*)"<" : (char*)" "));
-  DSPrint(31,22,0,(NoDebGame+14<diskCount ? (char*)">" : (char*)" "));
+  DSPrint(31,4,0,(NoDebGame>0 ? (char*)"<" : (char*)" "));
+  DSPrint(31,21,0,(NoDebGame+14<diskCount ? (char*)">" : (char*)" "));
 
   for (ucBcl=0;ucBcl<18; ucBcl++)
   {
@@ -86,17 +178,26 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
         szName[28] = 0; // Needs to be 2 chars shorter with brackets
         sprintf(szName2, "[%s]",szName);
         sprintf(szName,"%-30s",szName2);
-        DSPrint(1,5+ucBcl,(ucSel == ucBcl ? 2 :  0),szName);
+        DSPrint(1,4+ucBcl,(ucSel == ucBcl ? 2 :  0),szName);
       }
       else
       {
         sprintf(szName,"%-30s",strupr(szName));
-        DSPrint(1,5+ucBcl,(ucSel == ucBcl ? 2 : 0 ),szName);
+        DSPrint(1,4+ucBcl,(ucSel == ucBcl ? 2 : 0 ),szName);
+        
+        if (IsFavorite(gpFic[ucGame].szName))
+        {
+            DSPrint(0,4+ucBcl,(IsFavorite(gpFic[ucGame].szName) == 1) ? 0:2,(char*)"*");
+        }
+        else
+        {
+            DSPrint(0,4+ucBcl,0,(char*)" ");
+        }        
       }
     }
     else
     {
-        DSPrint(1,5+ucBcl,(ucSel == ucBcl ? 2 : 0 ),(char *)"                              ");
+        DSPrint(1,4+ucBcl,(ucSel == ucBcl ? 2 : 0 ),(char *)"                              ");
     }
   }
 }
@@ -220,6 +321,8 @@ u8 gimliDSLoadFile(u8 bCartOnly)
       currentBrightness = 0;
   }
 
+  DSPrint(3,23,0, (char*)"A=LOAD, SELECT=FAV, B=EXIT");
+  
   gimliDSFindFiles(bCartOnly);
 
   diskGameChoice = -1;
@@ -358,8 +461,23 @@ u8 gimliDSLoadFile(u8 bCartOnly)
       ucSHaut = 0;
     }
 
+    // The SELECT key will toggle favorites
+    if (keysCurrent() & KEY_SELECT)
+    {
+        if (gpFic[diskGameAct].uType != DIRECTORY)
+        {
+            ToggleFavorite(gpFic[diskGameAct].szName);
+            dsDisplayFiles(firstRomDisplay,romSelected);
+            SaveFavorites();
+            while (keysCurrent() & KEY_SELECT)
+            {
+                WAITVBL;
+            }
+        }
+    }
+
     // -------------------------------------------------------------------------
-    // They B key will exit out of the ROM selection without picking a new game
+    // The B key will exit out of the ROM selection without picking a new game
     // -------------------------------------------------------------------------
     if ( keysCurrent() & KEY_B )
     {
@@ -424,7 +542,7 @@ u8 gimliDSLoadFile(u8 bCartOnly)
         }
         strncpy(szName,gpFic[diskGameAct].szName+uLenFic,30);
         szName[30] = '\0';
-        DSPrint(1,5+romSelected,2,szName);
+        DSPrint(1,4+romSelected,2,szName);
       }
     }
     swiWaitForVBlank();

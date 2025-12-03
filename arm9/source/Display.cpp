@@ -434,7 +434,6 @@ int init_graphics(void)
     vramSetBankH(VRAM_H_LCD);        // Not using this for video but 32K of faster RAM always useful!   Mapped at 0x06898000 -   ..
     vramSetBankI(VRAM_I_LCD);        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x068A0000 -   16K used for SID waveform table cache
 
-
     videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE); //sub bg 0 will be used to print text
     REG_BG0CNT_SUB = BG_MAP_BASE(31);
     BG_PALETTE_SUB[255] = RGB15(31,31,31);
@@ -469,7 +468,6 @@ int init_graphics(void)
     irqEnable(IRQ_VBLANK);
 
     return TRUE;
-
 }
 
 /*
@@ -543,10 +541,12 @@ void show_cartstatus(void)
         if (cart_in)
         {
             DSPrint(21, 23, 2, (char*)"PQR");
+            DSPrint(21, 22, 2, (char*)"89:");
         }
         else
         {
             DSPrint(21, 23, 2, (char*)"012");
+            DSPrint(21, 22, 2, (char*)"567");
         }
 
         if (cart_led)

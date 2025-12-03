@@ -408,7 +408,7 @@ inline void MOS6510::write_zp(uint16 adr, uint8 byte)
  *  Adc instruction
  */
 
-ITCM_CODE void MOS6510::do_adc(uint8 byte)
+void MOS6510::do_adc(uint8 byte)
 {
     if (!d_flag) {
         uint16 tmp = a + (byte) + (c_flag ? 1 : 0);
@@ -435,7 +435,7 @@ ITCM_CODE void MOS6510::do_adc(uint8 byte)
  * Sbc instruction
  */
 
-ITCM_CODE void MOS6510::do_sbc(uint8 byte)
+void MOS6510::do_sbc(uint8 byte)
 {
     uint16 tmp = a - (byte) - (c_flag ? 0 : 1);
     if (!d_flag) {

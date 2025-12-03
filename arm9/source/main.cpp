@@ -146,6 +146,8 @@ int main(int argc, char **argv)
     srand(time(NULL));
     
     LoadConfig();
+    
+    LoadFavorites();
 
     the_app = new Frodo();
 

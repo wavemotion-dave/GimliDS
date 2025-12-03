@@ -178,8 +178,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
 
-Version 1.5b release 02-Dec-2025 by wavemotion-dave
+Version 1.6 release ??-Dec-2025 by wavemotion-dave
   * Reverted CPU Adjustment to +0 (the +3 was too aggressive for some games - such as the new Sherwood!)
+  * New Favorites system implemented - press SELECT on game select to toggle LIKE/LOVE.
   * Slight tweaks to disk icon flashing for read/writes.
   * Slight optimization for another frame of performance.
 

@@ -41,9 +41,7 @@
 #include "C64.h"
 
 // Set this to 1 for more precise CPU cycle calculation
-#ifndef PRECISE_CPU_CYCLES
-#define PRECISE_CPU_CYCLES 0
-#endif
+#define PRECISE_CPU_CYCLES 1
 
 // Interrupt types
 enum {

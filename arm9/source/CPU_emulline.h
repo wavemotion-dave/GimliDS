@@ -153,6 +153,7 @@
         }
 #endif
 
+        u16 page_plus_cyc = 0; 
         switch (read_byte_imm())
         {
         // Load group
@@ -1390,6 +1391,8 @@
         // Extension opcode - for Kernal / 1541 hooks
         case 0xf2: extended_opcode(); break;
         }
+        
+        if (page_plus_cyc) last_cycles++;
         
 #ifdef IS_CPU_1541
         cycle_counter += last_cycles;	// Needed for GCR timing        
