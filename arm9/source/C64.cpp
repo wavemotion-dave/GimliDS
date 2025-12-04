@@ -1384,7 +1384,7 @@ void C64::main_loop(void)
 {
     while (true)
     {
-        if(have_a_break)
+        if (have_a_break)
         {
             scanKeys();
             continue;

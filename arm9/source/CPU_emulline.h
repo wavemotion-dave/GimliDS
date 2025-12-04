@@ -129,7 +129,7 @@
 
 #ifndef IS_CPU_1541 // If main C64 CPU we handle borrowed cycles
     // Main opcode fetch/execute loop
-    if (cycles_left != 1) cycles_left += borrowed_cycles;
+    if (cycles_left != 1) {cycles_left += borrowed_cycles; borrowed_cycles=0;}
 
     while (true)
     {
@@ -769,33 +769,29 @@
 
         // Jump/branch group
         case 0x4c:  // JMP abs
-            adr = read_adr_abs();
-            jump(adr);
+            pc = read_adr_abs();
+            //jump(adr);
             ENDOP(3);
 
         case 0x6c:  // JMP (ind)
             adr = read_adr_abs();
-            adr = read_byte(adr) | (read_byte(((adr + 1) & 0xff) | (adr & 0xff00)) << 8);
-            jump(adr);
+            pc = read_byte(adr) | (((adr & 0xff00) | read_byte(adr + 1)) << 8);
             ENDOP(5);
 
         case 0x20:  // JSR abs
             push_byte((pc+1) >> 8); push_byte(pc+1);
-            adr = read_adr_abs();
-            jump(adr);
+            pc = read_adr_abs();
             ENDOP(6);
 
         case 0x60:  // RTS
             adr = pop_byte();   // Split because of pop_byte ++sp side-effect
-            adr = (adr | pop_byte() << 8) + 1;
-            jump(adr);
+            pc = (adr | pop_byte() << 8) + 1;
             ENDOP(6);
 
         case 0x40:  // RTI
             pop_flags();
             adr = pop_byte();   // Split because of pop_byte ++sp side-effect
-            adr = adr | pop_byte() << 8;
-            jump(adr);
+            pc = adr | pop_byte() << 8;
             if (interrupt.intr_any && !i_flag)
                 {last_cycles=6;goto handle_int;}
             ENDOP(6);
@@ -804,14 +800,14 @@
             push_byte((pc+1) >> 8); push_byte(pc+1);
             push_flags(true);
             i_flag = true;
-            adr = read_word(0xfffe);
-            jump(adr);
+            pc = read_word(0xfffe);
             ENDOP(7);
 
 #define Branch(flag) \
     if (flag) { \
         uint16 old_pc = pc; \
-        pc += (int8)read_byte(pc) + 1; \
+        pc++; \
+        pc += (int8)read_byte(old_pc); \
         if ((pc ^ old_pc) & 0xff00) { \
             ENDOP(4); \
         } else { \
@@ -1397,7 +1393,7 @@
 #ifdef IS_CPU_1541
         cycle_counter += last_cycles;	// Needed for GCR timing        
 #endif        
-    }
+    } // while (true)
 #ifdef IS_CPU_1541
     // See if there are any straggler cycles left for the CPU
     while (cpu_cycles > 0)

@@ -40,14 +40,14 @@
 #include <nds.h>
 
 // Total number of raster lines (PAL)
-#define TOTAL_RASTERS   0x138
+#define TOTAL_RASTERS   312
 
 // Screen refresh frequency (PAL)
 #define SCREEN_FREQ     50
 
 // First and last displayed line
-#define FIRST_DISP_LINE 0x20
-#define LAST_DISP_LINE  0x11C
+#define FIRST_DISP_LINE 28
+#define LAST_DISP_LINE  (FIRST_DISP_LINE+256)
 
 // First and last possible line for Bad Lines
 #define FIRST_DMA_LINE  0x30

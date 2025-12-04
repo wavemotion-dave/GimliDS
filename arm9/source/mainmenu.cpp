@@ -424,7 +424,7 @@ void SetDefaultGameConfig(void)
     myConfig.reserved5   = 1;               // In case we need a default at '1' = ON/Enabled
     
     myConfig.offsetX     = 32;              // Push the side border off the main display
-    myConfig.offsetY     = 19;              // Push the top border off the main display
+    myConfig.offsetY     = 23;              // Push the top border off the main display
     myConfig.scaleX      = 256;             // Scale the 320 pixels of C64 display to the DS 256 pixels (squashed... booo!)
     myConfig.scaleY      = 200;             // Scale the 200 pixels of C64 display to the DS 200 (yes, there is only 192 so this will cut... use PAN UP/DN)
 }
