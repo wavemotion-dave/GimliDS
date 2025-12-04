@@ -763,7 +763,7 @@
         case 0x28:  // PLP
             pop_flags();
             if (interrupt.intr_any && !i_flag)
-                goto handle_int;
+                {last_cycles=4;goto handle_int;}
             ENDOP(4);
 
 
@@ -797,7 +797,7 @@
             adr = adr | pop_byte() << 8;
             jump(adr);
             if (interrupt.intr_any && !i_flag)
-                goto handle_int;
+                {last_cycles=6;goto handle_int;}
             ENDOP(6);
 
         case 0x00:  // BRK
@@ -886,7 +886,7 @@
         case 0x58:  // CLI
             i_flag = false;
             if (interrupt.intr_any)
-                goto handle_int;
+                {last_cycles=2;goto handle_int;}
             ENDOP(2);
 
         case 0xb8:  // CLV

@@ -179,6 +179,7 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
         sprintf(szName2, "[%s]",szName);
         sprintf(szName,"%-30s",szName2);
         DSPrint(1,4+ucBcl,(ucSel == ucBcl ? 2 :  0),szName);
+        DSPrint(0,4+ucBcl,0,(char*)" ");
       }
       else
       {
@@ -187,7 +188,7 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
         
         if (IsFavorite(gpFic[ucGame].szName))
         {
-            DSPrint(0,4+ucBcl,(IsFavorite(gpFic[ucGame].szName) == 1) ? 0:2,(char*)"*");
+            DSPrint(0,4+ucBcl,(IsFavorite(gpFic[ucGame].szName) == 1) ? 0:2,(char*)"\\");
         }
         else
         {
@@ -197,7 +198,7 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
     }
     else
     {
-        DSPrint(1,4+ucBcl,(ucSel == ucBcl ? 2 : 0 ),(char *)"                              ");
+        DSPrint(0,4+ucBcl,(ucSel == ucBcl ? 2 : 0 ),(char *)"                               ");
     }
   }
 }
@@ -1021,6 +1022,7 @@ u8 CartMenu(C64 *the_c64)
                     BottomScreenMainMenu();
                     retVal = 3;
                     strcpy(CartFilename, "");
+                    SetDefaultGameConfig();
                     bExitMenu = true;
                     break;
                 

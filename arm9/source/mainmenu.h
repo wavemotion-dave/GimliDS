@@ -152,4 +152,5 @@ void SaveConfig(void);
 void FindConfig(void);
 void GimliDSGameOptions(void);
 void check_and_make_sav_directory(void);
+void SetDefaultGameConfig(void);
 void debug_printf(const char * str, ...);

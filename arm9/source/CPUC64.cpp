@@ -188,7 +188,7 @@ __attribute__ ((noinline)) void MOS6510::new_config(void)
     MemMap[0xa] = basic_in ? (basic_rom - 0xa000) : myRAM;
     MemMap[0xb] = basic_in ? (basic_rom - 0xa000) : myRAM;
     MemMap[0xc] = myRAM;
-    MemMap[0xd] = myRAM; // Usually will be I/O
+    MemMap[0xd] = 0;
     MemMap[0xe] = kernal_in ? (kernal_rom - 0xe000) : myRAM;
     MemMap[0xf] = kernal_in ? (kernal_rom - 0xe000) : myRAM;
     
@@ -246,14 +246,14 @@ __attribute__ ((noinline)) uint8_t  MOS6510::read_byte_io(uint16 adr)
 
 inline __attribute__((always_inline)) uint8 MOS6510::read_byte(uint16 adr)
 {
-    if ((adr>>12) == 0xd) return read_byte_io(adr);
-    else return MemMap[adr>>12][adr];
+    if (MemMap[adr>>12]) return MemMap[adr>>12][adr];
+    else return read_byte_io(adr);
 }
 
 /*
  *  Read a word (little-endian) from the CPU's address space
  */
-__attribute__ ((noinline)) ITCM_CODE uint16 MOS6510::read_word(uint16 adr)
+inline __attribute__((always_inline)) ITCM_CODE uint16 MOS6510::read_word(uint16 adr)
 {
     if ((adr>>12) == 0xd) return (read_byte_io(adr) | (read_byte_io(adr+1) << 8));
     else return (MemMap[adr>>12][adr] | (MemMap[adr>>12][adr+1] << 8));
@@ -334,7 +334,7 @@ __attribute__ ((noinline)) void MOS6510::write_byte_io(uint16 adr, uint8 byte)
 }
 
 
-__attribute__ ((noinline)) ITCM_CODE void MOS6510::write_byte_flash(uint16 adr, uint8 byte)
+inline __attribute__((always_inline)) void MOS6510::write_byte_flash(uint16 adr, uint8 byte)
 {
     if ((adr >> 12) == 0xd)
     {
@@ -350,7 +350,7 @@ __attribute__ ((noinline)) ITCM_CODE void MOS6510::write_byte_flash(uint16 adr, 
 /*
  *  Write a byte to the CPU's address space
  */
-inline void MOS6510::write_byte(uint16 adr, uint8 byte)
+inline __attribute__((always_inline)) void MOS6510::write_byte(uint16 adr, uint8 byte)
 {
     if (adr & 0x8000)
     {
@@ -762,7 +762,7 @@ handle_int:
         else if (interrupt.intr[INT_NMI])
         {
             IntNMI();
-            last_cycles = 7;
+            last_cycles += 7;
         }
         else if ((interrupt.intr[INT_VICIRQ] || interrupt.intr[INT_CIAIRQ]) && !i_flag)
         {
@@ -771,7 +771,7 @@ handle_int:
             i_flag = true;
             adr = read_word(0xfffe);
             jump(adr);
-            last_cycles = 7;
+            last_cycles += 7;
         }
     }
 

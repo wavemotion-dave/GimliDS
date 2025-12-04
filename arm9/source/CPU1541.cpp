@@ -466,7 +466,7 @@ inline void MOS6502_1541::jump(uint16 adr)
  *  Adc instruction
  */
 
-void MOS6502_1541::do_adc(uint8 byte)
+ITCM_CODE void MOS6502_1541::do_adc(uint8 byte)
 {
     if (!d_flag) {
         uint16 tmp;
@@ -502,7 +502,7 @@ void MOS6502_1541::do_adc(uint8 byte)
  * Sbc instruction
  */
 
-void MOS6502_1541::do_sbc(uint8 byte)
+ITCM_CODE void MOS6502_1541::do_sbc(uint8 byte)
 {
     uint16 tmp = a - byte - (c_flag ? 0 : 1);
 
@@ -761,7 +761,7 @@ handle_int:
             push_flags(false);
             i_flag = true;
             jump(read_word(0xfffe));
-            last_cycles = 7;
+            last_cycles += 7;
         }
     }
 
