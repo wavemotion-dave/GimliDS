@@ -188,7 +188,7 @@ __attribute__ ((noinline)) void MOS6510::new_config(void)
     MemMap[0xa] = basic_in ? (basic_rom - 0xa000) : myRAM;
     MemMap[0xb] = basic_in ? (basic_rom - 0xa000) : myRAM;
     MemMap[0xc] = myRAM;
-    MemMap[0xd] = 0;
+    MemMap[0xd] = 0; // This is IO space and we use this as a sentinel
     MemMap[0xe] = kernal_in ? (kernal_rom - 0xe000) : myRAM;
     MemMap[0xf] = kernal_in ? (kernal_rom - 0xe000) : myRAM;
     
@@ -253,16 +253,16 @@ inline __attribute__((always_inline)) uint8 MOS6510::read_byte(uint16 adr)
 /*
  *  Read a word (little-endian) from the CPU's address space
  */
-inline __attribute__((always_inline)) ITCM_CODE uint16 MOS6510::read_word(uint16 adr)
+__attribute__ ((noinline)) ITCM_CODE uint16 MOS6510::read_word(uint16 adr)
 {
-    if ((adr>>12) == 0xd) return (read_byte_io(adr) | (read_byte_io(adr+1) << 8));
-    else return (MemMap[adr>>12][adr] | (MemMap[adr>>12][adr+1] << 8));
+    if (MemMap[adr>>12]) return (MemMap[adr>>12][adr] | (MemMap[adr>>12][adr+1] << 8));
+    else return (read_byte_io(adr) | (read_byte_io(adr+1) << 8));
 }
 
 __attribute__ ((noinline)) ITCM_CODE uint16 MOS6510::read_word_pc(void)
 {
-    if ((pc>>12) == 0xd) return (read_byte_io(pc) | (read_byte_io(pc+1) << 8));
-    else return (MemMap[pc>>12][pc] | (MemMap[pc>>12][pc+1] << 8));
+    if (MemMap[pc>>12]) return (MemMap[pc>>12][pc] | (MemMap[pc>>12][pc+1] << 8));
+    else return (read_byte_io(pc) | (read_byte_io(pc+1) << 8));
 }
 
 /*
@@ -334,16 +334,16 @@ __attribute__ ((noinline)) void MOS6510::write_byte_io(uint16 adr, uint8 byte)
 }
 
 
-inline __attribute__((always_inline)) void MOS6510::write_byte_flash(uint16 adr, uint8 byte)
+ITCM_CODE void MOS6510::write_byte_flash(uint16 adr, uint8 byte)
 {
-    if ((adr >> 12) == 0xd)
-    {
-        write_byte_io(adr, byte);
-    }
-    else
+    if (MemMap[adr>>12])
     {
         if (flash_write_supported) TheCart->WriteFlash(adr, byte);
         else myRAM[adr] = byte;
+    }
+    else
+    {
+        write_byte_io(adr, byte);
     }
 }
 
@@ -368,7 +368,7 @@ inline __attribute__((always_inline)) void MOS6510::write_byte(uint16 adr, uint8
  *  Read a byte from the zeropage
  */
 
-inline uint8 MOS6510::read_zp(uint16 adr)
+inline __attribute__((always_inline)) uint8 MOS6510::read_zp(uint16 adr)
 {
     return myRAM[adr];
 }
@@ -389,7 +389,7 @@ inline uint16 MOS6510::read_zp_word(uint16 adr)
  *  Write a byte to the zeropage
  */
 
-inline void MOS6510::write_zp(uint16 adr, uint8 byte)
+inline __attribute__((always_inline)) void MOS6510::write_zp(uint16 adr, uint8 byte)
 {
     myRAM[adr] = byte;
 
@@ -408,7 +408,7 @@ inline void MOS6510::write_zp(uint16 adr, uint8 byte)
  *  Adc instruction
  */
 
-void MOS6510::do_adc(uint8 byte)
+ITCM_CODE void MOS6510::do_adc(uint8 byte)
 {
     if (!d_flag) {
         uint16 tmp = a + (byte) + (c_flag ? 1 : 0);

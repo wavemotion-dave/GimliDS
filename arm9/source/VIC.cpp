@@ -534,7 +534,7 @@ void MOS6569::SetState(MOS6569State *vd)
  *  Trigger raster IRQ
  */
 
-ITCM_CODE void MOS6569::raster_irq(void)
+void MOS6569::raster_irq(void)
 {
     irq_flag |= 0x01;
     if (irq_mask & 0x01) {

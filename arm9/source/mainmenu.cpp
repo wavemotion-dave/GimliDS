@@ -44,7 +44,7 @@ u8 option_table = 0;
 extern void BottomScreenMainMenu(void);
 
 // Used with myConfig.cpuCycles
-s16 CycleDeltas[] = {0,1,2,3,4,5,6,7,8,9,15,20, -9,-8,-7,-6,-5,-4,-3,-2,-1};
+s16 CycleDeltas[] __attribute__((section(".dtcm"))) = {0,1,2,3,4,5,6,7,8,9,15,20, -9,-8,-7,-6,-5,-4,-3,-2,-1};
 
 extern u8 CompressBuffer[]; // Needed for config compression
 
@@ -388,6 +388,9 @@ void SetDefaultGlobalConfig(void)
     myGlobalConfig.reserved8        = 0;
     myGlobalConfig.reserved9        = 0;
     myGlobalConfig.reserved10       = 1;
+    memset(myGlobalConfig.spare_A, 0x00, sizeof(myGlobalConfig.spare_A));
+    memset(myGlobalConfig.spare_B, 0x00, sizeof(myGlobalConfig.spare_B));
+    memset(myGlobalConfig.spare_C, 0x00, sizeof(myGlobalConfig.spare_C));
 }
 
 void SetDefaultGameConfig(void)
@@ -404,24 +407,21 @@ void SetDefaultGameConfig(void)
     myConfig.key_map[6]  = myGlobalConfig.defaultX; // X = Use Global - def is Joy Up
     myConfig.key_map[7]  = myGlobalConfig.defaultY; // Y = Use Global - def is RETURN key
     
-    myConfig.key_map[8]  = KEY_MAP_SPACE;    // Spare 1
-    myConfig.key_map[9]  = KEY_MAP_SPACE;    // Spare 2
-    
     myConfig.diskFlash   = myGlobalConfig.defaultDiskFlash;// Disk is writable with sound effects
     myConfig.joyPort     = myGlobalConfig.defaultJoyPort;  // Default to Joy2 (it's a toss-up but more than half use port 2)
     myConfig.poundKey    = myGlobalConfig.defaultPoundKey; // Default is Back Arrow
 
     myConfig.trueDrive   = 0;                // Fast 1541 emulation by default
-    myConfig.jitter      = 1;                // Medium level of jitter
+    myConfig.jitter      = 1;                // 'Light' level of jitter
     myConfig.joyMode     = 0;                // Default is normal joypad / dpad
-    myConfig.reuType     = 0;                // No REU by default
+    myConfig.reuType     = 0;                // No REU installed by default
     myConfig.cpuCycles   = 0;                // Normal 63 - this is the delta adjustment to that
     myConfig.reserved0   = 0;
     myConfig.reserved1   = 0;
     myConfig.reserved2   = 0;
     myConfig.reserved3   = 0;
-    myConfig.reserved4   = 0;             // So it's easy to spot on an "upgrade" and we can re-default it
-    myConfig.reserved5   = 1;
+    myConfig.reserved4   = 0;
+    myConfig.reserved5   = 1;               // In case we need a default at '1' = ON/Enabled
     
     myConfig.offsetX     = 32;              // Push the side border off the main display
     myConfig.offsetY     = 19;              // Push the top border off the main display

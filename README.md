@@ -136,7 +136,7 @@ To get some of the more popular games running as good as possible on the venerab
   * Bruce Lee - set the CPU CYCLES to +4 to minimize graphical line-based glitches.
   * LED Storm - set CPU CYCLES to +4 to eliminate top line graphical glitch.
   * SNK vs CAPCOM Stronger Edition - set CPU CYCLES to +9 so in-game fighting sprites are reasonably correct.
-  * Turrican I - set the BAD CYCLES to -6 (you will have some corruption on the title screen but the game will look and play fine - most importantly you can actually start the game!).
+  * Turrican I - set the CPU CYCLES to -1 (you will have some corruption on the title screen but the game will look and play fine - most importantly you can actually start the game!).
   * Turrican II - requires True Drive enabled (or load from cart).
   * Lode Runner - requires True Drive enabled (or load from cart).
   * Sky Shark - load from Arcade Compilation Cart, I can't get the disk versions working either.
