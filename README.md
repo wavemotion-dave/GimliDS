@@ -89,7 +89,9 @@ Lastly, a few games use custom loaders that require you to enable 'True Drive'. 
 a speed that is comparable to the original Commodore 1541 floppy drive - that is: extremely slow. It could take 2-5 minutes to load a game
 this way. But if the game requires it, that's your only option. Recommended to snap out a Save State so you don't have to repeat the loading.
 
-![image](./pngs/mainmenu.png) ![image](./pngs/diskmenu.png) ![image](./pngs/cartmenu.png)
+![image](./pngs/mainmenu.png) ![image](./pngs/diskmenu.png) ![image](./pngs/cartmenu.png) 
+
+![image](./pngs/options.png)
 
 ## Cartridge Support
 
