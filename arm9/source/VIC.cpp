@@ -220,7 +220,7 @@ static uint8 *matrix_base               __attribute__((section(".dtcm")));    //
 static uint8 *char_base                 __attribute__((section(".dtcm")));    // Character generator base
 static uint8 *bitmap_base               __attribute__((section(".dtcm")));    // Bitmap base
 
-static uint16 raster_y                  __attribute__((section(".dtcm")));     // Current raster line
+uint16 raster_y                  __attribute__((section(".dtcm")));     // Current raster line
 static uint16 irq_raster                __attribute__((section(".dtcm")));     // Interrupt raster line
 static uint16 dy_start                  __attribute__((section(".dtcm")));     // Comparison values for border logic
 static uint16 dy_stop                   __attribute__((section(".dtcm")));

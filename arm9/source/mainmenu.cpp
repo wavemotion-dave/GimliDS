@@ -42,6 +42,8 @@ u32 file_crc = 0x00000000;
 u8 option_table = 0;
 extern void BottomScreenMainMenu(void);
 
+extern "C" char *strcasestr(const char *haystack, const char *needle);
+
 // Used with myConfig.cpuCycles and myConfig.ciaCycles
 s16 CycleDeltas[] __attribute__((section(".dtcm"))) = {0,1,2,3,4,5,6,-2,-1};
 
@@ -600,6 +602,39 @@ void FindConfig(void)
     // below, we will fill in the config with data read from the file.
     // -----------------------------------------------------------------
     SetDefaultGameConfig();
+    
+    extern u8 turrican_hack;
+    turrican_hack = 0;
+    if (strcasestr(CartFilename, "TURRICAN")     != 0) turrican_hack = 1;
+    if (strcasestr(Drive8File, "TURRICAN")       != 0) turrican_hack = 1;
+                                                 
+    if (strcasestr(CartFilename, "MR HELI")      != 0) myConfig.ciaCycles = 1;
+    if (strcasestr(CartFilename, "MRHELI")       != 0) myConfig.ciaCycles = 1;
+    if (strcasestr(CartFilename, "MR. HELI")     != 0) myConfig.ciaCycles = 1;
+                                                 
+    if (strcasestr(Drive8File, "MR HELI")        != 0) myConfig.ciaCycles = 1;
+    if (strcasestr(Drive8File, "MRHELI")         != 0) myConfig.ciaCycles = 1;
+    if (strcasestr(Drive8File, "MR. HELI")       != 0) myConfig.ciaCycles = 1;
+                                                 
+    if (strcasestr(CartFilename, "FLYING SHARK") != 0) myConfig.ciaCycles = 6;
+    if (strcasestr(CartFilename, "FLYING_SHARK") != 0) myConfig.ciaCycles = 6;
+    if (strcasestr(CartFilename, "FLYINGSHARK")  != 0) myConfig.ciaCycles = 6;
+                                                 
+    if (strcasestr(Drive8File, "FLYING SHARK")   != 0) myConfig.ciaCycles = 6;
+    if (strcasestr(Drive8File, "FLYING_SHARK")   != 0) myConfig.ciaCycles = 6;
+    if (strcasestr(Drive8File, "FLYINGSHARK")    != 0) myConfig.ciaCycles = 6;
+
+    if (strcasestr(CartFilename, "BRUCE LEE")    != 0) myConfig.cpuCycles = 6;
+    if (strcasestr(CartFilename, "BRUCELEE")     != 0) myConfig.cpuCycles = 6;
+    
+    if (strcasestr(Drive8File, "BRUCE LEE")      != 0) myConfig.cpuCycles = 6;
+    if (strcasestr(Drive8File, "BRUCELEE")       != 0) myConfig.cpuCycles = 6;
+
+    if (strcasestr(CartFilename, "ROGUE64")      != 0) myConfig.cpuCycles = 4;
+    if (strcasestr(Drive8File, "ROGUE64")        != 0) myConfig.cpuCycles = 4;
+
+    if (strcasestr(CartFilename, "GAUNTLET")      != 0) myConfig.cpuCycles = 5;
+    if (strcasestr(Drive8File, "GAUNTLET")        != 0) myConfig.cpuCycles = 5;
 
     for (u16 slot=0; slot<MAX_CONFIGS; slot++)
     {
@@ -627,7 +662,8 @@ struct options_t
     u8           option_max;
 };
 
-#define CYCLE_DELTA_STR  "+0","+1","+2","+3","+4","+5","+6","-2","-1",
+#define CPU_CYCLE_DELTA_STR  "+0","+1","+2","+3","+4","+5","+6","-2","-1",
+#define CIA_CYCLE_DELTA_STR  "+0", "+1 SCANLINE","+2 SCANLINE","+60 FRAME","+80 FRAME","+100 FRAME","+120 FRAME","+140 FRAME","+160 FRAME",
 
 #define KEY_MAP_OPTIONS "JOY FIRE", "JOY UP", "JOY DOWN", "JOY LEFT", "JOY RIGHT", "JOY AUTOFIRE",\
                         "KEY SPACE", "KEY RETURN", "RUN/STOP", "KEY C=", "KEY F1", "KEY F3", "KEY F5", "KEY F7",\
@@ -650,8 +686,8 @@ const struct options_t Option_Table[2][20] =
         {"JOY MODE",       {"NORMAL", "SLIDE-N-GLIDE", "DIAGONALS"},                                    &myConfig.joyMode,     3},
         {"LCD JITTER",     {"NONE", "LIGHT", "HEAVY"},                                                  &myConfig.jitter,      3},
         {"DISK/FLASH",     {"READ NO SFX", "READ WITH SFX", "WRITE NO SFX", "WRITE WITH SFX"},          &myConfig.diskFlash,   4},
-        {"CPU CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.cpuCycles,   9},
-        {"CIA CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.ciaCycles,   9},
+        {"CPU CYCLES",     {CPU_CYCLE_DELTA_STR},                                                       &myConfig.cpuCycles,   9},
+        {"CIA CYCLES",     {CIA_CYCLE_DELTA_STR},                                                       &myConfig.ciaCycles,   9},
         {"POUND KEY",      {"POUND", "BACK ARROW", "UP ARROW", "C= COMMODORE"},                         &myConfig.poundKey,    4},
 
         {"D-PAD UP",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[0],  71},

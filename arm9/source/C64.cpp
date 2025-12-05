@@ -49,6 +49,7 @@
 #include "Display.h"
 #include "Cartridge.h"
 #include "mainmenu.h"
+#include "diskmenu.h"
 #include "lzav.h"
 #include <maxmod9.h>
 #include "soundbank.h"
@@ -69,6 +70,8 @@ MOS6510 myCPU    __attribute__((section(".dtcm")));  // Put the entire CPU objec
 C64 *gTheC64 = nullptr; // For occasional access in other classes without having to pass it around
 
 u8 CompressBuffer[300*1024]; //300K more than enough (might need to compress RDU at 256K)
+
+u8 turrican_hack = 0;
 
 #define SNAPSHOT_VERSION 4
 
@@ -1298,12 +1301,24 @@ uint8 C64::poll_joystick(int port)
         else if (joy_right) {joy_down  = 1;}
     }
 
-    if( (keys & KEY_SELECT) && !dampen)
+    if (turrican_hack)
     {
-        myConfig.joyPort ^= 1;
-        extern void show_joysticks();
-        show_joysticks();
-        dampen=30;
+        if(keys & KEY_SELECT)
+        {
+            myConfig.cpuCycles = 7;
+            joy_fire = 1;
+        }
+        else myConfig.cpuCycles = 0;
+    }
+    else
+    {
+        if( (keys & KEY_SELECT) && !dampen)
+        {
+            myConfig.joyPort ^= 1;
+            extern void show_joysticks();
+            show_joysticks();
+            dampen=30;
+        }
     }
 
     if( keys & KEY_START && !dampen)
@@ -1375,6 +1390,21 @@ void C64::RemoveCart(void)
     cart_in = 0;
 }
 
+int C64::CIA_Delta(void)
+{
+    extern uint16 raster_y;
+    int retVal = 0;
+    
+    if (myConfig.ciaCycles <= 2)
+    {
+        retVal = myConfig.ciaCycles;
+    }
+    else
+    {
+        if (raster_y==0)   retVal = (20*myConfig.ciaCycles);
+    }
+    return retVal;
+}
 
 /*
  * The emulation's main loop
@@ -1389,12 +1419,12 @@ void C64::main_loop(void)
             scanKeys();
             continue;
         }
-
+        
         // The order of calls is important here
         int cpu_cycles_to_execute = TheVIC->EmulateLine();
         TheSID->EmulateLine((myConfig.tvType ? SID_CYCLES_PER_LINE_NTSC:SID_CYCLES_PER_LINE_PAL));
-        TheCIA1->EmulateLine((myConfig.tvType ? CIA_CYCLES_PER_LINE_NTSC:CIA_CYCLES_PER_LINE_PAL) + CycleDeltas[myConfig.ciaCycles]);
-        TheCIA2->EmulateLine((myConfig.tvType ? CIA_CYCLES_PER_LINE_NTSC:CIA_CYCLES_PER_LINE_PAL) + CycleDeltas[myConfig.ciaCycles]);
+        TheCIA1->EmulateLine((myConfig.tvType ? CIA_CYCLES_PER_LINE_NTSC:CIA_CYCLES_PER_LINE_PAL) + CIA_Delta());
+        TheCIA2->EmulateLine((myConfig.tvType ? CIA_CYCLES_PER_LINE_NTSC:CIA_CYCLES_PER_LINE_PAL) + CIA_Delta());
 
         // -----------------------------------------------------------------
         // TrueDrive is more complicated as we must interleave the two CPUs

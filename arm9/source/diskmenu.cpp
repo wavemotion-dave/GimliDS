@@ -569,7 +569,7 @@ void LoadGameConfig(void)
     {
         file_crc = getCRC32((u8*)Drive8File, strlen(Drive8File));
         FindConfig();
-    }    
+    }
 }
 
 void BottomScreenDiskette(void)
