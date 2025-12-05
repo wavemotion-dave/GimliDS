@@ -143,7 +143,7 @@ To get some of the more popular games running as good as possible on the venerab
   * LED Storm - set CPU CYCLES to +4 to eliminate top line graphical glitch.
   * MR HELI - set the CIA Cycles to +120 FRAME (not CPU CYCLES!!)
   * Flying Shark - set CIA CYCLES to +1 SCANLINE (not CPU CYCLES!!) - score area will be closer to correct but still a bit glitchy.
-  * Turrican I - set the CPU CYCLES to -1 (you will have some corruption on the title screen but the game will look and play fine - most importantly you can actually start the game!).
+  * Turrican I - Due to slight timing inaccuracies, it's not normally possible to start the game but for this game only press and hold the SELECT button to get into the game proper (game will run at proper speed).
   * Turrican II - requires True Drive enabled (or load from cart).
   * Lode Runner - requires True Drive enabled (or load from cart).
   * Sky Shark - load from Arcade Compilation Cart, I can't get the disk versions working either.
