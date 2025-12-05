@@ -1392,9 +1392,9 @@ void C64::main_loop(void)
 
         // The order of calls is important here
         int cpu_cycles_to_execute = TheVIC->EmulateLine();
-        TheSID->EmulateLine(SID_CYCLES_PER_LINE);
-        TheCIA1->EmulateLine(CIA_CYCLES_PER_LINE + CycleDeltas[myConfig.ciaCycles]);
-        TheCIA2->EmulateLine(CIA_CYCLES_PER_LINE + CycleDeltas[myConfig.ciaCycles]);
+        TheSID->EmulateLine((myConfig.tvType ? SID_CYCLES_PER_LINE_NTSC:SID_CYCLES_PER_LINE_PAL));
+        TheCIA1->EmulateLine((myConfig.tvType ? CIA_CYCLES_PER_LINE_NTSC:CIA_CYCLES_PER_LINE_PAL) + CycleDeltas[myConfig.ciaCycles]);
+        TheCIA2->EmulateLine((myConfig.tvType ? CIA_CYCLES_PER_LINE_NTSC:CIA_CYCLES_PER_LINE_PAL) + CycleDeltas[myConfig.ciaCycles]);
 
         // -----------------------------------------------------------------
         // TrueDrive is more complicated as we must interleave the two CPUs
