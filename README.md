@@ -181,6 +181,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 Version 1.6 release ??-Dec-2025 by wavemotion-dave
   * Reverted CPU Adjustment to +0 (the +3 was too aggressive for some games - such as the new Sherwood!)
   * New Favorites system implemented - press SELECT on game select to toggle LIKE/LOVE.
+  * NTSC support - can choose PAL (default) or NTSC on a per-game basis.
+  * New CIA timer adjustment for slight tweaks that some games need (e.g. Flying Shark)
+  * Improved CPU timing accuracy for 'borrowed cycles'
   * Slight tweaks to disk icon flashing for read/writes.
   * Slight optimization for another frame of performance.
 
