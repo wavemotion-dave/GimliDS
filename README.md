@@ -139,10 +139,10 @@ In general, if you have a scanline instability/flicker near the top of the scree
 To get some of the more popular games running as good as possible on the venerable DS, here is a list of things you might try.
 
   * Gauntlet - set the CPU CYCLES to +5 to eliminate graphical glitches on 'G' font.
-  * Bruce Lee - set the CPU CYCLES to +4 to minimize graphical line-based glitches.
+  * Bruce Lee - set the CPU CYCLES to +6 to minimize graphical line-based glitches.
   * LED Storm - set CPU CYCLES to +4 to eliminate top line graphical glitch.
-  * MR HELI - set the CIA Cycles to +1 (not CPU CYCLES!!)
-  * Flying Shark - set CIA CYCLES to +1 (not CPU CYCLES!!) - score area will be closer to correct but still a bit glitchy.
+  * MR HELI - set the CIA Cycles to +120 FRAME (not CPU CYCLES!!)
+  * Flying Shark - set CIA CYCLES to +1 SCANLINE (not CPU CYCLES!!) - score area will be closer to correct but still a bit glitchy.
   * Turrican I - set the CPU CYCLES to -1 (you will have some corruption on the title screen but the game will look and play fine - most importantly you can actually start the game!).
   * Turrican II - requires True Drive enabled (or load from cart).
   * Lode Runner - requires True Drive enabled (or load from cart).
