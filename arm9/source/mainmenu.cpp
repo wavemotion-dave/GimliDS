@@ -43,7 +43,7 @@ u8 option_table = 0;
 extern void BottomScreenMainMenu(void);
 
 // Used with myConfig.cpuCycles and myConfig.ciaCycles
-s16 CycleDeltas[] __attribute__((section(".dtcm"))) = {0,1,2,3,4,-2,-1};
+s16 CycleDeltas[] __attribute__((section(".dtcm"))) = {0,1,2,3,4,5,-2,-1};
 
 static u16 nds_key __attribute__((section(".dtcm")));
 
@@ -627,7 +627,7 @@ struct options_t
     u8           option_max;
 };
 
-#define CYCLE_DELTA_STR  "+0","+1","+2","+3","-2","-1",
+#define CYCLE_DELTA_STR  "+0","+1","+2","+3","+4","+5","-2","-1",
 
 #define KEY_MAP_OPTIONS "JOY FIRE", "JOY UP", "JOY DOWN", "JOY LEFT", "JOY RIGHT", "JOY AUTOFIRE",\
                         "KEY SPACE", "KEY RETURN", "RUN/STOP", "KEY C=", "KEY F1", "KEY F3", "KEY F5", "KEY F7",\
@@ -650,8 +650,8 @@ const struct options_t Option_Table[2][20] =
         {"JOY MODE",       {"NORMAL", "SLIDE-N-GLIDE", "DIAGONALS"},                                    &myConfig.joyMode,     3},
         {"LCD JITTER",     {"NONE", "LIGHT", "HEAVY"},                                                  &myConfig.jitter,      3},
         {"DISK/FLASH",     {"READ NO SFX", "READ WITH SFX", "WRITE NO SFX", "WRITE WITH SFX"},          &myConfig.diskFlash,   4},
-        {"CPU CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.cpuCycles,   7},
-        {"CIA CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.ciaCycles,   7},
+        {"CPU CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.cpuCycles,   8},
+        {"CIA CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.ciaCycles,   8},
         {"POUND KEY",      {"POUND", "BACK ARROW", "UP ARROW", "C= COMMODORE"},                         &myConfig.poundKey,    4},
 
         {"D-PAD UP",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[0],  71},
