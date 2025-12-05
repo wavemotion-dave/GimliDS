@@ -141,6 +141,7 @@ To get some of the more popular games running as good as possible on the venerab
   * Gauntlet - set the CPU CYCLES to +5 to eliminate graphical glitches on 'G' font.
   * Bruce Lee - set the CPU CYCLES to +4 to minimize graphical line-based glitches.
   * LED Storm - set CPU CYCLES to +4 to eliminate top line graphical glitch.
+  * MR HELI - set the CIA Cycles to +1 (not CPU CYCLES!!)
   * Flying Shark - set CIA CYCLES to +1 (not CPU CYCLES!!) - score area will be closer to correct but still a bit glitchy.
   * Turrican I - set the CPU CYCLES to -1 (you will have some corruption on the title screen but the game will look and play fine - most importantly you can actually start the game!).
   * Turrican II - requires True Drive enabled (or load from cart).
