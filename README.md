@@ -50,6 +50,8 @@ and be sure they are named exactly as follows:
   * Y is normally mapped to RETURN but can be remapped in Configuration
   * Pressing and holding both shoulder buttons together will 'Turbo Warp' the emulator (runs as fast as it can until you release).
 
+![image](./pngs/keyboard.png)
+
 ## Emulator Use
 
 To use GimliDS you launch GimliDS.NDS on your DS/DSi/XL/LL. Please note that if you are running from an R4 card (or similar), you 
@@ -86,6 +88,8 @@ the L/R shoulder buttons to pan around if needed. Press the same TOGGLE ZOOM but
 Lastly, a few games use custom loaders that require you to enable 'True Drive'. Be warned that True Drive will render the floppy driver at 
 a speed that is comparable to the original Commodore 1541 floppy drive - that is: extremely slow. It could take 2-5 minutes to load a game
 this way. But if the game requires it, that's your only option. Recommended to snap out a Save State so you don't have to repeat the loading.
+
+![image](./pngs/mainmenu.png) ![image](./pngs/diskmenu.png) ![image](./pngs/cartmenu.png)
 
 ## Cartridge Support
 
