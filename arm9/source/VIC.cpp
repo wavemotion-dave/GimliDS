@@ -1329,7 +1329,7 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_sprites(uint8 *chunky_ptr
 __attribute__ ((noinline))  ITCM_CODE int MOS6569::el_update_mc(int raster)
 {
     int i, j;
-    int cycles_used = 0;
+    int num_sprites = 0;
     uint8 spron = sprite_on;
     uint8 spren = me;
     uint8 sprye = mye;
@@ -1358,13 +1358,13 @@ spr_off:
                 {
                     if (!((my[i] ^ raster8bit) & 1))
                     {
-                        cycles_used++;
+                        num_sprites++;
                         if (++mc[i] == 21) spron &= ~j;
                     }
                 }
                 else
                 {
-                    cycles_used++;
+                    num_sprites++;
                     if (++mc[i] == 21) spron &= ~j;
                 }
             }
@@ -1372,7 +1372,8 @@ spr_off:
     }
 
     sprite_on = spron;
-    return (cycles_used<<1); // Each cycles_used above is 2 actual cycles
+    static int sprite_cycles[] = {0,5,7,9,11,13,15,17,19};
+    return (sprite_cycles[num_sprites]); // Each num_sprites is ~2 actual cycles with some overhead - this is NOT exact
 }
 
 /*
@@ -1380,14 +1381,14 @@ spr_off:
  */
 int MOS6569::EmulateLine(void)
 {
-    int cycles_left = CPU_CYCLES_PER_LINE + CycleDeltas[myConfig.cpuCycles];    // Cycles left for CPU
+    int cycles_left = (myConfig.tvType ? CPU_CYCLES_PER_LINE_NTSC:CPU_CYCLES_PER_LINE_PAL) + CycleDeltas[myConfig.cpuCycles];    // Cycles left for CPU
     u8 is_bad_line = false;
     
     // Get raster counter into local variable for faster access and increment
     unsigned int raster = raster_y+1;
 
     // End of screen reached?
-    if (raster == TOTAL_RASTERS)
+    if (raster == (myConfig.tvType ? TOTAL_RASTERS_NTSC:TOTAL_RASTERS_PAL))
     {
         vblank();       // Yes, enter vblank - new frame coming up
         raster = 0;     // Start back at line 0

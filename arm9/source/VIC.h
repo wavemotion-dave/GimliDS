@@ -39,11 +39,13 @@
 #define _VIC_H
 #include <nds.h>
 
-// Total number of raster lines (PAL)
-#define TOTAL_RASTERS   312
+// Total number of raster lines (PAL vs NTSC)
+#define TOTAL_RASTERS_PAL  312
+#define TOTAL_RASTERS_NTSC 263
 
-// Screen refresh frequency (PAL)
-#define SCREEN_FREQ     50
+// Screen refresh frequency (PAL vs NTSC)
+#define SCREEN_FREQ_PAL    50
+#define SCREEN_FREQ_NTSC   60
 
 // First and last displayed line
 #define FIRST_DISP_LINE 28

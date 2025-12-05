@@ -3,12 +3,12 @@
 //
 // As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 // any copying or distribution of this emulator, its source code and associated
-// readme files, with or without modification, are permitted per the original 
+// readme files, with or without modification, are permitted per the original
 // Frodo emulator license shown below.  Hugest thanks to Christian Bauer for his
 // efforts to provide a clean open-source emulation base for the C64.
 //
-// Numerous hacks and 'unsafe' optimizations have been performed on the original 
-// Frodo emulator codebase to get it running on the small handheld system. You 
+// Numerous hacks and 'unsafe' optimizations have been performed on the original
+// Frodo emulator codebase to get it running on the small handheld system. You
 // are strongly encouraged to seek out the official Frodo sources if you're at
 // all interested in this emulator code.
 //
@@ -37,14 +37,15 @@
 
 extern C64 *TheC64;
 extern int bg0b, bg1b;
-static u16 nds_key;
 extern char strBuf[];
 u32 file_crc = 0x00000000;
 u8 option_table = 0;
 extern void BottomScreenMainMenu(void);
 
-// Used with myConfig.cpuCycles
-s16 CycleDeltas[] __attribute__((section(".dtcm"))) = {0,1,2,3,4,5,6,7,8,9,15,20, -9,-8,-7,-6,-5,-4,-3,-2,-1};
+// Used with myConfig.cpuCycles and myConfig.ciaCycles
+s16 CycleDeltas[] __attribute__((section(".dtcm"))) = {0,1,2,3,4,-2,-1};
+
+static u16 nds_key __attribute__((section(".dtcm")));
 
 extern u8 CompressBuffer[]; // Needed for config compression
 
@@ -86,7 +87,7 @@ MainMenu_t main_menu =
         {(char *)"  GLOBAL   CONFIG ",      MENU_ACTION_GLOBAL_CONFIG},
         {(char *)"  LCD      SWAP   ",      MENU_ACTION_LCD_SWAP},
         {(char *)"  RESET    C64    ",      MENU_ACTION_RESET_EMU},
-        {(char *)"  QUIT     GIMLIDS",      MENU_ACTION_QUIT_EMU},        
+        {(char *)"  QUIT     GIMLIDS",      MENU_ACTION_QUIT_EMU},
         {(char *)"  EXIT     MENU   ",      MENU_ACTION_EXIT},
         {(char *)"  NULL            ",      MENU_ACTION_END},
     },
@@ -185,14 +186,14 @@ u8 MainMenu(C64 *the_c64)
                 case MENU_ACTION_QUIT_EMU:
                     exit(0);
                     break;
-                    
+
                 case MENU_ACTION_RESET_EMU:
                     the_c64->RemoveCart();
                     the_c64->PatchKernal(TheDrivePrefs.TrueDrive);
                     the_c64->Reset();
                     bExitMenu = true;
                     break;
-                    
+
                 case MENU_ACTION_CONFIG:
                     option_table = 0;
                     if (file_crc != 0x00000000)
@@ -206,7 +207,7 @@ u8 MainMenu(C64 *the_c64)
                             the_c64->NewPrefs(prefs);
                             TheDrivePrefs = *prefs;
                             delete prefs;
-                        }                        
+                        }
                         bExitMenu = true;
                     }
                     else
@@ -218,7 +219,7 @@ u8 MainMenu(C64 *the_c64)
                         DSPrint(0, 18, 6, (char*)"                              ");
                     }
                     break;
-                    
+
                 case MENU_ACTION_LCD_SWAP:
                     lcdSwap();
                     WAITVBL;WAITVBL;
@@ -230,7 +231,7 @@ u8 MainMenu(C64 *the_c64)
                     GimliDSGameOptions();
                     bExitMenu = true;
                     break;
-                    
+
                 case MENU_ACTION_SAVE_STATE:
                 {
                     check_and_make_sav_directory();
@@ -288,7 +289,7 @@ u8 MainMenu(C64 *the_c64)
                     bExitMenu = true;
                 }
                     break;
-                    
+
                 case MENU_ACTION_EXIT:
                     bExitMenu = true;
                     break;
@@ -303,7 +304,7 @@ u8 MainMenu(C64 *the_c64)
 
   while ((keysCurrent() & (KEY_UP | KEY_DOWN | KEY_A ))!=0);
   WAITVBL;WAITVBL;WAITVBL;
-  
+
   return retVal;
 }
 
@@ -358,9 +359,9 @@ u32 getCRC32(u8 *buf, int size)
 
     for (int i=0; i < size; i++)
     {
-        crc = (crc >> 8) ^ crc32_table[(crc & 0xFF) ^ (u8)buf[i]]; 
+        crc = (crc >> 8) ^ crc32_table[(crc & 0xFF) ^ (u8)buf[i]];
     }
-    
+
     return ~crc;
 }
 
@@ -406,7 +407,7 @@ void SetDefaultGameConfig(void)
     myConfig.key_map[5]  = myGlobalConfig.defaultB; // B = Use Global - def is SPACE key
     myConfig.key_map[6]  = myGlobalConfig.defaultX; // X = Use Global - def is Joy Up
     myConfig.key_map[7]  = myGlobalConfig.defaultY; // Y = Use Global - def is RETURN key
-    
+
     myConfig.diskFlash   = myGlobalConfig.defaultDiskFlash;// Disk is writable with sound effects
     myConfig.joyPort     = myGlobalConfig.defaultJoyPort;  // Default to Joy2 (it's a toss-up but more than half use port 2)
     myConfig.poundKey    = myGlobalConfig.defaultPoundKey; // Default is Back Arrow
@@ -416,13 +417,13 @@ void SetDefaultGameConfig(void)
     myConfig.joyMode     = 0;                // Default is normal joypad / dpad
     myConfig.reuType     = 0;                // No REU installed by default
     myConfig.cpuCycles   = 0;                // Normal 63 - this is the delta adjustment to that
-    myConfig.reserved0   = 0;
-    myConfig.reserved1   = 0;
+    myConfig.ciaCycles   = 0;                // Normal 63 - this is the delta adjustment to that
+    myConfig.tvType      = 0;                // Default is PAL (1=NTSC)
     myConfig.reserved2   = 0;
     myConfig.reserved3   = 0;
     myConfig.reserved4   = 0;
     myConfig.reserved5   = 1;               // In case we need a default at '1' = ON/Enabled
-    
+
     myConfig.offsetX     = 32;              // Push the side border off the main display
     myConfig.offsetY     = 23;              // Push the top border off the main display
     myConfig.scaleX      = 256;             // Scale the 320 pixels of C64 display to the DS 256 pixels (squashed... booo!)
@@ -525,7 +526,7 @@ void SaveConfig(bool bShow)
         u16 ver = CONFIG_VERSION;
         fwrite(&ver, sizeof(ver), 1, fp);                       // Write the config version
         fwrite(&myGlobalConfig, sizeof(myGlobalConfig), 1, fp); // Write the global configuration
-        
+
         // --------------------------------------------------------------------
         // Compress the configuration data - this shrinks down quite nicely...
         // --------------------------------------------------------------------
@@ -560,8 +561,8 @@ void LoadConfig(void)
     u8 bInitDatabase = 0;
     if (ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&ver, sizeof(ver), 0))  // Read Global Config
     {
-        ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&myGlobalConfig, sizeof(myGlobalConfig), sizeof(ver));                  // Read the global config 
-        
+        ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&myGlobalConfig, sizeof(myGlobalConfig), sizeof(ver));                  // Read the global config
+
         if (ver != CONFIG_VERSION)
         {
             bInitDatabase = 1;
@@ -572,13 +573,13 @@ void LoadConfig(void)
             ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)&comp_len, sizeof(comp_len), sizeof(ver) + sizeof(myGlobalConfig));
             ReadFileCarefully((char *)"/data/GimliDS.DAT", (u8*)CompressBuffer, comp_len, sizeof(ver) + sizeof(myGlobalConfig)+ sizeof(comp_len));
             (void)lzav_decompress( CompressBuffer, AllConfigs, comp_len, sizeof(AllConfigs) );
-        }        
+        }
     }
     else    // Not found... init the entire database...
     {
         bInitDatabase = 1;
     }
-    
+
     if (bInitDatabase)
     {
         memset(&myGlobalConfig, 0x00, sizeof(myGlobalConfig));
@@ -599,7 +600,7 @@ void FindConfig(void)
     // below, we will fill in the config with data read from the file.
     // -----------------------------------------------------------------
     SetDefaultGameConfig();
-    
+
     for (u16 slot=0; slot<MAX_CONFIGS; slot++)
     {
         if (AllConfigs[slot].game_crc == file_crc)  // Got a match?!
@@ -626,7 +627,7 @@ struct options_t
     u8           option_max;
 };
 
-#define CYCLE_DELTA_STR  "+0","+1","+2","+3","+4","+5","+6","+7","+8","+9","+15","+20","-9","-8","-7","-6","-5","-4","-3","-2","-1",
+#define CYCLE_DELTA_STR  "+0","+1","+2","+3","-2","-1",
 
 #define KEY_MAP_OPTIONS "JOY FIRE", "JOY UP", "JOY DOWN", "JOY LEFT", "JOY RIGHT", "JOY AUTOFIRE",\
                         "KEY SPACE", "KEY RETURN", "RUN/STOP", "KEY C=", "KEY F1", "KEY F3", "KEY F5", "KEY F7",\
@@ -636,19 +637,21 @@ struct options_t
                         "KEY Y", "KEY Z", "KEY 1", "KEY 2", "KEY 3", "KEY 4", "KEY 5", "KEY 6", "KEY 7", "KEY 8", "KEY 9", "KEY 0",\
                         "PAN-UP 16", "PAN-UP 24", "PAN-UP 32", "PAN-DOWN 16", "PAN-DOWN 24", "PAN-DOWN 32","PAN-LEFT 32", "PAN-RIGHT 32",\
                         "PAN-LEFT 64", "PAN-RIGHT 64", "ZOOM TOGGLE"
-                        
+
 
 const struct options_t Option_Table[2][20] =
 {
     // Game Specific Configuration
     {
         {"TRUE DRIVE",     {"DISABLE (FAST)", "ENABLED (SLOW)"},                                        &myConfig.trueDrive,   2},
-        {"REU TYPE",       {"NONE", "REU-1764 256K"},                                                   &myConfig.reuType,     2},        
+        {"REU TYPE",       {"NONE", "REU-1764 256K"},                                                   &myConfig.reuType,     2},
+        {"TV  TYPE",       {"PAL 50HZ", "NTSC 60HZ"},                                                   &myConfig.tvType,      2},
         {"JOY PORT",       {"PORT 1", "PORT 2"},                                                        &myConfig.joyPort,     2},
         {"JOY MODE",       {"NORMAL", "SLIDE-N-GLIDE", "DIAGONALS"},                                    &myConfig.joyMode,     3},
         {"LCD JITTER",     {"NONE", "LIGHT", "HEAVY"},                                                  &myConfig.jitter,      3},
         {"DISK/FLASH",     {"READ NO SFX", "READ WITH SFX", "WRITE NO SFX", "WRITE WITH SFX"},          &myConfig.diskFlash,   4},
-        {"CPU CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.cpuCycles,   21},
+        {"CPU CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.cpuCycles,   7},
+        {"CIA CYCLES",     {CYCLE_DELTA_STR},                                                           &myConfig.ciaCycles,   7},
         {"POUND KEY",      {"POUND", "BACK ARROW", "UP ARROW", "C= COMMODORE"},                         &myConfig.poundKey,    4},
 
         {"D-PAD UP",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[0],  71},
@@ -660,7 +663,7 @@ const struct options_t Option_Table[2][20] =
         {"B BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[5],  71},
         {"X BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[6],  71},
         {"Y BUTTON",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[7],  71},
-        
+
         {NULL,             {"",      ""},                                                               NULL,                  1}
     },
     // Global Configuration
@@ -668,13 +671,13 @@ const struct options_t Option_Table[2][20] =
         {"DEF JOY PORT",       {"PORT 1", "PORT 2"},                                                    &myGlobalConfig.defaultJoyPort,     2},
         {"DEF DSK/FLSH",       {"READ NO SFX", "READ WITH SFX", "WRITE NO SFX", "WRITE WITH SFX"},      &myGlobalConfig.defaultDiskFlash,   4},
         {"DEF PND KEY",        {"POUND", "BACK ARROW", "UP ARROW", "C= COMMODORE"},                     &myGlobalConfig.defaultPoundKey,    4},
-        {"DEF KEYBOARD",       {"MAX BRIGHT", "DIM", "DIMMER", "DIMMEST"},                              &myGlobalConfig.keyboardDim,        4},        
+        {"DEF KEYBOARD",       {"MAX BRIGHT", "DIM", "DIMMER", "DIMMEST"},                              &myGlobalConfig.keyboardDim,        4},
         {"DEF KEY B",          {KEY_MAP_OPTIONS},                                                       &myGlobalConfig.defaultB,           71},
         {"DEF KEY X",          {KEY_MAP_OPTIONS},                                                       &myGlobalConfig.defaultX,           71},
         {"DEF KEY Y",          {KEY_MAP_OPTIONS},                                                       &myGlobalConfig.defaultY,           71},
-        
+
         {NULL,                 {"",      ""},                                                           NULL,                               1}
-    }    
+    }
 };
 
 
@@ -691,14 +694,14 @@ u8 display_options_list(bool bFullDisplay)
         while (true)
         {
             sprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][len].label, Option_Table[option_table][len].option[*(Option_Table[option_table][len].option_val)]);
-            DSPrint(1,5+len, (len==0 ? 2:0), strBuf); len++;
+            DSPrint(1,4+len, (len==0 ? 2:0), strBuf); len++;
             if (Option_Table[option_table][len].label == NULL) break;
         }
 
         // Blank out rest of the screen... option menus are of different lengths...
         for (int i=len; i<16; i++)
         {
-            DSPrint(1,5+i, 0, (char *)"                               ");
+            DSPrint(1,4+i, 0, (char *)"                               ");
         }
     }
 
@@ -735,25 +738,25 @@ void GimliDSGameOptions(void)
             if (keysCurrent() & KEY_UP) // Previous option
             {
                 sprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
-                DSPrint(1,5+optionHighlighted,0, strBuf);
+                DSPrint(1,4+optionHighlighted,0, strBuf);
                 if (optionHighlighted > 0) optionHighlighted--; else optionHighlighted=(idx-1);
                 sprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
-                DSPrint(1,5+optionHighlighted,2, strBuf);
+                DSPrint(1,4+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_DOWN) // Next option
             {
                 sprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
-                DSPrint(1,5+optionHighlighted,0, strBuf);
+                DSPrint(1,4+optionHighlighted,0, strBuf);
                 if (optionHighlighted < (idx-1)) optionHighlighted++;  else optionHighlighted=0;
                 sprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
-                DSPrint(1,5+optionHighlighted,2, strBuf);
+                DSPrint(1,4+optionHighlighted,2, strBuf);
             }
 
             if (keysCurrent() & KEY_RIGHT)  // Toggle option clockwise
             {
                 *(Option_Table[option_table][optionHighlighted].option_val) = (*(Option_Table[option_table][optionHighlighted].option_val) + 1) % Option_Table[option_table][optionHighlighted].option_max;
                 sprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
-                DSPrint(1,5+optionHighlighted,2, strBuf);
+                DSPrint(1,4+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_LEFT)  // Toggle option counterclockwise
             {
@@ -762,7 +765,7 @@ void GimliDSGameOptions(void)
                 else
                     *(Option_Table[option_table][optionHighlighted].option_val) = (*(Option_Table[option_table][optionHighlighted].option_val) - 1) % Option_Table[option_table][optionHighlighted].option_max;
                 sprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
-                DSPrint(1,5+optionHighlighted,2, strBuf);
+                DSPrint(1,4+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_START)  // Save Options
             {
@@ -776,7 +779,7 @@ void GimliDSGameOptions(void)
         }
         swiWaitForVBlank();
     }
-    
+
     // Give a third of a second time delay...
     for (int i=0; i<20; i++)
     {
@@ -797,7 +800,7 @@ void debug_printf(const char * str, ...)
     va_start(ap, str);
     vsnprintf(szTemp, 32, str, ap);
     va_end(ap);
-    
+
     for (int i=strlen(szTemp); i<33; i++)
     {
         szTemp[i] = ' ';

@@ -1,6 +1,6 @@
 
-#define MAX_CONFIGS                 2048
-#define CONFIG_VERSION              0x000C
+#define MAX_CONFIGS                 2500
+#define CONFIG_VERSION              0x000D
 
 extern s16 CycleDeltas[];
 
@@ -16,8 +16,8 @@ struct __attribute__((__packed__)) Config_t
     u8  poundKey;
     u8  reuType;
     u8  cpuCycles;
-    u8  reserved0;
-    u8  reserved1;
+    u8  ciaCycles;
+    u8  tvType;
     u8  reserved2;
     u8  reserved3;
     u8  reserved4;

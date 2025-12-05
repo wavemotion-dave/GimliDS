@@ -992,7 +992,7 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
     TheCart->CartFrame();
 
     frames++;
-    while (GetTicks() < (((unsigned int)TICKS_PER_SEC/(unsigned int)SCREEN_FREQ) * (unsigned int)frames))
+    while (GetTicks() < (((unsigned int)TICKS_PER_SEC/(unsigned int)(myConfig.tvType ? SCREEN_FREQ_NTSC:SCREEN_FREQ_PAL)) * (unsigned int)frames))
     {
         if (bTurboWarp) break;
     }
@@ -1007,7 +1007,7 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
         frames_per_sec = 0;
     }
 
-    if (frames == SCREEN_FREQ)
+    if (frames == (myConfig.tvType ? SCREEN_FREQ_NTSC:SCREEN_FREQ_PAL))
     {
         frames = 0;
         StartTimers();
@@ -1393,8 +1393,8 @@ void C64::main_loop(void)
         // The order of calls is important here
         int cpu_cycles_to_execute = TheVIC->EmulateLine();
         TheSID->EmulateLine(SID_CYCLES_PER_LINE);
-        TheCIA1->EmulateLine(CIA_CYCLES_PER_LINE);
-        TheCIA2->EmulateLine(CIA_CYCLES_PER_LINE);
+        TheCIA1->EmulateLine(CIA_CYCLES_PER_LINE + CycleDeltas[myConfig.ciaCycles]);
+        TheCIA2->EmulateLine(CIA_CYCLES_PER_LINE + CycleDeltas[myConfig.ciaCycles]);
 
         // -----------------------------------------------------------------
         // TrueDrive is more complicated as we must interleave the two CPUs
