@@ -17,7 +17,7 @@ struct __attribute__((__packed__)) Config_t
     u8  reuType;
     u8  cpuCycles;
     u8  ciaCycles;
-    u8  tvType;
+    u8  flopCycles;
     u8  reserved2;
     u8  reserved3;
     u8  reserved4;

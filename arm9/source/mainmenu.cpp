@@ -420,7 +420,7 @@ void SetDefaultGameConfig(void)
     myConfig.reuType     = 0;                // No REU installed by default
     myConfig.cpuCycles   = 0;                // Normal 63 - this is the delta adjustment to that
     myConfig.ciaCycles   = 0;                // Normal 63 - this is the delta adjustment to that
-    myConfig.tvType      = 0;                // Default is PAL (1=NTSC)
+    myConfig.flopCycles  = 0;                // Normal 64 - this is the delta adjustment to that
     myConfig.reserved2   = 0;
     myConfig.reserved3   = 0;
     myConfig.reserved4   = 0;
@@ -592,6 +592,31 @@ void LoadConfig(void)
     }
 }
 
+typedef struct {
+  char  szKeyWord1[20];
+  char  szKeyWord2[20];
+  char  szKeyWord3[20];
+  u8    trueDrive;
+  u8    cpuCycles;
+  u8    ciaCycles;
+  u8    flopCycles;
+} GAME_DATABASE;
+
+GAME_DATABASE gameDatabase[]
+{//   Key1           Key2            Key3           TD  CPU CIA FLOP
+    {"MR HELI",     "MR. HELI",     "MRHELI",       0,  0,  1,  0},
+    {"FLYING SHA",  "FLYINGSHA",    "FLYING_SHA",   0,  0,  6,  0},
+    {"BRUCE LEE",   "BRUCELEE",     "BRUCE_LEE",    0,  6,  0,  0},
+    {"ROGUE64",     "ROGUE 64",     "ROGUE-64",     0,  4,  0,  0},
+    {"GAUNTLET",    "GAUNTLET",     "GAUNTLET",     0,  5,  0,  0},
+    {"DRAGON WAR",  "DRAGON_WAR",   "DRAGONWAR",    0,  0,  0,  1},
+    {"TURRICAN II", "TURRICAN 2",   "TURRICAN2",    1,  0,  0,  0},
+    {"LODE RUN",    "LODE_RUN",     "LODERUN",      1,  0,  0,  0},
+    {"DEVOLUTION",  "DEVOLUTION",   "DEVOLUTION",   1,  0,  0,  0},
+    
+    {"xxxx",        "xxxx",         "xxxx",         99, 99, 99, 99}  // End of list
+};
+
 // -------------------------------------------------------------------------
 // Try to match our loaded game to a configuration my matching CRCs
 // -------------------------------------------------------------------------
@@ -602,39 +627,44 @@ void FindConfig(void)
     // below, we will fill in the config with data read from the file.
     // -----------------------------------------------------------------
     SetDefaultGameConfig();
-    
+
+    // Turrican I is unique... it requires a special SELECT_KEY hack to get past the title screen.
     extern u8 turrican_hack;
     turrican_hack = 0;
     if (strcasestr(CartFilename, "TURRICAN")     != 0) turrican_hack = 1;
     if (strcasestr(Drive8File, "TURRICAN")       != 0) turrican_hack = 1;
-                                                 
-    if (strcasestr(CartFilename, "MR HELI")      != 0) myConfig.ciaCycles = 1;
-    if (strcasestr(CartFilename, "MRHELI")       != 0) myConfig.ciaCycles = 1;
-    if (strcasestr(CartFilename, "MR. HELI")     != 0) myConfig.ciaCycles = 1;
-                                                 
-    if (strcasestr(Drive8File, "MR HELI")        != 0) myConfig.ciaCycles = 1;
-    if (strcasestr(Drive8File, "MRHELI")         != 0) myConfig.ciaCycles = 1;
-    if (strcasestr(Drive8File, "MR. HELI")       != 0) myConfig.ciaCycles = 1;
-                                                 
-    if (strcasestr(CartFilename, "FLYING SHARK") != 0) myConfig.ciaCycles = 6;
-    if (strcasestr(CartFilename, "FLYING_SHARK") != 0) myConfig.ciaCycles = 6;
-    if (strcasestr(CartFilename, "FLYINGSHARK")  != 0) myConfig.ciaCycles = 6;
-                                                 
-    if (strcasestr(Drive8File, "FLYING SHARK")   != 0) myConfig.ciaCycles = 6;
-    if (strcasestr(Drive8File, "FLYING_SHARK")   != 0) myConfig.ciaCycles = 6;
-    if (strcasestr(Drive8File, "FLYINGSHARK")    != 0) myConfig.ciaCycles = 6;
-
-    if (strcasestr(CartFilename, "BRUCE LEE")    != 0) myConfig.cpuCycles = 6;
-    if (strcasestr(CartFilename, "BRUCELEE")     != 0) myConfig.cpuCycles = 6;
     
-    if (strcasestr(Drive8File, "BRUCE LEE")      != 0) myConfig.cpuCycles = 6;
-    if (strcasestr(Drive8File, "BRUCELEE")       != 0) myConfig.cpuCycles = 6;
+    // -------------------------------------------------------------------------------------------------------
+    // Now apply some game-specific settings so the games play correctly without too much user intervention...
+    // -------------------------------------------------------------------------------------------------------
+    int idx=0;
+    while (true)
+    {
+        u8 bFound = 0;
+        if (gameDatabase[idx].trueDrive == 99) break;
+        
+        if (strcasestr(CartFilename, gameDatabase[idx].szKeyWord1) != 0) bFound = 1;
+        if (strcasestr(Drive8File,   gameDatabase[idx].szKeyWord1) != 0) bFound = 1;
+        if (strcasestr(Drive9File,   gameDatabase[idx].szKeyWord1) != 0) bFound = 1;
 
-    if (strcasestr(CartFilename, "ROGUE64")      != 0) myConfig.cpuCycles = 4;
-    if (strcasestr(Drive8File, "ROGUE64")        != 0) myConfig.cpuCycles = 4;
+        if (strcasestr(CartFilename, gameDatabase[idx].szKeyWord2) != 0) bFound = 1;
+        if (strcasestr(Drive8File,   gameDatabase[idx].szKeyWord2) != 0) bFound = 1;
+        if (strcasestr(Drive9File,   gameDatabase[idx].szKeyWord2) != 0) bFound = 1;
 
-    if (strcasestr(CartFilename, "GAUNTLET")      != 0) myConfig.cpuCycles = 5;
-    if (strcasestr(Drive8File, "GAUNTLET")        != 0) myConfig.cpuCycles = 5;
+        if (strcasestr(CartFilename, gameDatabase[idx].szKeyWord3) != 0) bFound = 1;
+        if (strcasestr(Drive8File,   gameDatabase[idx].szKeyWord3) != 0) bFound = 1;
+        if (strcasestr(Drive9File,   gameDatabase[idx].szKeyWord3) != 0) bFound = 1;
+        
+        if (bFound) // Apply the settings...
+        {
+            myConfig.trueDrive  = gameDatabase[idx].trueDrive;
+            myConfig.cpuCycles  = gameDatabase[idx].cpuCycles;
+            myConfig.ciaCycles  = gameDatabase[idx].ciaCycles;
+            myConfig.flopCycles = gameDatabase[idx].flopCycles;
+        }
+        
+        idx++;
+    }
 
     for (u16 slot=0; slot<MAX_CONFIGS; slot++)
     {
@@ -681,13 +711,13 @@ const struct options_t Option_Table[2][20] =
     {
         {"TRUE DRIVE",     {"DISABLE (FAST)", "ENABLED (SLOW)"},                                        &myConfig.trueDrive,   2},
         {"REU TYPE",       {"NONE", "REU-1764 256K"},                                                   &myConfig.reuType,     2},
-        {"TV  TYPE",       {"PAL 50HZ", "NTSC 60HZ"},                                                   &myConfig.tvType,      2},
         {"JOY PORT",       {"PORT 1", "PORT 2"},                                                        &myConfig.joyPort,     2},
         {"JOY MODE",       {"NORMAL", "SLIDE-N-GLIDE", "DIAGONALS"},                                    &myConfig.joyMode,     3},
         {"LCD JITTER",     {"NONE", "LIGHT", "HEAVY"},                                                  &myConfig.jitter,      3},
         {"DISK/FLASH",     {"READ NO SFX", "READ WITH SFX", "WRITE NO SFX", "WRITE WITH SFX"},          &myConfig.diskFlash,   4},
         {"CPU CYCLES",     {CPU_CYCLE_DELTA_STR},                                                       &myConfig.cpuCycles,   9},
         {"CIA CYCLES",     {CIA_CYCLE_DELTA_STR},                                                       &myConfig.ciaCycles,   9},
+        {"FLOP CYCLES",    {CPU_CYCLE_DELTA_STR},                                                       &myConfig.flopCycles,  9},
         {"POUND KEY",      {"POUND", "BACK ARROW", "UP ARROW", "C= COMMODORE"},                         &myConfig.poundKey,    4},
 
         {"D-PAD UP",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[0],  71},
@@ -741,7 +771,7 @@ u8 display_options_list(bool bFullDisplay)
         }
     }
 
-    DSPrint(1,23, 0, (char *)"  A or B=EXIT,   START=SAVE    ");
+    DSPrint(0,23, 0, (char *)" B=EXIT  X=DEFAULTS  START=SAVE ");
     return len;
 }
 
@@ -764,6 +794,8 @@ void GimliDSGameOptions(void)
         currentBrightness = 0; dimDampen = 0;
         WAITVBL;
     }
+
+    u8 opt_dampen = 0;
     while (!bDone)
     {
         currentBrightness = 0; dimDampen = 0;
@@ -771,6 +803,7 @@ void GimliDSGameOptions(void)
         if (keys_pressed != last_keys_pressed)
         {
             last_keys_pressed = keys_pressed;
+            opt_dampen = 10;
             if (keysCurrent() & KEY_UP) // Previous option
             {
                 sprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
@@ -812,8 +845,19 @@ void GimliDSGameOptions(void)
                 option_table = 0;   // Reset for next time
                 break;
             }
+            if ((keysCurrent() & KEY_X)) // Defaults
+            {
+                SetDefaultGameConfig();
+                option_table = 0;
+                optionHighlighted = 0;
+                idx=display_options_list(true);
+            }
         }
         swiWaitForVBlank();
+        if (opt_dampen)
+        {
+            if (--opt_dampen == 0) last_keys_pressed = 9999;
+        }
     }
 
     // Give a third of a second time delay...
