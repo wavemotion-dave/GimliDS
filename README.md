@@ -19,8 +19,9 @@ The GimliDS emulator is offered as-is, without any warranty.
 ## Features
 
   * Commodore 64 with full 6510 CPU emulation, 64K of base memory, VIC II and SID chip rendering
+  * PAL emulation at 50Hz provides the wide support for the C64 gaming scene.
   * REU-1764 emulated with 256K of expanded memory
-  * D64 disk file support for two drives (8, 9)
+  * D64 disk file support for two drives (8, 9) with TrueDrive emulation optional (slower but compatible).
   * CRT cartridge file support with writeback for EasyFlash (flash sectors) and GMOD2 (serial EE)
   * Virtual touch-screen keyboard to replicate the C64 look and feel
   * Full key mapping of C64 Keyboard / Joystick to any of the main DS keys
@@ -89,9 +90,9 @@ Lastly, a few games use custom loaders that require you to enable 'True Drive'. 
 a speed that is comparable to the original Commodore 1541 floppy drive - that is: extremely slow. It could take 2-5 minutes to load a game
 this way. But if the game requires it, that's your only option. Recommended to snap out a Save State so you don't have to repeat the loading.
 
-![image](./pngs/mainmenu.png) ![image](./pngs/diskmenu.png) ![image](./pngs/cartmenu.png) 
+![image](./pngs/mainmenu.png) ![image](./pngs/options.png)
 
-![image](./pngs/options.png)
+![image](./pngs/diskmenu.png) ![image](./pngs/cartmenu.png)
 
 ## Cartridge Support
 
@@ -146,7 +147,6 @@ To get some of the more popular games running as good as possible on the venerab
   * Turrican I - Due to slight timing inaccuracies, it's not normally possible to start the game but for this game only press and hold the SELECT button to get into the game proper (game will run at proper speed).
   * Turrican II - requires True Drive enabled (or load from cart).
   * Lode Runner - requires True Drive enabled (or load from cart).
-  * Sky Shark - load from Arcade Compilation Cart, I can't get the disk versions working either.
 
 ## Acknowledgements
 
@@ -188,10 +188,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 Version 1.6 release ??-Dec-2025 by wavemotion-dave
   * Reverted CPU Adjustment to +0 (the +3 was too aggressive for some games - such as the new Sherwood!)
   * New Favorites system implemented - press SELECT on game select to toggle LIKE/LOVE.
-  * NTSC support - can choose PAL (default) or NTSC on a per-game basis.
-  * New CIA timer adjustment for slight tweaks that some games need (e.g. Flying Shark)
-  * Improved CPU timing accuracy for 'borrowed cycles'
-  * Slight tweaks to disk icon flashing for read/writes.
+  * Improved CPU timing accuracy for 'borrowed cycles', floppy cycles, etc. More games run more correctly.
+  * Major reworking of configuration options, all config options are reset with this release.
+  * New CIA timer adjustment for slight tweaks that some games need (e.g. Flying Shark, Mr. Heli)
+  * New FLOPPY timer adjustment for slight tweaks that some games need (e.g. Dragon Wars now runs)
+  * Turrican I now works... press the DS SELECT key and hold for 1-2 seconds to get past the title screen.
+  * Slight tweaks to disk icon graphics for read/writes.
   * Slight optimization for another frame of performance.
 
 Version 1.5 release 08-Oct-2025 by wavemotion-dave

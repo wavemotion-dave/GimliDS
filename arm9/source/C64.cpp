@@ -995,7 +995,7 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
     TheCart->CartFrame();
 
     frames++;
-    while (GetTicks() < (((unsigned int)TICKS_PER_SEC/(unsigned int)(myConfig.tvType ? SCREEN_FREQ_NTSC:SCREEN_FREQ_PAL)) * (unsigned int)frames))
+    while (GetTicks() < (((unsigned int)TICKS_PER_SEC/(unsigned int)SCREEN_FREQ_PAL) * (unsigned int)frames))
     {
         if (bTurboWarp) break;
     }
@@ -1010,7 +1010,7 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
         frames_per_sec = 0;
     }
 
-    if (frames == (myConfig.tvType ? SCREEN_FREQ_NTSC:SCREEN_FREQ_PAL))
+    if (frames == SCREEN_FREQ_PAL)
     {
         frames = 0;
         StartTimers();
@@ -1399,6 +1399,14 @@ int C64::CIA_Delta(void)
     {
         retVal = myConfig.ciaCycles;
     }
+    else if (myConfig.ciaCycles == 9)
+    {
+        retVal = -1;
+    }
+    else if (myConfig.ciaCycles == 10)
+    {
+        retVal = -2;
+    }
     else
     {
         if (raster_y==0)   retVal = (20*myConfig.ciaCycles);
@@ -1422,16 +1430,16 @@ void C64::main_loop(void)
         
         // The order of calls is important here
         int cpu_cycles_to_execute = TheVIC->EmulateLine();
-        TheSID->EmulateLine((myConfig.tvType ? SID_CYCLES_PER_LINE_NTSC:SID_CYCLES_PER_LINE_PAL));
-        TheCIA1->EmulateLine((myConfig.tvType ? CIA_CYCLES_PER_LINE_NTSC:CIA_CYCLES_PER_LINE_PAL) + CIA_Delta());
-        TheCIA2->EmulateLine((myConfig.tvType ? CIA_CYCLES_PER_LINE_NTSC:CIA_CYCLES_PER_LINE_PAL) + CIA_Delta());
+        TheSID->EmulateLine(SID_CYCLES_PER_LINE_PAL);
+        TheCIA1->EmulateLine(CIA_CYCLES_PER_LINE_PAL + CIA_Delta());
+        TheCIA2->EmulateLine(CIA_CYCLES_PER_LINE_PAL + CIA_Delta());
 
         // -----------------------------------------------------------------
         // TrueDrive is more complicated as we must interleave the two CPUs
         // -----------------------------------------------------------------
         if (TheDrivePrefs.TrueDrive)
         {
-            int cycles_1541 = FLOPPY_CYCLES_PER_LINE + CycleDeltas[myConfig.cpuCycles];
+            int cycles_1541 = FLOPPY_CYCLES_PER_LINE + CycleDeltas[myConfig.flopCycles] + CycleDeltas[myConfig.cpuCycles];
             TheCPU1541->CountVIATimers(cycles_1541);
 
             if (!TheCPU1541->Idle)
