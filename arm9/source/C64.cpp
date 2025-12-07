@@ -1003,7 +1003,7 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
     frames_per_sec++;
 
     extern u16 DSIvBlanks;
-    if (DSIvBlanks >= 60)
+    if (DSIvBlanks >= SCREEN_FREQ_PAL)
     {
         DSIvBlanks = 0;
         TheDisplay->DisplayStatusLine((int)frames_per_sec);

@@ -387,6 +387,9 @@ ITCM_CODE void vblankDS(void)
             last_led_states = 0;
         }        
     }    
+    
+    #define VCOUNT *((u16*)(0x4000006))
+    VCOUNT = (VCOUNT - 50);  // Trickery! This will put the DSi back 50 scanlines and elongate the vBLANK period so it matches a 50Hz refresh rate (262 vs 312 scanlines)
 }
 
 // Toggle full 320x256
