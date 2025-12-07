@@ -274,14 +274,15 @@ void MOS6581::SetState(MOS6581State *ss)
  **  Renderer for digital SID emulation (SIDTYPE_DIGITAL)
  **/
 
-const uint32 SAMPLE_FREQ        = 15600;                                  // NDS Sample Rate - 50 frames x 312 scanlines = 15600 samples per second - normal sample rate for older DS hardware
 const uint32 SID_FREQ           = 985248;                                 // SID frequency in Hz
+
+const uint32 SAMPLE_FREQ        = (21000);                                // NDS Sample Rate - 50 frames x 312 scanlines = 15600 samples per second - normal sample rate for older DS hardware
 const uint32 SID_CYCLES_FIX     = ((SID_FREQ << 11)/SAMPLE_FREQ)<<5;      // # of SID clocks per sample frame * 65536
 
-const uint32 SAMPLE_FREQ_DSI    = 3*15600;                                // NDS Sample Rate - 50 frames x 312 scanlines = 15600 samples per second - doubled sample rate
+const uint32 SAMPLE_FREQ_DSI    = (48000);                                // NDS Sample Rate - 50 frames x 312 scanlines = 15600 samples per second - improved sample rate for DSi and above
 const uint32 SID_CYCLES_FIX_DSI = ((SID_FREQ << 11)/SAMPLE_FREQ_DSI)<<5;  // # of SID clocks per sample frame * 65536
 
-const int SAMPLE_BUF_SIZE       = 0x138*4;                                // Size of buffer for sampled voice (double buffered)
+const int SAMPLE_BUF_SIZE       = 0x138*4;                                // Size of buffer for sampled voice (double buffered for DS-Lite, quad-buffered for DSi)
 
 uint8 sample_vol_filt[SAMPLE_BUF_SIZE] __attribute__((section(".dtcm"))); // Buffer for sampled volumes and filter bits shifted up
 int sample_in_ptr                      __attribute__((section(".dtcm"))); // Index in sample_vol_filt[] for writing
@@ -859,7 +860,7 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
     FixPoint cd1 = d1, cd2 = d2, cg1 = g1, cg2 = g2;
 
     // Index in sample_vol_filt[] for reading, 16.16 fixed
-    uint32 sample_count = (sample_in_ptr + SAMPLE_BUF_SIZE/(isDSiMode() ? 2:4)) << 16;
+    uint32 sample_count = (sample_in_ptr + (isDSiMode() ? SAMPLE_BUF_SIZE : (SAMPLE_BUF_SIZE/2))/2) << 16;
     
     // Output DC offset
  	int32_t dc_offset = 0x100000;
@@ -873,7 +874,7 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
  		uint8_t res_filt = sample_vol_filt[(sample_count >> 16) % (isDSiMode() ? SAMPLE_BUF_SIZE : (SAMPLE_BUF_SIZE/2))] >> 4;
                 
         // calculate sampled voice
-        sample_count += ((0x138 * (isDSiMode() ? 100:50)) << 16) / (isDSiMode() ? SAMPLE_FREQ_DSI : SAMPLE_FREQ);
+        sample_count += ((TOTAL_RASTERS_PAL * SCREEN_FREQ_PAL) << 16) / (isDSiMode() ? SAMPLE_FREQ_DSI : SAMPLE_FREQ);
         int32_t sum_output = 0;
         int32 sum_output_filter = 0;
 

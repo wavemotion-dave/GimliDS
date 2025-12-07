@@ -80,7 +80,10 @@ void floppy_soundfx(u8 is_write)
 
     if (is_write)
     {
-        DSPrint(24, 21, 2, (char*)"#$%"); // Blue Activity Label (write)
+        if (bKeyboardShowing)
+        {
+            DSPrint(24, 21, 2, (char*)"#$%"); // Blue Activity Label (write)
+        }
         dampen_drive_led = 40; // Turn off drive LED (back to white) in 3/4 a second
     }
     else
@@ -91,7 +94,10 @@ void floppy_soundfx(u8 is_write)
         }
         else
         {
-            DSPrint(24, 21, 2, (char*)"@AB"); // Green Activity Label (read or other access)
+            if (bKeyboardShowing)
+            {
+                DSPrint(24, 21, 2, (char*)"@AB"); // Green Activity Label (read or other access)
+            }
             dampen_drive_led = 40; // Turn off drive LED (back to white) in 3/4 a second
         }
     }
@@ -374,7 +380,10 @@ ITCM_CODE void vblankDS(void)
     {
         if (--dampen_drive_led == 0)
         {
-            DSPrint(24, 21, 2, (char*)" !\""); // White Idle Drive Label
+            if (bKeyboardShowing)
+            {
+                DSPrint(24, 21, 2, (char*)" !\""); // White Idle Drive Label
+            }
             last_led_states = 0;
         }        
     }    

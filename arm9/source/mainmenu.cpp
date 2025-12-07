@@ -614,7 +614,7 @@ const GAME_DATABASE gameDatabase[]
     {"TURRICAN II", "TURRICAN 2",   "TURRICAN2",    1,  0,  0,  0},
     {"LODE RUN",    "LODE_RUN",     "LODERUN",      1,  0,  0,  0},
     {"DEVOLUTION",  "DEVOLUTION",   "DEVOLUTION",   1,  0,  0,  0},
-    
+   
     {"xxxx",        "xxxx",         "xxxx",         99, 99, 99, 99}  // End of list
 };
 

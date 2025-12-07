@@ -189,6 +189,7 @@ Version 1.6 release ??-Dec-2025 by wavemotion-dave
   * Reverted CPU Adjustment to +0 (the +3 was too aggressive for some games - such as the new Sherwood!)
   * New Favorites system implemented - press SELECT on game select to toggle LIKE/LOVE.
   * Improved CPU timing accuracy for 'borrowed cycles', floppy cycles, etc. More games run more correctly.
+  * Improved SID emulation timing - DS-Lite gets a nice sound improvement and fixed bug on DSi for improved rendering.
   * Major reworking of configuration options, all config options are reset with this release.
   * New CIA timer adjustment for slight tweaks that some games need (e.g. Flying Shark, Mr. Heli)
   * New FLOPPY timer adjustment for slight tweaks that some games need (e.g. Dragon Wars now runs)
