@@ -90,6 +90,9 @@ Lastly, a few games use custom loaders that require you to enable 'True Drive'. 
 a speed that is comparable to the original Commodore 1541 floppy drive - that is: extremely slow. It could take 2-5 minutes to load a game
 this way. But if the game requires it, that's your only option. Recommended to snap out a Save State so you don't have to repeat the loading.
 
+Speaking of custom/fast loaders - if the game offers you the ability to disable the fastloader, take it! The standard loader is highly optmized 
+in the emulator itself and custom/fast loaders are only going to cause you problems.
+
 ![image](./pngs/mainmenu.png) ![image](./pngs/options.png)
 
 ![image](./pngs/diskmenu.png) ![image](./pngs/cartmenu.png)
