@@ -1540,7 +1540,11 @@ void ImageDrive::mem_read_cmd(uint16 adr, uint8 len)
         error_ptr = (char *)ram + (adr & 0x7ff);
     } else if (adr >= 0xc000) {
         // Read from ROM
-        error_ptr = (char *)(TheC64->ROM1541) + (adr - 0xc000);
+        if (TheDrivePrefs.TrueDrive)
+        {
+            extern uint8_t myROM1541[];
+            error_ptr = (char *)(myROM1541) + (adr - 0xc000);
+        }
     } else {
         unsupp_cmd();
         memset(error_buf, 0, len);

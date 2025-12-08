@@ -60,7 +60,9 @@ uint8 myRAM[C64_RAM_SIZE];
 uint8 myKERNAL[KERNAL_ROM_SIZE];
 uint8 myBASIC[BASIC_ROM_SIZE];
 uint8 myRAM1541[DRIVE_RAM_SIZE] __attribute__((section(".dtcm")));  // Small enough to keep in fast memory
+uint8 myROM1541[DRIVE_ROM_SIZE];
 uint8 myCOLOR[0x400]            __attribute__((section(".dtcm")));  // Small enough to keep in fast memory
+uint8 myCHAR[CHAR_ROM_SIZE];
 
 uint8 bTurboWarp __attribute__((section(".dtcm"))) = 0; // Run the CPU as fast as possible
 uint8 cart_in    __attribute__((section(".dtcm"))) = 0; // Will be set to '1' if CART is inserted
@@ -72,6 +74,7 @@ C64 *gTheC64 = nullptr; // For occasional access in other classes without having
 u8 CompressBuffer[300*1024]; //300K more than enough (might need to compress RDU at 256K)
 
 u8 turrican_hack = 0;
+int sync_frames = 0;
 
 #define SNAPSHOT_VERSION 4
 
@@ -94,10 +97,10 @@ C64::C64()
     RAM = myRAM;
     Basic = myBASIC;
     Kernal = myKERNAL;
-    Char = new uint8[CHAR_ROM_SIZE];
+    Char = myCHAR;
     Color = myCOLOR;
     RAM1541 = myRAM1541;
-    ROM1541 = new uint8[DRIVE_ROM_SIZE];
+    ROM1541 = myROM1541;
 
     // Create the chips
     TheCPU = &myCPU;
@@ -187,9 +190,6 @@ C64::~C64()
     delete TheCPU1541;
     delete TheDisplay;
     delete TheREU;
-
-    delete[] Char;
-    delete[] ROM1541;
 
     c64_dtor();
 }
@@ -975,6 +975,7 @@ void kbd_buf_update(C64 *TheC64)
 /*
  *  Vertical blank: Poll keyboard and joysticks, update window
  */
+volatile u16 last_sync_frames = 33211;
 
 ITCM_CODE void C64::VBlank(bool draw_frame)
 {
@@ -995,14 +996,19 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
     TheCart->CartFrame();
 
     frames++;
-    while (GetTicks() < (((unsigned int)TICKS_PER_SEC/(unsigned int)SCREEN_FREQ_PAL) * (unsigned int)frames))
+    
+    // ----------------------------------------------------------------------------------
+    // Sync to the 50Hz DS framerate to provide for a smooth mostly tear-free display...
+    // ----------------------------------------------------------------------------------
+    extern volatile u16 DSIvBlanks;
+    while (last_sync_frames == DSIvBlanks)
     {
         if (bTurboWarp) break;
     }
+    last_sync_frames = DSIvBlanks;
 
     frames_per_sec++;
 
-    extern u16 DSIvBlanks;
     if (DSIvBlanks >= SCREEN_FREQ_PAL)
     {
         DSIvBlanks = 0;
@@ -1365,12 +1371,12 @@ void C64::InsertCart(char *filename)
 	}
     else
     {
-        DSPrint(0, 0, 6, (char*)errBuffer);
+        DSPrint(0, 0, 0, (char*)errBuffer);
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-        DSPrint(0, 0, 6, (char*)"                              ");
+        DSPrint(0, 0, 0, (char*)"                              ");
     }
 }
 

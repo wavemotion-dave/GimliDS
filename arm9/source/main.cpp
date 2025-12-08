@@ -114,16 +114,16 @@ void Frodo::load_rom_files()
     {
         BottomScreenMainMenu();
 
-        DSPrint(0,5, 6, (char*) "ONE OR MORE BIOS ROMS NOT FOUND ");
-        DSPrint(0,7, 6, (char*) "THIS EMULATOR REQUIRES ORIGINAL ");
-        DSPrint(0,8, 6, (char*) "C64 BIOS ROMS AS FOLLOWS:       ");
-        DSPrint(0,10,6, (char*) "KERNAL.ROM   8K  CRC32:dbe3e7c7 ");
-        DSPrint(0,11,6, (char*) "BASIC.ROM    8K  CRC32:f833d117 ");
-        DSPrint(0,12,6, (char*) "CHAR.ROM     4K  CRC32:ec4272ee ");
-        DSPrint(0,13,6, (char*) "1541.ROM    16K  CRC32:899fa3c5 ");
-        DSPrint(0,15,6, (char*) "PLACE THESE EXACTLY NAMED ROMS  ");
-        DSPrint(0,16,6, (char*) "IN /ROMS/BIOS or /ROMS/C64 or   ");
-        DSPrint(0,17,6, (char*) "IN THE SAME DIRECTORY AS THE EMU");
+        DSPrint(0,5, 0, (char*) "ONE OR MORE BIOS ROMS NOT FOUND ");
+        DSPrint(0,7, 0, (char*) "THIS EMULATOR REQUIRES ORIGINAL ");
+        DSPrint(0,8, 0, (char*) "C64 BIOS ROMS AS FOLLOWS:       ");
+        DSPrint(0,10,0, (char*) "KERNAL.ROM   8K  CRC32:dbe3e7c7 ");
+        DSPrint(0,11,0, (char*) "BASIC.ROM    8K  CRC32:f833d117 ");
+        DSPrint(0,12,0, (char*) "CHAR.ROM     4K  CRC32:ec4272ee ");
+        DSPrint(0,13,0, (char*) "1541.ROM    16K  CRC32:899fa3c5 ");
+        DSPrint(0,15,0, (char*) "PLACE THESE EXACTLY NAMED ROMS  ");
+        DSPrint(0,16,0, (char*) "IN /ROMS/BIOS or /ROMS/C64 or   ");
+        DSPrint(0,17,0, (char*) "IN THE SAME DIRECTORY AS THE EMU");
         while(1) asm("nop");
     }
 }

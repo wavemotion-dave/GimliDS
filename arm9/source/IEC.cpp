@@ -626,11 +626,17 @@ static void parse_block_cmd_args(const uint8 *p, int &arg1, int &arg2, int &arg3
 
 void Drive::execute_cmd(const uint8 *cmd, int cmd_len)
 {
+    if (!cmd || (cmd_len < 1))
+    {
+        set_error(ERR_SYNTAX31);
+        return;
+    }
+
 	// Strip trailing CRs
 	while (cmd_len > 0 && cmd[cmd_len - 1] == 0x0d) {
 		cmd_len--;
 	}
-
+    
 	// Find token delimiters
 	const uint8_t *colon = (const uint8_t *)memchr(cmd, ':', cmd_len);
 	const uint8_t *equal = colon ? (const uint8_t *)memchr(colon, '=', cmd_len - (colon - cmd)) : nullptr;

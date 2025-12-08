@@ -113,6 +113,7 @@ private:
 
     void do_adc(uint8 byte);
     void do_sbc(uint8 byte);
+    void do_arr(uint8 byte);
 
     uint16_t pc;
 

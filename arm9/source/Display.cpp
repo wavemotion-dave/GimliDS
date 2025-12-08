@@ -501,19 +501,19 @@ __attribute__ ((noinline)) ITCM_CODE void C64Display::UpdateRasterLine(int raste
 //*****************************************************************************
 // Displays a message on the screen
 //*****************************************************************************
-void DSPrint(int iX,int iY,int iScr,char *szMessage)
+void DSPrint(int iX,int iY,int highlight,char *szMessage)
 {
   u16 *pusScreen,*pusMap;
   u16 usCharac;
   char *pTrTxt=szMessage;
 
   pusScreen=(u16*) bgGetMapPtr(bg1b) + iX + (iY<<5);
-  pusMap=(u16*) (iScr == 6 ? bgGetMapPtr(bg0b)+24*32 : (iScr == 0 ? bgGetMapPtr(bg0b)+24*32 : bgGetMapPtr(bg0b)+26*32 ));
+  pusMap=(u16*) (highlight ? (bgGetMapPtr(bg0b)+26*32) : (bgGetMapPtr(bg0b)+24*32));
 
   while((*pTrTxt)!='\0' )
   {
     char ch = *pTrTxt++;
-    if (ch >= 'a' && ch <= 'z') ch -= 32;   // Faster than strcpy/strtoupper
+    if (ch >= 'a') ch -= 32;                // Faster than strcpy/strtoupper
 
     if (((ch)<' ') || ((ch)>'_'))
       usCharac=*(pusMap);                   // Will render as a vertical bar
@@ -521,6 +521,7 @@ void DSPrint(int iX,int iY,int iScr,char *szMessage)
       usCharac=*(pusMap+(ch)-' ');          // Number from 0-9 or punctuation
     else
       usCharac=*(pusMap+32+(ch)-'@');       // Character from A-Z
+      
     *pusScreen++=usCharac;
   }
 }
@@ -568,7 +569,7 @@ void show_cartstatus(void)
         }
         else
         {
-            DSPrint(22, 21, 6, (char*)" ");
+            DSPrint(22, 21, 0, (char*)" ");
         }
     }
 }
@@ -622,11 +623,11 @@ void C64Display::DisplayStatusLine(int speed)
         for (int idx=0; idx<16; idx++)
         {
             sprintf(tmp, "D%02d: %-9d        [%08X]", idx, debug[idx], debug[idx]);
-            DSPrint(0, 1+idx, 6, tmp);
+            DSPrint(0, 1+idx, 0, tmp);
         }
 
         sprintf(tmp, "FPS %3d", speed);
-        DSPrint(25, 0, 6, tmp);
+        DSPrint(25, 0, 0, tmp);
     }
 }
 
@@ -1088,7 +1089,7 @@ char tmp[256];
 long int ShowRequester(const char *a, const char *b, const char *)
 {
     sprintf(tmp, "%s: %s\n", a, b);
-    DSPrint(0, 0, 6, tmp);
+    DSPrint(0, 0, 0, tmp);
     return 1;
 }
 

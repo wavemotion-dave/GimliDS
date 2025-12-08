@@ -51,7 +51,7 @@ extern C64 *TheC64;
 
 // Determine whether path name refers to a directory
 extern bool IsDirectory(const char *path);
-extern void DSPrint(int iX,int iY,int iScr,char *szMessage);
+extern void DSPrint(int iX,int iY,int highlight,char *szMessage);
 extern void kbd_buf_reset(void);
 
 #endif

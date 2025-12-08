@@ -178,13 +178,13 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
         szName[28] = 0; // Needs to be 2 chars shorter with brackets
         sprintf(szName2, "[%s]",szName);
         sprintf(szName,"%-30s",szName2);
-        DSPrint(1,4+ucBcl,(ucSel == ucBcl ? 2 :  0),szName);
+        DSPrint(1,4+ucBcl,(ucSel == ucBcl ? 2:0),szName);
         DSPrint(0,4+ucBcl,0,(char*)" ");
       }
       else
       {
         sprintf(szName,"%-30s",strupr(szName));
-        DSPrint(1,4+ucBcl,(ucSel == ucBcl ? 2 : 0 ),szName);
+        DSPrint(1,4+ucBcl,(ucSel == ucBcl ? 2:0 ),szName);
         
         if (IsFavorite(gpFic[ucGame].szName))
         {
@@ -198,7 +198,7 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
     }
     else
     {
-        DSPrint(0,4+ucBcl,(ucSel == ucBcl ? 2 : 0 ),(char *)"                               ");
+        DSPrint(0,4+ucBcl,(ucSel == ucBcl ? 2:0 ),(char *)"                               ");
     }
   }
 }
@@ -609,37 +609,37 @@ void DisplayFileNameDiskette(void)
 {
     char tmp[34];
 
-    DSPrint(5,6,6,  (char*)"                           ");
-    DSPrint(5,10,6, (char*)"                           ");
+    DSPrint(5,6,0,  (char*)"                           ");
+    DSPrint(5,10,0, (char*)"                           ");
     if (strlen(Drive8File) > 1)
     {
-        DSPrint(5,5,6, (char *)"DRIVE 8 IS MOUNTED WITH:");
+        DSPrint(5,5,0, (char *)"DRIVE 8 IS MOUNTED WITH:");
         strncpy(tmp, Drive8File, 27); tmp[26]=0;
-        DSPrint(5,6,6, tmp);
+        DSPrint(5,6,0, tmp);
     }
     else
     {
-        DSPrint(5,5,6, (char *)"DRIVE 8 IS NOT MOUNTED ");
+        DSPrint(5,5,0, (char *)"DRIVE 8 IS NOT MOUNTED ");
     }
     
     if (strlen(Drive9File) > 1)
     {
-        DSPrint(5,9,6, (char *)"DRIVE 9 IS MOUNTED WITH:");
+        DSPrint(5,9,0, (char *)"DRIVE 9 IS MOUNTED WITH:");
         strncpy(tmp, Drive9File, 27); tmp[26]=0;
-        DSPrint(5,10,6, tmp);
+        DSPrint(5,10,0, tmp);
     }
     else
     {
-        DSPrint(5,9,6, (char *)"DRIVE 9 IS NOT MOUNTED ");
+        DSPrint(5,9,0, (char *)"DRIVE 9 IS NOT MOUNTED ");
     }
     
     if (myConfig.trueDrive)
     {
-        DSPrint(0,22,6, (char *)"  TRUE DRIVE IS ENABLED (SLOW) ");
+        DSPrint(0,22,0, (char *)"  TRUE DRIVE IS ENABLED (SLOW) ");
     }
     else
     {
-        DSPrint(0,22,6, (char *)" TRUE DRIVE IS DISABLED (FAST) ");
+        DSPrint(0,22,0, (char *)" TRUE DRIVE IS DISABLED (FAST) ");
     }
 }
 
@@ -647,25 +647,25 @@ void DisplayFileNameCartridge(void)
 {
     char tmp[34];
 
-    DSPrint(7,5,6, (char*)"                         ");
-    DSPrint(7,7,6, (char*)"                         ");
+    DSPrint(7,5,0, (char*)"                         ");
+    DSPrint(7,7,0, (char*)"                         ");
     if (strlen(CartFilename) > 1)
     {
-        DSPrint(7,5,6, (char *)"CARTRIDGE IS MOUNTED AS:");
+        DSPrint(7,5,0, (char *)"CARTRIDGE IS MOUNTED AS:");
         strncpy(tmp, CartFilename, 25); tmp[24]=0;
-        DSPrint(7,7,6, tmp);
+        DSPrint(7,7,0, tmp);
         if (strlen(CartFilename) > 28)
         {
             strncpy(tmp, CartFilename+24, 25); tmp[24]=0;
-            DSPrint(7,8,6, tmp);
+            DSPrint(7,8,0, tmp);
         }
         
         sprintf(tmp, "TYPE: %s", CartType);
-        DSPrint(16-(strlen(tmp)/2),22,6, tmp);
+        DSPrint(16-(strlen(tmp)/2),22,0, tmp);
     }
     else
     {
-        DSPrint(7,5,6, (char *)"CARTRIDGE IS NOT MOUNTED");
+        DSPrint(7,5,0, (char *)"CARTRIDGE IS NOT MOUNTED");
     }
 }
 
@@ -753,12 +753,12 @@ void DiskMenuShow(bool bClearScreen, u8 sel)
     menu = &disk_menu;
 
     // Display the menu title
-    DSPrint(15-(strlen(menu->title)/2), menu->start_row, 6, menu->title);
+    DSPrint(15-(strlen(menu->title)/2), menu->start_row, 0, menu->title);
 
     // And display all of the menu items
     while (menu->menulist[diskette_menu_items].menu_action != MENU_ACTION_END)
     {
-        DSPrint(16-(strlen(menu->menulist[diskette_menu_items].menu_string)/2), menu->start_row+2+diskette_menu_items, (diskette_menu_items == sel) ? 7:6, menu->menulist[diskette_menu_items].menu_string);
+        DSPrint(16-(strlen(menu->menulist[diskette_menu_items].menu_string)/2), menu->start_row+2+diskette_menu_items, (diskette_menu_items == sel) ? 2:0, menu->menulist[diskette_menu_items].menu_string);
         diskette_menu_items++;
     }
 
@@ -875,11 +875,11 @@ u8 DisketteMenu(C64 *the_c64)
                     }
                     else
                     {
-                        DSPrint(0, 20, 6, (char*)"       NO GAME IS LOADED      ");
+                        DSPrint(0, 20, 0, (char*)"       NO GAME IS LOADED      ");
                         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
                         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
                         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-                        DSPrint(0, 20, 6, (char*)"                              ");
+                        DSPrint(0, 20, 0, (char*)"                              ");
                     }
                     break;
                     
@@ -935,12 +935,12 @@ void CartMenuShow(bool bClearScreen, u8 sel)
     menu = &cart_menu;
 
     // Display the menu title
-    DSPrint(15-(strlen(menu->title)/2), menu->start_row, 6, menu->title);
+    DSPrint(15-(strlen(menu->title)/2), menu->start_row, 0, menu->title);
 
     // And display all of the menu items
     while (menu->menulist[diskette_menu_items].menu_action != MENU_ACTION_END)
     {
-        DSPrint(16-(strlen(menu->menulist[diskette_menu_items].menu_string)/2), menu->start_row+2+diskette_menu_items, (diskette_menu_items == sel) ? 7:6, menu->menulist[diskette_menu_items].menu_string);
+        DSPrint(16-(strlen(menu->menulist[diskette_menu_items].menu_string)/2), menu->start_row+2+diskette_menu_items, (diskette_menu_items == sel) ? 2:0, menu->menulist[diskette_menu_items].menu_string);
         diskette_menu_items++;
     }
 

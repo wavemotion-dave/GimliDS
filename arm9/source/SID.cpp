@@ -42,9 +42,9 @@
  *  - Lots of empirically determined constants in the filter calculations
  */
 
+#include <nds.h>
 #include "sysdeps.h"
 #include "VIC.h"
-#include <nds.h>
 #include <maxmod9.h>
 #include "soundbank.h"
 #include "soundbank_bin.h"
@@ -1004,11 +1004,17 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
         ext_output >>= 13;
 
 		// Write to buffer
- 		if (ext_output > 0x7fff) {	// Using filters can cause minor clipping
- 			ext_output = 0x7fff;
- 		} else if (ext_output < -0x8000) {
- 			ext_output = -0x8000;
- 		}
+        if (ext_output & 0xFFFF8000) // Check clipping only if some high bits are set...
+        {
+            if (ext_output & 0x80000000) // Is negative?
+            {
+                if (ext_output < -0x8000) ext_output = -0x8000;
+            }
+            else // Had to be above 32K
+            {
+                ext_output = 0x7fff;
+            }
+        }
         
         *buf++ = ext_output;
     }

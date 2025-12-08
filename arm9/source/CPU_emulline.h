@@ -1296,23 +1296,7 @@
             ENDOP(2);
 
         case 0x6b:  // ARR #imm
-            tmp2 = read_byte_imm() & a;
-            a = (c_flag ? (tmp2 >> 1) | 0x80 : tmp2 >> 1);
-            if (!d_flag) {
-                set_nz(a);
-                c_flag = a & 0x40;
-                v_flag = (a & 0x40) ^ ((a & 0x20) << 1);
-            } else {
-                n_flag = c_flag ? 0x80 : 0;
-                z_flag = a;
-                v_flag = (tmp2 ^ a) & 0x40;
-                if ((tmp2 & 0x0f) + (tmp2 & 0x01) > 5) {
-                    a = (a & 0xf0) | ((a + 6) & 0x0f);
-                }
-                if ((c_flag = ((tmp2 + (tmp2 & 0x10)) & 0x1f0) > 0x50) != 0) {
-                    a += 0x60;
-                }
-            }
+            do_arr(read_byte_imm());
             ENDOP(2);
 
         case 0x8b:  // ANE #imm

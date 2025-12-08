@@ -102,6 +102,7 @@ private:
 
     void do_adc(uint8 byte);
     void do_sbc(uint8 byte);
+    void do_arr(uint8 byte);
 
     uint8 *ram;             // Pointer to main RAM
     uint8 *rom;             // Pointer to ROM

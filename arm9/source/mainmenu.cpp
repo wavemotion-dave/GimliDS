@@ -35,7 +35,6 @@
 #include "lzav.h"
 #include "printf.h"
 
-extern C64 *TheC64;
 extern int bg0b, bg1b;
 extern char strBuf[];
 u32 file_crc = 0x00000000;
@@ -45,7 +44,7 @@ extern void BottomScreenMainMenu(void);
 extern "C" char *strcasestr(const char *haystack, const char *needle);
 
 // Used with myConfig.cpuCycles and myConfig.ciaCycles
-s16 CycleDeltas[] __attribute__((section(".dtcm"))) = {0,1,2,3,4,5,6,-2,-1};
+s16 CycleDeltas[] __attribute__((section(".dtcm"))) = {0,1,2,3,4,5,6,10,-2,-1};
 
 static u16 nds_key __attribute__((section(".dtcm")));
 
@@ -116,12 +115,12 @@ void MainMenuShow(bool bClearScreen, u8 sel)
     menu = &main_menu;
 
     // Display the menu title
-    DSPrint(15-(strlen(menu->title)/2), menu->start_row, 6, menu->title);
+    DSPrint(15-(strlen(menu->title)/2), menu->start_row, 0, menu->title);
 
     // And display all of the menu items
     while (menu->menulist[main_menu_items].menu_action != MENU_ACTION_END)
     {
-        DSPrint(16-(strlen(menu->menulist[main_menu_items].menu_string)/2), menu->start_row+2+main_menu_items, (main_menu_items == sel) ? 7:6, menu->menulist[main_menu_items].menu_string);
+        DSPrint(16-(strlen(menu->menulist[main_menu_items].menu_string)/2), menu->start_row+2+main_menu_items, (main_menu_items == sel) ? 2:0, menu->menulist[main_menu_items].menu_string);
         main_menu_items++;
     }
 }
@@ -214,11 +213,11 @@ u8 MainMenu(C64 *the_c64)
                     }
                     else
                     {
-                        DSPrint(0, 18, 6, (char*)"       NO GAME IS LOADED      ");
+                        DSPrint(0, 18, 0, (char*)"       NO GAME IS LOADED      ");
                         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
                         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
                         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-                        DSPrint(0, 18, 6, (char*)"                              ");
+                        DSPrint(0, 18, 0, (char*)"                              ");
                     }
                     break;
 
@@ -251,16 +250,16 @@ u8 MainMenu(C64 *the_c64)
                     theDrivePath[len-1] = 's';
                     if (the_c64->SaveSnapshot(theDrivePath) == false)
                     {
-                        DSPrint(0, 18, 6, (char*)"      UNABLE TO SAVE STATE     ");
+                        DSPrint(0, 18, 0, (char*)"      UNABLE TO SAVE STATE     ");
                     }
                     else
                     {
-                        DSPrint(0, 18, 6, (char*)"      .GSS SNAPSHOT SAVED      ");
+                        DSPrint(0, 18, 0, (char*)"      .GSS SNAPSHOT SAVED      ");
                     }
                     WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
                     WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
                     WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-                    DSPrint(0, 18, 6, (char*)"                               ");
+                    DSPrint(0, 18, 0, (char*)"                               ");
                     bExitMenu = true;
                 }
                     break;
@@ -282,11 +281,11 @@ u8 MainMenu(C64 *the_c64)
                     theDrivePath[len-1] = 's';
                     if (the_c64->LoadSnapshot(theDrivePath) == false)
                     {
-                        DSPrint(0, 18, 6, (char*)"    NO VALID SNAPSHOT FOUND    ");
+                        DSPrint(0, 18, 0, (char*)"    NO VALID SNAPSHOT FOUND    ");
                         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
                         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
                         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-                        DSPrint(0, 18, 6, (char*)"                               ");
+                        DSPrint(0, 18, 0, (char*)"                               ");
                     }
                     bExitMenu = true;
                 }
@@ -610,6 +609,8 @@ const GAME_DATABASE gameDatabase[]
     {"ROGUE64",     "ROGUE 64",     "ROGUE-64",     0,  4,  0,  0},
     {"GAUNTLET",    "GAUNTLET",     "GAUNTLET",     0,  5,  0,  0},
     {"ARMY MOVE",   "ARMY_MOVE",    "ARMYMOV",      0,  3,  0,  0},
+    {"BLACK TIG",   "BLACK_TIG",    "BLACKTIG",     0,  4,  0,  0},
+    {"BIONIC",      "BIONIC",       "BIONIC",       0,  1,  0,  0},
     {"DRAGON WAR",  "DRAGON_WAR",   "DRGWARS",      0,  0,  0,  1},
     {"TURRICAN II", "TURRICAN 2",   "TURRICAN2",    1,  0,  0,  0},
     {"LODE RUN",    "LODE_RUN",     "LODERUN",      1,  0,  0,  0},
@@ -693,7 +694,7 @@ struct options_t
     u8           option_max;
 };
 
-#define CPU_CYCLE_DELTA_STR  "+0","+1","+2","+3","+4","+5","+6","-2","-1",
+#define CPU_CYCLE_DELTA_STR  "+0","+1","+2","+3","+4","+5","+6","+10","-2","-1",
 #define CIA_CYCLE_DELTA_STR  "+0", "+1 SCANLINE","+2 SCANLINE","+60 FRAME","+80 FRAME","+100 FRAME","+120 FRAME","+140 FRAME","+160 FRAME", "-1 SCANLINE","-2 SCANLINE",
 
 #define KEY_MAP_OPTIONS "JOY FIRE", "JOY UP", "JOY DOWN", "JOY LEFT", "JOY RIGHT", "JOY AUTOFIRE",\
@@ -716,9 +717,9 @@ const struct options_t Option_Table[2][20] =
         {"JOY MODE",       {"NORMAL", "SLIDE-N-GLIDE", "DIAGONALS"},                                    &myConfig.joyMode,     3},
         {"LCD JITTER",     {"NONE", "LIGHT", "HEAVY"},                                                  &myConfig.jitter,      3},
         {"DISK/FLASH",     {"READ NO SFX", "READ WITH SFX", "WRITE NO SFX", "WRITE WITH SFX"},          &myConfig.diskFlash,   4},
-        {"CPU CYCLES",     {CPU_CYCLE_DELTA_STR},                                                       &myConfig.cpuCycles,   9},
+        {"CPU CYCLES",     {CPU_CYCLE_DELTA_STR},                                                       &myConfig.cpuCycles,   10},
         {"CIA CYCLES",     {CIA_CYCLE_DELTA_STR},                                                       &myConfig.ciaCycles,   11},
-        {"FLOP CYCLES",    {CPU_CYCLE_DELTA_STR},                                                       &myConfig.flopCycles,  9},
+        {"FLOP CYCLES",    {CPU_CYCLE_DELTA_STR},                                                       &myConfig.flopCycles,  10},
         {"POUND KEY",      {"POUND", "BACK ARROW", "UP ARROW", "C= COMMODORE"},                         &myConfig.poundKey,    4},
 
         {"D-PAD UP",       {KEY_MAP_OPTIONS},                                                           &myConfig.key_map[0],  71},
@@ -888,8 +889,8 @@ void debug_printf(const char * str, ...)
         szTemp[i+1] = 0;
     }
 
-    DSPrint(0, 0, 6, (char*)szTemp);
+    DSPrint(0, 0, 0, (char*)szTemp);
     for (int i=0; i<64; i++) {WAITVBL;}
-    DSPrint(0, 0, 6, (char*)"                              ");
+    DSPrint(0, 0, 0, (char*)"                              ");
 }
 

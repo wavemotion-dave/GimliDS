@@ -194,6 +194,7 @@ Version 1.6 release ??-Dec-2025 by wavemotion-dave
   * New CIA timer adjustment for slight tweaks that some games need (e.g. Flying Shark, Mr. Heli)
   * New FLOPPY timer adjustment for slight tweaks that some games need (e.g. Dragon Wars now runs)
   * Turrican I now works... press the DS SELECT key and hold for 1-2 seconds to get past the title screen.
+  * Fixed DS guru meditation (crash) error on some disk loads (fixes games like Barnsley Badger loading).
   * Slight tweaks to disk icon graphics for read/writes.
   * Slight optimization for another frame of performance.
 

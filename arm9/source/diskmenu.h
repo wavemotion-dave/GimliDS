@@ -4,7 +4,7 @@
 #define NORMALFILE                  0x01
 #define DIRECTORY                   0x02
 class C64;
-extern void DSPrint(int iX,int iY,int iScr,char *szMessage);
+extern void DSPrint(int iX,int iY,int highlight,char *szMessage);
 
 typedef struct {
   char szName[MAX_FILENAME_LEN+1];
