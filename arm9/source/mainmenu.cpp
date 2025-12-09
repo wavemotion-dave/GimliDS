@@ -609,6 +609,7 @@ const GAME_DATABASE gameDatabase[]
     {"ROGUE64",     "ROGUE 64",     "ROGUE-64",     0,  4,  0,  0},
     {"GAUNTLET",    "GAUNTLET",     "GAUNTLET",     0,  5,  0,  0},
     {"ARMY MOVE",   "ARMY_MOVE",    "ARMYMOV",      0,  3,  0,  0},
+    {"N GRAIL",     "NGRAIL",       "N'GRAIL",      0,  2,  0,  0},
     {"BLACK TIG",   "BLACK_TIG",    "BLACKTIG",     0,  4,  0,  0},
     {"BIONIC",      "BIONIC",       "BIONIC",       0,  1,  0,  0},
     {"DRAGON WAR",  "DRAGON_WAR",   "DRGWARS",      0,  0,  0,  1},

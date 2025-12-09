@@ -194,6 +194,8 @@ Version 1.6 release ??-Dec-2025 by wavemotion-dave
   * Improved CPU timing accuracy for 'borrowed cycles', floppy cycles, etc. More games run more correctly.
   * Improved SID emulation timing - DS-Lite gets a nice sound improvement and fixed bug on DSi for improved rendering.
   * Major reworking of configuration options, all config options are reset with this release.
+  * Configuration changes allow you to press and hold the D-PAD to make rapid changes of things like key maps.
+  * Pressing X in configuration allow restoring of factory defaults for that game only.
   * New CIA timer adjustment for slight tweaks that some games need (e.g. Flying Shark, Mr. Heli)
   * New FLOPPY timer adjustment for slight tweaks that some games need (e.g. Dragon Wars now runs)
   * Turrican I now works... press the DS SELECT key and hold for 1-2 seconds to get past the title screen.
