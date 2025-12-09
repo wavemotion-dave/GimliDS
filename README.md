@@ -189,7 +189,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ## Change Log
 
 Version 1.6 release ??-Dec-2025 by wavemotion-dave
-  * Reverted CPU Adjustment to +0 (the +3 was too aggressive for some games - such as the new Sherwood!)
+  * New 50Hz True Sync mode which changes the DS native 60Hz refresh to a 50Hz refresh and syncronizes the emulation to provide a nearly tear-free experience.
   * New Favorites system implemented - press SELECT on game select to toggle LIKE/LOVE.
   * Improved CPU timing accuracy for 'borrowed cycles', floppy cycles, etc. More games run more correctly.
   * Improved SID emulation timing - DS-Lite gets a nice sound improvement and fixed bug on DSi for improved rendering.
@@ -198,6 +198,7 @@ Version 1.6 release ??-Dec-2025 by wavemotion-dave
   * Pressing X in configuration allow restoring of factory defaults for that game only.
   * New CIA timer adjustment for slight tweaks that some games need (e.g. Flying Shark, Mr. Heli)
   * New FLOPPY timer adjustment for slight tweaks that some games need (e.g. Dragon Wars now runs)
+  * Reverted CPU Adjustment to +0 (the +3 was too aggressive for some games - such as the new Sherwood!).
   * Turrican I now works... press the DS SELECT key and hold for 1-2 seconds to get past the title screen.
   * Fixed DS guru meditation (crash) error on some disk loads (fixes games like Barnsley Badger loading).
   * Slight tweaks to disk icon graphics for read/writes.
