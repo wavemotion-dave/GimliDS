@@ -58,8 +58,8 @@ and be sure they are named exactly as follows:
 To use GimliDS you launch GimliDS.NDS on your DS/DSi/XL/LL. Please note that if you are running from an R4 card (or similar), you 
 will be running in 'Compatibility' mode that keeps the CPU at the slower 67MHz. While GimliDS will run, it must use some level 
 of light frameskip to get full speed gameplay. If you're running from the SD card on a DSi/XL/LL with something like Twilight Menu++
-or Unlaunch - you will be happy to know that you are running at 134MHz and there will be no frameskip and the audio will be 
-much improved.
+or Unlaunch - you will be happy to know that you are running at 134MHz and there will be no frameskip and the audio will sample at 
+twice the normal rate and generally sound smoother.
 
 When you first launch the emulator (provided you have the BIOS files in the right place), you will be greeted by the CBM BASIC 
 and the famous READY prompt:
