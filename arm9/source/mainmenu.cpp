@@ -608,6 +608,7 @@ const GAME_DATABASE gameDatabase[]
     {"BRUCE LEE",   "BRUCELEE",     "BRUCE_LEE",    0,  6,  0,  0},
     {"ROGUE64",     "ROGUE 64",     "ROGUE-64",     0,  4,  0,  0},
     {"GAUNTLET",    "GAUNTLET",     "GAUNTLET",     0,  5,  0,  0},
+    {"ROUGEISH",    "ROUGE ISH",    "ROUGE-ISH",    0,  7,  0,  0},
     {"ARMY MOVE",   "ARMY_MOVE",    "ARMYMOV",      0,  3,  0,  0},
     {"N GRAIL",     "NGRAIL",       "N'GRAIL",      0,  2,  0,  0},
     {"BLACK TIG",   "BLACK_TIG",    "BLACKTIG",     0,  4,  0,  0},
@@ -683,8 +684,8 @@ void FindConfig(void)
 // ------------------------------------------------------------------------------
 // Options are handled here... we have a number of things the user can tweak
 // and these options are applied immediately. The user can also save off
-// their option choices for the currently running game into the NINTV-DS.DAT
-// configuration database. When games are loaded back up, NINTV-DS.DAT is read
+// their option choices for the currently running game into the GimliDS.DAT
+// configuration database. When games are loaded back up, GimliDS.DAT is read
 // to see if we have a match and the user settings can be restored for the game.
 // ------------------------------------------------------------------------------
 struct options_t

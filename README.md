@@ -90,7 +90,7 @@ Lastly, a few games use custom loaders that require you to enable 'True Drive'. 
 a speed that is comparable to the original Commodore 1541 floppy drive - that is: extremely slow. It could take 2-5 minutes to load a game
 this way. But if the game requires it, that's your only option. Recommended to snap out a Save State so you don't have to repeat the loading.
 
-Speaking of custom/fast loaders - if the game offers you the ability to disable the fastloader, take it! The standard loader is highly optmized 
+Speaking of custom/fast loaders - if the game offers you the ability to disable the fastloader, then DISABLE it! The standard loader is highly optimized 
 in the emulator itself and custom/fast loaders are only going to cause you problems.
 
 ![image](./pngs/mainmenu.png) ![image](./pngs/options.png)
@@ -188,7 +188,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
 
-Version 1.6 release ??-Dec-2025 by wavemotion-dave
+Version 1.6 release 10-Dec-2025 by wavemotion-dave
   * New 50Hz True Sync mode which changes the DS native 60Hz refresh to a 50Hz refresh and syncronizes the emulation to provide a nearly tear-free experience.
   * New Favorites system implemented - press SELECT on game select to toggle LIKE/LOVE.
   * Improved CPU timing accuracy for 'borrowed cycles', floppy cycles, etc. More games run more correctly.
@@ -203,6 +203,7 @@ Version 1.6 release ??-Dec-2025 by wavemotion-dave
   * Fixed DS guru meditation (crash) error on some disk loads (fixes games like Barnsley Badger loading).
   * Slight tweaks to disk icon graphics for read/writes.
   * Slight optimization for another frame of performance.
+  * Numerous other small improvements that time forgets.
 
 Version 1.5 release 08-Oct-2025 by wavemotion-dave
   * Added Ultimax support plus the first pass at some of the Freezer carts.
