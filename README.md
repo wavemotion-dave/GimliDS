@@ -140,7 +140,7 @@ In general, if you have a scanline instability/flicker near the top of the scree
 
 ## Specific Game Hacks
 
-To get some of the more popular games running as good as possible on the venerable DS, here is a list of things you might try.
+To get some of the more popular games running as good as possible on the venerable DS, here is a list of things you might try (all of the ones below should be auto-detected and patched by the emulator depending on how you named your game files).
 
   * Gauntlet - set the CPU CYCLES to +5 to eliminate graphical glitches on 'G' font.
   * Bruce Lee - set the CPU CYCLES to +6 to minimize graphical line-based glitches.
