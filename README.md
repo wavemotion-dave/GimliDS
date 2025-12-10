@@ -21,7 +21,7 @@ The GimliDS emulator is offered as-is, without any warranty.
   * Commodore 64 with full 6510 CPU emulation, 64K of base memory, VIC II and SID chip rendering
   * PAL emulation at 50Hz provides the wide support for the C64 gaming scene.
   * REU-1764 emulated with 256K of expanded memory
-  * D64 disk file support for two drives (8, 9) with TrueDrive emulation optional (slower but compatible).
+  * D64 disk file support for two 1541 drives (8, 9) with TrueDrive emulation optional (slower but compatible).
   * CRT cartridge file support with writeback for EasyFlash (flash sectors) and GMOD2 (serial EE)
   * Virtual touch-screen keyboard to replicate the C64 look and feel
   * Full key mapping of C64 Keyboard / Joystick to any of the main DS keys
@@ -145,7 +145,7 @@ To get some of the more popular games running as good as possible on the venerab
   * Gauntlet - set the CPU CYCLES to +5 to eliminate graphical glitches on 'G' font.
   * Bruce Lee - set the CPU CYCLES to +6 to minimize graphical line-based glitches.
   * LED Storm - set CPU CYCLES to +4 to eliminate top line graphical glitch.
-  * MR HELI - set the CIA Cycles to +120 FRAME (not CPU CYCLES!!)
+  * MR HELI - set the CIA CYCLES to +120 FRAME (not CPU CYCLES!!)
   * Flying Shark - set CIA CYCLES to +1 SCANLINE (not CPU CYCLES!!) - score area will be closer to correct but still a bit glitchy.
   * Turrican I - Due to slight timing inaccuracies, it's not normally possible to start the game but for this game only press and hold the SELECT button to get into the game proper (game will run at proper speed).
   * Turrican II - requires True Drive enabled (or load from cart).
