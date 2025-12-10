@@ -617,7 +617,7 @@ const GAME_DATABASE gameDatabase[]
     {"TURRICAN II", "TURRICAN 2",   "TURRICAN2",    1,  0,  0,  0},
     {"LODE RUN",    "LODE_RUN",     "LODERUN",      1,  0,  0,  0},
     {"DEVOLUTION",  "DEVOLUTION",   "DEVOLUTION",   1,  0,  0,  0},
-   
+
     {"xxxx",        "xxxx",         "xxxx",         99, 99, 99, 99}  // End of list
 };
 
@@ -637,7 +637,7 @@ void FindConfig(void)
     turrican_hack = 0;
     if (strcasestr(CartFilename, "TURRICAN")     != 0) turrican_hack = 1;
     if (strcasestr(Drive8File, "TURRICAN")       != 0) turrican_hack = 1;
-    
+
     // -------------------------------------------------------------------------------------------------------
     // Now apply some game-specific settings so the games play correctly without too much user intervention...
     // -------------------------------------------------------------------------------------------------------
@@ -646,7 +646,7 @@ void FindConfig(void)
     {
         u8 bFound = 0;
         if (gameDatabase[idx].trueDrive == 99) break;
-        
+
         if (strcasestr(CartFilename, gameDatabase[idx].szKeyWord1) != 0) bFound = 1;
         if (strcasestr(Drive8File,   gameDatabase[idx].szKeyWord1) != 0) bFound = 1;
         if (strcasestr(Drive9File,   gameDatabase[idx].szKeyWord1) != 0) bFound = 1;
@@ -658,7 +658,7 @@ void FindConfig(void)
         if (strcasestr(CartFilename, gameDatabase[idx].szKeyWord3) != 0) bFound = 1;
         if (strcasestr(Drive8File,   gameDatabase[idx].szKeyWord3) != 0) bFound = 1;
         if (strcasestr(Drive9File,   gameDatabase[idx].szKeyWord3) != 0) bFound = 1;
-        
+
         if (bFound) // Apply the settings...
         {
             myConfig.trueDrive  = gameDatabase[idx].trueDrive;
@@ -666,7 +666,7 @@ void FindConfig(void)
             myConfig.ciaCycles  = gameDatabase[idx].ciaCycles;
             myConfig.flopCycles = gameDatabase[idx].flopCycles;
         }
-        
+
         idx++;
     }
 

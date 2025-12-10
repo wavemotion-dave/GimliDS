@@ -3,12 +3,12 @@
 //
 // As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 // any copying or distribution of this emulator, its source code and associated
-// readme files, with or without modification, are permitted per the original 
+// readme files, with or without modification, are permitted per the original
 // Frodo emulator license shown below.  Hugest thanks to Christian Bauer for his
 // efforts to provide a clean open-source emulation base for the C64.
 //
-// Numerous hacks and 'unsafe' optimizations have been performed on the original 
-// Frodo emulator codebase to get it running on the small handheld system. You 
+// Numerous hacks and 'unsafe' optimizations have been performed on the original
+// Frodo emulator codebase to get it running on the small handheld system. You
 // are strongly encouraged to seek out the official Frodo sources if you're at
 // all interested in this emulator code.
 //
@@ -144,9 +144,9 @@ int main(int argc, char **argv)
         return 0;
 
     srand(time(NULL));
-    
+
     LoadConfig();
-    
+
     LoadFavorites();
 
     the_app = new Frodo();
@@ -156,7 +156,7 @@ int main(int argc, char **argv)
     keysSetRepeat(15, 6);
 
     the_app->ReadyToRun();
-    
+
     delete the_app;
 
     return (1);
@@ -197,7 +197,7 @@ void Frodo::ArgvReceived(int argc, char **argv)
         {
             strcpy(cmd_line_file,  argv[1]);
         }
-        
+
         ///TODO: Unsure what do do here... we could auto-load and auto-launch the disk/CRT file I guess...
     }
 }

@@ -3,12 +3,12 @@
 //
 // As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 // any copying or distribution of this emulator, its source code and associated
-// readme files, with or without modification, are permitted per the original 
+// readme files, with or without modification, are permitted per the original
 // Frodo emulator license shown below.  Hugest thanks to Christian Bauer for his
 // efforts to provide a clean open-source emulation base for the C64.
 //
-// Numerous hacks and 'unsafe' optimizations have been performed on the original 
-// Frodo emulator codebase to get it running on the small handheld system. You 
+// Numerous hacks and 'unsafe' optimizations have been performed on the original
+// Frodo emulator codebase to get it running on the small handheld system. You
 // are strongly encouraged to seek out the official Frodo sources if you're at
 // all interested in this emulator code.
 //
@@ -119,7 +119,7 @@ MOS6502_1541::MOS6502_1541(C64 *c64, Job1541 *job, C64Display *disp, uint8 *Ram,
     borrowed_cycles = 0;
 
     rom = Rom - 0xC000; // So we don't have to mask the ROM when reading
-    
+
     Idle = false;
 
     Reset();
@@ -596,13 +596,13 @@ void MOS6502_1541::GetState(MOS6502State *s)
     s->via2_sr = via2_sr;
     s->via2_acr = via2_acr; s->via2_pcr = via2_pcr;
     s->via2_ifr = via2_ifr; s->via2_ier = via2_ier;
-    
+
     s->cycle_counter = cycle_counter;
-    
+
     s->spare1 = 0;
     s->spare2 = 0;
     s->spare3 = 0;
-    s->spare4 = 0;   
+    s->spare4 = 0;
 }
 
 
@@ -646,7 +646,7 @@ void MOS6502_1541::SetState(MOS6502State *s)
     via2_sr = s->via2_sr;
     via2_acr = s->via2_acr; via2_pcr = s->via2_pcr;
     via2_ifr = s->via2_ifr; via2_ier = s->via2_ier;
-    
+
     cycle_counter = s->cycle_counter;
 }
 
@@ -664,19 +664,19 @@ void MOS6502_1541::Reset(void)
 
     via1_pra = via1_ddra = via1_prb = via1_ddrb = 0;
     via1_t1c = via1_t1l = via1_t2c = via1_t2l = 0xffff;
-    via1_sr = 0;    
+    via1_sr = 0;
     via1_acr = via1_pcr = 0;
     via1_ifr = via1_ier = 0;
-    
+
     via2_t1c = via2_t1l = via2_t2c = via2_t2l = 0xffff;
-    via2_sr = 0;    
+    via2_sr = 0;
     via2_pra = via2_ddra = via2_prb = via2_ddrb = 0;
     via2_acr = via2_pcr = 0;
     via2_ifr = via2_ier = 0;
 
     // Clear all interrupt lines
     interrupt.intr_any = 0;
-    
+
     cycle_counter = 0;
     borrowed_cycles = 0;
 

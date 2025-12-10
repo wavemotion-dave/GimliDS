@@ -3,12 +3,12 @@
 //
 // As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 // any copying or distribution of this emulator, its source code and associated
-// readme files, with or without modification, are permitted per the original 
+// readme files, with or without modification, are permitted per the original
 // Frodo emulator license shown below.  Hugest thanks to Christian Bauer for his
 // efforts to provide a clean open-source emulation base for the C64.
 //
-// Numerous hacks and 'unsafe' optimizations have been performed on the original 
-// Frodo emulator codebase to get it running on the small handheld system. You 
+// Numerous hacks and 'unsafe' optimizations have been performed on the original
+// Frodo emulator codebase to get it running on the small handheld system. You
 // are strongly encouraged to seek out the official Frodo sources if you're at
 // all interested in this emulator code.
 //
@@ -185,7 +185,7 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
       {
         sprintf(szName,"%-30s",strupr(szName));
         DSPrint(1,4+ucBcl,(ucSel == ucBcl ? 2:0 ),szName);
-        
+
         if (IsFavorite(gpFic[ucGame].szName))
         {
             DSPrint(0,4+ucBcl,(IsFavorite(gpFic[ucGame].szName) == 1) ? 0:2,(char*)"\\");
@@ -193,7 +193,7 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
         else
         {
             DSPrint(0,4+ucBcl,0,(char*)" ");
-        }        
+        }
       }
     }
     else
@@ -260,14 +260,14 @@ void gimliDSFindFiles(u8 bCartOnly)
       {
         if (bCartOnly)
         {
-            if ( (strcasecmp(strrchr(szFile, '.'), ".CRT") == 0) )  
+            if ( (strcasecmp(strrchr(szFile, '.'), ".CRT") == 0) )
             {
               strcpy(gpFic[uNbFile].szName,szFile);
               gpFic[uNbFile].uType = NORMALFILE;
               uNbFile++;
               diskCount++;
             }
-            
+
             if ( (strcasecmp(strrchr(szFile, '.'), ".PRG") == 0) )
             {
               strcpy(gpFic[uNbFile].szName,szFile);
@@ -278,7 +278,7 @@ void gimliDSFindFiles(u8 bCartOnly)
         }
         else
         {
-            if ( (strcasecmp(strrchr(szFile, '.'), ".D64") == 0) )  
+            if ( (strcasecmp(strrchr(szFile, '.'), ".D64") == 0) )
             {
               strcpy(gpFic[uNbFile].szName,szFile);
               gpFic[uNbFile].uType = NORMALFILE;
@@ -309,7 +309,7 @@ u8 gimliDSLoadFile(u8 bCartOnly)
   u16 ucHaut=0x00, ucBas=0x00,ucSHaut=0x00, ucSBas=0x00, romSelected= 0, firstRomDisplay=0,nbRomPerPage, uNbRSPage;
   s16 uLenFic=0, ucFlip=0, ucFlop=0;
   u8 retVal = 0;
-  
+
   if (bLastFileTypeLoaded != bCartOnly)
   {
      diskCount=0;
@@ -323,7 +323,7 @@ u8 gimliDSLoadFile(u8 bCartOnly)
   }
 
   DSPrint(3,23,0, (char*)"A=LOAD, SELECT=FAV, B=EXIT");
-  
+
   gimliDSFindFiles(bCartOnly);
 
   diskGameChoice = -1;
@@ -621,7 +621,7 @@ void DisplayFileNameDiskette(void)
     {
         DSPrint(5,5,0, (char *)"DRIVE 8 IS NOT MOUNTED ");
     }
-    
+
     if (strlen(Drive9File) > 1)
     {
         DSPrint(5,9,0, (char *)"DRIVE 9 IS MOUNTED WITH:");
@@ -632,7 +632,7 @@ void DisplayFileNameDiskette(void)
     {
         DSPrint(5,9,0, (char *)"DRIVE 9 IS NOT MOUNTED ");
     }
-    
+
     if (myConfig.trueDrive)
     {
         DSPrint(0,22,0, (char *)"  TRUE DRIVE IS ENABLED (SLOW) ");
@@ -659,7 +659,7 @@ void DisplayFileNameCartridge(void)
             strncpy(tmp, CartFilename+24, 25); tmp[24]=0;
             DSPrint(7,8,0, tmp);
         }
-        
+
         sprintf(tmp, "TYPE: %s", CartType);
         DSPrint(16-(strlen(tmp)/2),22,0, tmp);
     }
@@ -808,7 +808,7 @@ u8 DisketteMenu(C64 *the_c64)
             }
             DiskMenuShow(false, menuSelection);
         }
-        
+
         if (nds_key & KEY_B) // Treat this as selecting 'exit'
         {
             bExitMenu = true;
@@ -833,7 +833,7 @@ u8 DisketteMenu(C64 *the_c64)
                     }
                     DiskMenuShow(true, menuSelection);
                     break;
-                    
+
                 case MENU_ACTION_DRIVE9:
                     BottomScreenMainMenu();
                     retVal = gimliDSLoadFile(0);
@@ -856,7 +856,7 @@ u8 DisketteMenu(C64 *the_c64)
                     myConfig.trueDrive ^= 1;
                     DiskMenuShow(true, menuSelection);
                     break;
-                    
+
                 case MENU_ACTION_CONFIG:
                     if (file_crc != 0x00000000)
                     {
@@ -870,7 +870,7 @@ u8 DisketteMenu(C64 *the_c64)
                             the_c64->NewPrefs(prefs);
                             TheDrivePrefs = *prefs;
                             delete prefs;
-                        }                        
+                        }
                         DiskMenuShow(true, menuSelection);
                     }
                     else
@@ -882,7 +882,7 @@ u8 DisketteMenu(C64 *the_c64)
                         DSPrint(0, 20, 0, (char*)"                              ");
                     }
                     break;
-                    
+
                 case MENU_ACTION_REBOOT_C64:
                     retVal = 2;
                     bExitMenu = true;
@@ -898,7 +898,7 @@ u8 DisketteMenu(C64 *the_c64)
 
   while ((keysCurrent() & (KEY_UP | KEY_DOWN | KEY_A ))!=0);
   WAITVBL;WAITVBL;WAITVBL;
-  
+
   return retVal;
 }
 
@@ -906,11 +906,11 @@ u8 mount_disk(C64 *the_c64)
 {
     strcpy(Drive8File, TheDrivePrefs.DrivePath[0]);
     strcpy(Drive9File, TheDrivePrefs.DrivePath[1]);
-    
+
     u8 retVal = DisketteMenu(the_c64);
-    
+
     if (retVal) bLastFileTypeLoaded = 0;
-    
+
     return retVal;
 }
 
@@ -991,7 +991,7 @@ u8 CartMenu(C64 *the_c64)
             }
             CartMenuShow(false, menuSelection);
         }
-        
+
         if (nds_key & KEY_B) // Treat this as selecting 'exit'
         {
             bExitMenu = true;
@@ -1017,7 +1017,7 @@ u8 CartMenu(C64 *the_c64)
                     }
                     bExitMenu = true;
                     break;
-                    
+
                 case MENU_ACTION_REMOVE_CART:
                     BottomScreenMainMenu();
                     retVal = 3;
@@ -1025,7 +1025,7 @@ u8 CartMenu(C64 *the_c64)
                     SetDefaultGameConfig();
                     bExitMenu = true;
                     break;
-                
+
                 case MENU_ACTION_FREEZE_CART:
                     gTheC64->TheCart->Freeze();
                     bExitMenu = true;
@@ -1041,14 +1041,14 @@ u8 CartMenu(C64 *the_c64)
 
   while ((keysCurrent() & (KEY_UP | KEY_DOWN | KEY_A ))!=0);
   WAITVBL;WAITVBL;WAITVBL;
-  
+
   return retVal;
 }
 
 u8 mount_cart(C64 *the_c64)
 {
     u8 retVal = CartMenu(the_c64);
-    
+
     if (retVal) bLastFileTypeLoaded = 1;
 
     return retVal;

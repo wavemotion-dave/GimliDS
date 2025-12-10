@@ -3,12 +3,12 @@
 //
 // As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 // any copying or distribution of this emulator, its source code and associated
-// readme files, with or without modification, are permitted per the original 
+// readme files, with or without modification, are permitted per the original
 // Frodo emulator license shown below.  Hugest thanks to Christian Bauer for his
 // efforts to provide a clean open-source emulation base for the C64.
 //
-// Numerous hacks and 'unsafe' optimizations have been performed on the original 
-// Frodo emulator codebase to get it running on the small handheld system. You 
+// Numerous hacks and 'unsafe' optimizations have been performed on the original
+// Frodo emulator codebase to get it running on the small handheld system. You
 // are strongly encouraged to seek out the official Frodo sources if you're at
 // all interested in this emulator code.
 //
@@ -64,7 +64,7 @@ REU::REU(MOS6510 * cpu) : the_cpu(cpu)
 {
     // Allocate expansion RAM
     ram_size = 0x40000; // 256K only
-    
+
     ex_ram = REU_RAM;
 
     // Clear expansion RAM
@@ -91,11 +91,11 @@ REU::~REU()
 void REU::Reset()
 {
     // Set size bit in status register
-    if (ram_size > 0x20000) 
+    if (ram_size > 0x20000)
     {
         regs[0] = 0x10;
     }
-    else 
+    else
     {
         regs[0] = 0x00;
     }
@@ -137,7 +137,7 @@ uint8_t REU::ReadIO2(uint16_t adr, uint8_t bus_byte)
     if ((adr & 0x1f) >= 0x10)
         return 0xff;
 
-    switch (adr & 0xf) 
+    switch (adr & 0xf)
     {
         case 0:
         {
@@ -168,7 +168,7 @@ void REU::WriteIO2(uint16_t adr, uint8_t byte)
     if ((adr & 0x1f) >= 0x10)
         return;
 
-    switch (adr & 0xf) 
+    switch (adr & 0xf)
     {
         case 0:     // Status register is read-only
         case 2:
@@ -206,11 +206,11 @@ void REU::WriteIO2(uint16_t adr, uint8_t byte)
             break;
         case 1:     // Command register
             regs[1] = byte;
-            if ((byte & 0x90) == 0x90) 
+            if ((byte & 0x90) == 0x90)
             {
                 execute_dma();
-            } 
-            if ((byte & 0x90) == 0x80) 
+            }
+            if ((byte & 0x90) == 0x80)
             {
                 // This would normally be the 'delayed' write... not fully handled by GimliDS as we can't afford the trigger check on FF00
                 execute_dma();
@@ -245,7 +245,7 @@ void REU::execute_dma()
 
     // We are skipping the memory increment of regs[10] as there
     // are no known practical uses of it... and we need the speed.
-    
+
     if ((regs[1] & 3) == 0)
     {
         while (length--)
@@ -271,9 +271,9 @@ void REU::execute_dma()
     }
     else // Compare
     {
-        while (length--) 
+        while (length--)
         {
-            if (REU_RAM[reu_adr++ & RAM_MASK] != the_cpu->REUReadByte(c64_adr++)) 
+            if (REU_RAM[reu_adr++ & RAM_MASK] != the_cpu->REUReadByte(c64_adr++))
             {
                 regs[0] |= 0x20;    // Verify error
                 break;
@@ -293,7 +293,7 @@ void REU::execute_dma()
         regs[7] = autoload_length_lo;
         regs[8] = autoload_length_hi;
     }
-    else 
+    else
     {
         reu_adr &= RAM_MASK;
         regs[2] = c64_adr & 0xff;
@@ -308,7 +308,7 @@ void REU::execute_dma()
 
 
 /*
- *  Ret REU state 
+ *  Ret REU state
  */
 
 void REU::GetState(REUState *rs)
@@ -327,7 +327,7 @@ void REU::GetState(REUState *rs)
 
 
 /*
- *  Set REU state 
+ *  Set REU state
  */
 
 void REU::SetState(REUState *rs)

@@ -385,7 +385,7 @@ void CartridgeFinal3::WriteIO2(uint16_t adr, uint8_t byte)
         notGAME  = (byte & 0x20) ? true:false;
         bank = byte & 0x0f;
         MapThyself();
-        
+
         if (byte & 0x40) gTheC64->TheCPU->AsyncNMI();
     }
 }
@@ -466,11 +466,11 @@ void CartridgeActionReplay::WriteIO1(uint16_t adr, uint8_t byte)
 //   2    1 = disable cartridge (turn off $DE00)
 //   1    1 = /EXROM high
 //   0    1 = /GAME low
-    
+
     if (ar_enabled)
     {
         ar_control = byte;
-        
+
         notGAME     = (byte & 0x01) ? false:true;
         notEXROM    = (byte & 0x02) ? true:false;
         ar_enabled  = (byte & 0x04) ? false:true;
@@ -1598,7 +1598,7 @@ Cartridge * Cartridge::FromFile(char *filename, char *errBuffer)
             {
                 offset = 0x2000;
             }
-            
+
             cart->total_cart_size += chip_size;
 
             if (fread(cart->ROM() + offset, chip_size, 1, f) != 1)

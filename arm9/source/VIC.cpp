@@ -328,7 +328,7 @@ void MOS6569::Reset(void)
     total_frames = 0;
     frame_skipped = false;
     raster_y = 0xffff;
-    
+
     vic_ultimax_mode = 0;
 
     // Clear foreground mask
@@ -350,7 +350,7 @@ void MOS6569::make_mc_table(void)
 uint8 *MOS6569::get_physical(uint16 adr)
 {
     int va = adr | cia_vabase;
-    
+
     if ((va & 0x7000) == 0x1000)
     {
         return char_rom + (va & 0x0fff);
@@ -358,7 +358,7 @@ uint8 *MOS6569::get_physical(uint16 adr)
     else if (((va & 0x3000) == 0x3000) && vic_ultimax_mode)
     {
         return MemMap[0xf]+0xf000+(va&0xfff);
-    }    
+    }
     else
     {
         return ram + va;
@@ -883,7 +883,7 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_mc_text(uint8 *p, uint8 *
     for (int i=0; i<40; i++)
     {
         uint8 data = q[mp[i] << 3];
-        
+
         if (!data)
         {
             r[i] = 0x00;
@@ -899,7 +899,7 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_mc_text(uint8 *p, uint8 *
                 mc_color_lookup[3] = color | (color << 8);
                 *wp++ = mc_color_lookup[(data >> 6) & 3] | (mc_color_lookup[(data >> 4) & 3] << 16);
                 *wp++ = mc_color_lookup[(data >> 2) & 3] | (mc_color_lookup[(data >> 0) & 3] << 16);
-            } 
+            }
             else
             { // Standard mode in multicolor mode
                 r[i] = data;
@@ -1006,7 +1006,7 @@ __attribute__ ((noinline))  ITCM_CODE  void MOS6569::el_std_idle(uint8 *p, uint8
         *lp++ = conv0; *lp++ = conv1;
         *lp++ = conv0; *lp++ = conv1;
         *lp++ = conv0; *lp++ = conv1;
-        *r32++ = data32;        
+        *r32++ = data32;
     }
 }
 
@@ -1165,7 +1165,7 @@ __attribute__ ((noinline))  ITCM_CODE void MOS6569::el_sprites(uint8 *chunky_ptr
                         q[i] |= sbit;
                     }
 
-                } 
+                }
                 else           // X-expanded standard mode
                 {
                     // Expand sprite data
@@ -1382,7 +1382,7 @@ int MOS6569::EmulateLine(void)
 {
     int cycles_left = CPU_CYCLES_PER_LINE_PAL + CycleDeltas[myConfig.cpuCycles];    // Cycles left for CPU
     u8 is_bad_line = false;
-    
+
     // Get raster counter into local variable for faster access and increment
     unsigned int raster = raster_y+1;
 

@@ -1338,7 +1338,7 @@ static int write_sector(FILE *f, const image_file_desc &desc, int track, int sec
         return ERR_NOTREADY;
 
     fseek(f, offset, SEEK_SET);
-    
+
     // Is the disk writable?
     if (myConfig.diskFlash & 0x02)
     {
@@ -1370,7 +1370,7 @@ bool ImageDrive::write_sector(int track, int sector, uint8 *buffer)
 // Write error info back to image file
 static void write_back_error_info(FILE *f, const image_file_desc &desc)
 {
-    if (desc.type == TYPE_D64 && desc.has_error_info) 
+    if (desc.type == TYPE_D64 && desc.has_error_info)
     {
         int num_sectors = desc.num_tracks == 40 ? NUM_SECTORS_40 : NUM_SECTORS_35;
         fseek(f, num_sectors * 256, SEEK_SET);

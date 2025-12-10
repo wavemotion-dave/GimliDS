@@ -3,12 +3,12 @@
 //
 // As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 // any copying or distribution of this emulator, its source code and associated
-// readme files, with or without modification, are permitted per the original 
+// readme files, with or without modification, are permitted per the original
 // Frodo emulator license shown below.  Hugest thanks to Christian Bauer for his
 // efforts to provide a clean open-source emulation base for the C64.
 //
-// Numerous hacks and 'unsafe' optimizations have been performed on the original 
-// Frodo emulator codebase to get it running on the small handheld system. You 
+// Numerous hacks and 'unsafe' optimizations have been performed on the original
+// Frodo emulator codebase to get it running on the small handheld system. You
 // are strongly encouraged to seek out the official Frodo sources if you're at
 // all interested in this emulator code.
 //
@@ -403,7 +403,7 @@ bool Job1541::load_gcr_file()
 void Job1541::WriteSector()
 {
     floppy_soundfx(1);   // Play floppy SFX if needed
-    
+
 	unsigned track = ram[0x18];
 	unsigned halftrack = (track - 1) * 2;
 	unsigned sector = ram[0x19];
@@ -425,7 +425,7 @@ void Job1541::FormatTrack()
 {
 	unsigned track = ram[0x51];
 	unsigned halftrack = (track - 1) * 2;
-    
+
     floppy_soundfx(1);   // Play floppy SFX if needed
 
 	// Get new ID
@@ -463,7 +463,7 @@ int Job1541::read_sector(unsigned track, unsigned sector, uint8_t *buffer)
 		return ERR_NOTREADY;
 
     floppy_soundfx(0);   // Play floppy SFX if needed
-    
+
 	// Convert track/sector to byte offset in file
 	int offset = offset_from_ts(track, sector);
 	if (offset < 0)
@@ -491,7 +491,7 @@ bool Job1541::write_sector(unsigned track, unsigned sector, const uint8_t *buffe
 		return false;
 
     floppy_soundfx(1);   // Play floppy SFX if needed
-    
+
 	// Convert track/sector to byte offset in image file
 	int offset = offset_from_ts(track, sector);
 	if (offset < 0)
@@ -752,7 +752,7 @@ void Job1541::rotate_disk(uint32_t cycle_counter)
 		uint32_t elapsed = cycle_counter - last_byte_cycle;
 		uint32_t advance = elapsed / cycles_per_byte;
 
-		if (advance > 0) 
+		if (advance > 0)
         {
 			size_t track_length = gcr_track_length[current_halftrack];
 
@@ -783,8 +783,8 @@ void Job1541::rotate_disk(uint32_t cycle_counter)
 			last_byte_cycle += advance * cycles_per_byte;
 		}
 
-	} 
-    else 
+	}
+    else
     {
 		last_byte_cycle = cycle_counter;
 		on_sync = false;
@@ -824,7 +824,7 @@ bool Job1541::ByteReady(uint32_t cycle_counter)
 uint8_t Job1541::ReadGCRByte(uint32_t cycle_counter)
 {
     floppy_soundfx(0);   // Play floppy SFX if needed
-    
+
 	rotate_disk(cycle_counter);
 
 	byte_ready = false;

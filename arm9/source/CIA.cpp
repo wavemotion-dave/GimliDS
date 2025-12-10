@@ -3,12 +3,12 @@
 //
 // As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 // any copying or distribution of this emulator, its source code and associated
-// readme files, with or without modification, are permitted per the original 
+// readme files, with or without modification, are permitted per the original
 // Frodo emulator license shown below.  Hugest thanks to Christian Bauer for his
 // efforts to provide a clean open-source emulation base for the C64.
 //
-// Numerous hacks and 'unsafe' optimizations have been performed on the original 
-// Frodo emulator codebase to get it running on the small handheld system. You 
+// Numerous hacks and 'unsafe' optimizations have been performed on the original
+// Frodo emulator codebase to get it running on the small handheld system. You
 // are strongly encouraged to seek out the official Frodo sources if you're at
 // all interested in this emulator code.
 //
@@ -202,9 +202,9 @@ void MOS6526::SetState(MOS6526State *cs)
 
 uint8 MOS6526_1::ReadRegister(uint16 adr)
 {
-    switch (adr) 
+    switch (adr)
     {
-        case 0x00: 
+        case 0x00:
         {
             uint8 ret = pra | ~ddra, tst = (prb | ~ddrb) & Joystick1;
             if (!(tst & 0x01)) ret &= RevMatrix[0]; // AND all active columns
@@ -217,7 +217,7 @@ uint8 MOS6526_1::ReadRegister(uint16 adr)
             if (!(tst & 0x80)) ret &= RevMatrix[7];
             return ret & Joystick2;
         }
-        case 0x01: 
+        case 0x01:
         {
             uint8 ret = ~ddrb, tst = (pra | ~ddra) & Joystick2;
             if (!(tst & 0x01)) ret &= KeyMatrix[0]; // AND all active rows
@@ -241,7 +241,7 @@ uint8 MOS6526_1::ReadRegister(uint16 adr)
         case 0x0a: return tod_min;
         case 0x0b: return tod_hr;       // TODO: latch
         case 0x0c: return sdr;
-        case 0x0d: 
+        case 0x0d:
         {
             uint8 ret = icr;        // Read and clear ICR
             icr = 0;
@@ -261,7 +261,7 @@ uint8 MOS6526_1::ReadRegister(uint16 adr)
 
 uint8 MOS6526_2::ReadRegister(uint16 adr)
 {
-    switch (adr) 
+    switch (adr)
     {
         case 0x00:
             return ((pra | ~ddra) & 0x3f) | (IECLines & the_cpu_1541->IECLines);
@@ -277,7 +277,7 @@ uint8 MOS6526_2::ReadRegister(uint16 adr)
         case 0x0a: return tod_min;
         case 0x0b: return tod_hr;       // TODO: latch
         case 0x0c: return sdr;
-        case 0x0d: 
+        case 0x0d:
         {
             uint8 ret = icr;        // Read and clear ICR
             icr = 0;
@@ -333,17 +333,17 @@ void MOS6526_1::WriteRegister(uint16 adr, uint8 byte)
 
         case 0x8:
 			byte &= 0x0f;
-			if (crb & 0x80) 
+			if (crb & 0x80)
             {
-				if (alm_10ths != byte) 
+				if (alm_10ths != byte)
                 {
 					check_tod_alarm();
 				}
 				alm_10ths = byte;
-			} 
-            else 
+			}
+            else
             {
-				if (tod_10ths != byte) 
+				if (tod_10ths != byte)
                 {
 					check_tod_alarm();
 				}
@@ -467,17 +467,17 @@ void MOS6526_2::WriteRegister(uint16 adr, uint8 byte)
 
         case 0x8:
 			byte &= 0x0f;
-			if (crb & 0x80) 
+			if (crb & 0x80)
             {
-				if (alm_10ths != byte) 
+				if (alm_10ths != byte)
                 {
 					check_tod_alarm();
 				}
 				alm_10ths = byte;
-			} 
-            else 
+			}
+            else
             {
-				if (tod_10ths != byte) 
+				if (tod_10ths != byte)
                 {
 					check_tod_alarm();
 				}
@@ -551,7 +551,7 @@ void MOS6526_2::WriteRegister(uint16 adr, uint8 byte)
 void MOS6526::CountTOD(void)
 {
     uint8 lo, hi;
-    
+
    	if (tod_halt)  return;  // Clock halted - skip clocking
 
     // Decrement frequency divider
@@ -567,31 +567,31 @@ void MOS6526::CountTOD(void)
 
         // 1/10 seconds
         tod_10ths++;
-        if (tod_10ths > 9) 
+        if (tod_10ths > 9)
         {
             tod_10ths = 0;
 
             // Seconds
             lo = (tod_sec & 0x0f) + 1;
             hi = tod_sec >> 4;
-            if (lo > 9) 
+            if (lo > 9)
             {
                 lo = 0;
                 hi++;
             }
-            if (hi > 5) 
+            if (hi > 5)
             {
                 tod_sec = 0;
 
                 // Minutes
                 lo = (tod_min & 0x0f) + 1;
                 hi = tod_min >> 4;
-                if (lo > 9) 
+                if (lo > 9)
                 {
                     lo = 0;
                     hi++;
                 }
-                if (hi > 5) 
+                if (hi > 5)
                 {
                     tod_min = 0;
 
@@ -624,7 +624,7 @@ void MOS6526::CountTOD(void)
 void MOS6526_1::TriggerInterrupt(int bit)
 {
     icr |= bit;
-    if (int_mask & bit) 
+    if (int_mask & bit)
     {
         icr |= 0x80;
         the_cpu->TriggerCIAIRQ();
@@ -639,7 +639,7 @@ void MOS6526_1::TriggerInterrupt(int bit)
 void MOS6526_2::TriggerInterrupt(int bit)
 {
     icr |= bit;
-    if (int_mask & bit) 
+    if (int_mask & bit)
     {
         icr |= 0x80;
         the_cpu->TriggerNMI();

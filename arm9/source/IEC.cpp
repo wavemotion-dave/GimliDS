@@ -3,12 +3,12 @@
 //
 // As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 // any copying or distribution of this emulator, its source code and associated
-// readme files, with or without modification, are permitted per the original 
+// readme files, with or without modification, are permitted per the original
 // Frodo emulator license shown below.  Hugest thanks to Christian Bauer for his
 // efforts to provide a clean open-source emulation base for the C64.
 //
-// Numerous hacks and 'unsafe' optimizations have been performed on the original 
-// Frodo emulator codebase to get it running on the small handheld system. You 
+// Numerous hacks and 'unsafe' optimizations have been performed on the original
+// Frodo emulator codebase to get it running on the small handheld system. You
 // are strongly encouraged to seek out the official Frodo sources if you're at
 // all interested in this emulator code.
 //
@@ -94,9 +94,9 @@ Drive *IEC::create_drive(const char *path)
     {
         // Not a directory, check for mountable file type
         int type;
-        if (IsMountableFile(path, type)) 
+        if (IsMountableFile(path, type))
         {
-            if (type == FILE_IMAGE) 
+            if (type == FILE_IMAGE)
             {
                 // Mount disk image
                 return new ImageDrive(this, path);
@@ -505,7 +505,7 @@ void Drive::set_error(int error, int track, int sector)
     error_len = strlen(error_buf);
     current_error = error;
 
-    //debug_printf(error_buf);    
+    //debug_printf(error_buf);
 
     // Set drive condition
     if (error != ERR_OK && error != ERR_SCRATCHED)
@@ -636,7 +636,7 @@ void Drive::execute_cmd(const uint8 *cmd, int cmd_len)
 	while (cmd_len > 0 && cmd[cmd_len - 1] == 0x0d) {
 		cmd_len--;
 	}
-    
+
 	// Find token delimiters
 	const uint8_t *colon = (const uint8_t *)memchr(cmd, ':', cmd_len);
 	const uint8_t *equal = colon ? (const uint8_t *)memchr(colon, '=', cmd_len - (colon - cmd)) : nullptr;

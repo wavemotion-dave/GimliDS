@@ -101,7 +101,7 @@ void floppy_soundfx(u8 is_write)
             dampen_drive_led = 40; // Turn off drive LED (back to white) in 3/4 a second
         }
     }
-    
+
     last_drive_access_write = is_write;
 }
 
@@ -126,7 +126,7 @@ void C64Display::UpdateLEDs(int l0, int l1)
     }
     else
     {
-        // Do nothing... unless last disk LED showing was a RED error. 
+        // Do nothing... unless last disk LED showing was a RED error.
         // Main disk activity light is handled directly in floppy_soundfx();
         if (bKeyboardShowing)
         {
@@ -186,7 +186,7 @@ void C64Display::UpdateLEDs(int l0, int l1)
 
 #define LFA 0x095 // Left arrow
 #define CLR 0x147 // Home/clear
-#define PND 0x92  // Pound 
+#define PND 0x92  // Pound
 #define RST 0x13  // Restore
 #define RET '\n'  // Enter
 #define BSP 0x08  // Backspace
@@ -242,7 +242,7 @@ void ShowKeyboard(void)
     dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
 
     bKeyboardShowing = 1;
-    
+
     show_joysticks();
     show_shift_key();
     show_cartstatus();
@@ -369,12 +369,12 @@ ITCM_CODE void vblankDS(void)
         }
         floppy_sound_counter--;
     }
-    
+
     if (currentBrightness != brightness[myGlobalConfig.keyboardDim])
     {
         HandleBrightness();
     }
-    
+
     // We allow the drive icon to stay on for 1-2 seconds for better visibility
     if (dampen_drive_led)
     {
@@ -385,9 +385,9 @@ ITCM_CODE void vblankDS(void)
                 DSPrint(24, 21, 2, (char*)" !\""); // White Idle Drive Label
             }
             last_led_states = 0;
-        }        
-    }    
-    
+        }
+    }
+
     #define VCOUNT *((u16*)(0x4000006))
     VCOUNT = (VCOUNT - 50);  // Trickery! This will put the DSi back 50 scanlines and elongate the vBLANK period so it matches a 50Hz refresh rate (262 vs 312 scanlines)
 }
@@ -521,7 +521,7 @@ void DSPrint(int iX,int iY,int highlight,char *szMessage)
       usCharac=*(pusMap+(ch)-' ');          // Number from 0-9 or punctuation
     else
       usCharac=*(pusMap+32+(ch)-'@');       // Character from A-Z
-      
+
     *pusScreen++=usCharac;
   }
 }
@@ -617,7 +617,7 @@ void C64Display::DisplayStatusLine(int speed)
     show_joysticks();
     show_shift_key();
     show_cartstatus();
-    
+
     if (bDebugDisplay)
     {
         for (int idx=0; idx<16; idx++)
@@ -702,7 +702,7 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
         if (--bDelayLoadCRT == 0)
         {
             TheC64->InsertCart(CartFilename);
-            
+
             // Magic Desk requires TRUE DRIVE emulation
             DrivePrefs *prefs = new DrivePrefs(TheDrivePrefs);
             strcpy(prefs->DrivePath[0], Drive8File);
@@ -740,7 +740,7 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
 
         tilex = m_tp.px;
         tiley = m_tp.py;
-        
+
         if (tiley > 20) // We're in the keyboard area...
         {
             if (tiley < 44) // Big Key Row
@@ -1039,7 +1039,7 @@ void C64Display::PollKeyboard(uint8 *key_matrix, uint8 *rev_matrix, uint8 *joyst
                     }
                     KeyPress(c64_key, key_matrix, rev_matrix);
                     lastc64key=c64_key;
-                    
+
                     if (left_arrow)
                     {
                         KeyPress(MATRIX(7,1) | 0x80, key_matrix, rev_matrix);
@@ -1074,7 +1074,7 @@ void C64Display::InitColors(uint8 *colors)
     }
 
     // frodo internal 8 bit palette
-    for(i=0; i<256; i++) 
+    for(i=0; i<256; i++)
     {
         colors[i] = i & 0x0f;
     }

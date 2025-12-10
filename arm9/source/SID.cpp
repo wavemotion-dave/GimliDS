@@ -215,7 +215,7 @@ void MOS6581::GetState(MOS6581State *ss)
     ss->v3_eg_level = fake_v3_eg_level;
     ss->v3_eg_state = fake_v3_eg_state;
     ss->sid_seed    = sid_random_seed;
-    
+
     ss->spare1 = 0;
     ss->spare2 = 0;
     ss->spare3 = 0;
@@ -337,7 +337,7 @@ struct DRVoice {
     bool gate;      // EG gate bit
     bool ring;      // Ring modulation bit
     bool test;      // Test bit
-    
+
                     // The following bit is set for the modulating
                     // voice, not for the modulated one (as the SID bits)
     bool sync;      // Sync modulation bit
@@ -646,7 +646,7 @@ void DigitalRenderer::Reset(void)
 
     sample_in_ptr = 0;
     memset(sample_vol_filt, 0, SAMPLE_BUF_SIZE);
-    
+
     // -------------------------------------------------------------------
     // Copy sawtooth tables to VRAM where they are a bit faster to access
     // -------------------------------------------------------------------
@@ -654,7 +654,7 @@ void DigitalRenderer::Reset(void)
     u16 *ptr2 = (u16*) 0x068A1000;
     u16 *ptr3 = (u16*) 0x068A2000;
     u16 *ptr4 = (u16*) 0x068A3000;
-    
+
     for (int i=0; i<256; i++)
     {
         ptr1[i] = TriSawTable[i];
@@ -837,7 +837,7 @@ void DigitalRenderer::calc_filter(void)
         FixPoint c = fixsqrt(g2*g2 + FixNo(2.0)*g2 - g1*g1 + FixNo(1.0));
         f_ampl = FixNo(0.25) * (FixNo(-2.0)*g2*g2 - (FixNo(4.0)+FixNo(2.0)*c)*g2 - FixNo(2.0)*c + (c+FixNo(2.0))*g1*g1 - FixNo(2.0)) / (-g2*g2 - (c+FixNo(2.0))*g2 - c + g1*g1 - FixNo(1.0));
         }
-        
+
         break;
       case FILT_NOTCH:
         d1 = FixNo(-2) * fixcos(arg); d2 = FixNo(1);
@@ -861,7 +861,7 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
 
     // Index in sample_vol_filt[] for reading, 16.16 fixed
     uint32 sample_count = (sample_in_ptr + (SAMPLE_BUF_SIZE/2)) << 16;
-    
+
     // Output DC offset
  	int32_t dc_offset = 0x100000;
 
@@ -872,7 +872,7 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
 		// Get current master volume and RES/FILT setting from sample buffers
  		uint8_t master_volume = sample_vol_filt[(sample_count >> 16) % SAMPLE_BUF_SIZE] & 0xf;
  		uint8_t res_filt = sample_vol_filt[(sample_count >> 16) % SAMPLE_BUF_SIZE] >> 4;
-                
+
         // calculate sampled voice
         sample_count += ((TOTAL_RASTERS_PAL * SCREEN_FREQ_PAL) << 16) / (isDSiMode() ? SAMPLE_FREQ_DSI : SAMPLE_FREQ);
         int32_t sum_output = 0;
@@ -922,7 +922,7 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
 
             v->count &= 0xffffff;
 
-            switch (v->wave) 
+            switch (v->wave)
             {
                 case WAVE_TRI: {
                         uint32_t ctrl = v->count;
@@ -952,7 +952,7 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
                     if (v->test || v->count >= (uint32_t)(v->pw << 12))
                     {
                         uint32_t ctrl = v->count;
-                        if (v->ring) 
+                        if (v->ring)
                         {
                             ctrl ^= ~(v->mod_by->count) & 0x800000;
                         }
@@ -986,7 +986,7 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
                     output = 0x8000;
                     break;
             }
-            
+
             // Route voice through filter if selected
  			if (res_filt & (1 << j))
                 sum_output_filter += (int16)(output ^ 0x8000) * envelope;
@@ -1015,7 +1015,7 @@ ITCM_CODE int16 DigitalRenderer::calc_buffer(int16 *buf, long count)
                 ext_output = 0x7fff;
             }
         }
-        
+
         *buf++ = ext_output;
     }
     buf--; return *buf;

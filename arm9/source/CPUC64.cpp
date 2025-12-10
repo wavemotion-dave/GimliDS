@@ -3,12 +3,12 @@
 //
 // As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 // any copying or distribution of this emulator, its source code and associated
-// readme files, with or without modification, are permitted per the original 
+// readme files, with or without modification, are permitted per the original
 // Frodo emulator license shown below.  Hugest thanks to Christian Bauer for his
 // efforts to provide a clean open-source emulation base for the C64.
 //
-// Numerous hacks and 'unsafe' optimizations have been performed on the original 
-// Frodo emulator codebase to get it running on the small handheld system. You 
+// Numerous hacks and 'unsafe' optimizations have been performed on the original
+// Frodo emulator codebase to get it running on the small handheld system. You
 // are strongly encouraged to seek out the official Frodo sources if you're at
 // all interested in this emulator code.
 //
@@ -81,7 +81,7 @@
 #include "mainmenu.h"
 #include "printf.h"
 
-enum 
+enum
 {
     INT_RESET = 3
 };
@@ -162,7 +162,7 @@ void MOS6510::setCharVsIO(void)
 
 __attribute__ ((noinline)) void MOS6510::new_config(void)
 {
-    if ((ram[0] & 0x10) == 0) 
+    if ((ram[0] & 0x10) == 0)
     {
         ram[1] |= 0x10; // Keep cassette sense line high
     }
@@ -173,7 +173,7 @@ __attribute__ ((noinline)) void MOS6510::new_config(void)
     kernal_in = port & 2;
     char_in = (port & 3) && !(port & 4);
     io_in = (port & 3) && (port & 4);
-    
+
     MemMap[0x0] = myRAM;
     MemMap[0x1] = myRAM;
     MemMap[0x2] = myRAM;
@@ -182,7 +182,7 @@ __attribute__ ((noinline)) void MOS6510::new_config(void)
     MemMap[0x5] = myRAM;
     MemMap[0x6] = myRAM;
     MemMap[0x7] = myRAM;
-    
+
     MemMap[0x8] = myRAM;
     MemMap[0x9] = myRAM;
     MemMap[0xa] = basic_in ? (basic_rom - 0xa000) : myRAM;
@@ -191,7 +191,7 @@ __attribute__ ((noinline)) void MOS6510::new_config(void)
     MemMap[0xd] = 0; // This is IO space and we use this as a sentinel
     MemMap[0xe] = kernal_in ? (kernal_rom - 0xe000) : myRAM;
     MemMap[0xf] = kernal_in ? (kernal_rom - 0xe000) : myRAM;
-    
+
     // If a Cartridge is inserted, it may respond in some of these memory regions
     TheCart->MapThyself();
 }
@@ -200,10 +200,10 @@ __attribute__ ((noinline)) void MOS6510::new_config(void)
  *  Read a byte from I/O / ROM space
  */
 __attribute__ ((noinline)) uint8_t  MOS6510::read_byte_io(uint16 adr)
-{    
+{
     if (io_in || vic_ultimax_mode)
     {
-        switch ((adr >> 8) & 0x0f) 
+        switch ((adr >> 8) & 0x0f)
         {
             case 0x0:   // VIC
             case 0x1:
@@ -231,7 +231,7 @@ __attribute__ ((noinline)) uint8_t  MOS6510::read_byte_io(uint16 adr)
                 return TheCart->ReadIO2(adr & 0xff, rand());
         }
     }
-    else if (char_in) 
+    else if (char_in)
     {
          return char_rom[adr & 0x0fff];
     }
@@ -292,7 +292,7 @@ __attribute__ ((noinline)) void MOS6510::write_byte_io(uint16 adr, uint8 byte)
 {
     if (io_in || vic_ultimax_mode)
     {
-        switch ((adr >> 8) & 0x0f) 
+        switch ((adr >> 8) & 0x0f)
         {
             case 0x0:   // VIC
             case 0x1:
@@ -509,34 +509,34 @@ void MOS6510::GetState(MOS6510State *s)
     s->nmi_state = nmi_state;
     s->dfff_byte = dfff_byte;
     s->instruction_complete = true;
-    
+
     // ----------------------------------------------------------------
-    // Now the tricky part... we use MemMap[] as our CPU memory mapper 
+    // Now the tricky part... we use MemMap[] as our CPU memory mapper
     // so we can quickly index into RAM, Kernal, Basic or Cart ROM and
     // it's possible that from build-to-build that this memory moves...
     // So we must determine the memory type and save the offset so we
     // can properly restore it when loading save states.
     // ----------------------------------------------------------------
-    for (u8 i=0; i<16; i++) 
+    for (u8 i=0; i<16; i++)
     {
         if ((MemMap[i] >= myRAM) && (MemMap[i] <= (myRAM+0x10000)))
         {
             s->MemMap_Type[i] = MEM_TYPE_RAM;
             s->MemMap_Offset[i] = MemMap[i] - myRAM;
         }
-        else 
+        else
         if ((MemMap[i] >= (kernal_rom-0xe000)) && (MemMap[i] <= (kernal_rom+0x2000)))
         {
             s->MemMap_Type[i] = MEM_TYPE_KERNAL;
             s->MemMap_Offset[i] = MemMap[i] - kernal_rom;
         }
-        else 
+        else
         if ((MemMap[i] >= (basic_rom-0xa000)) && (MemMap[i] <= (basic_rom+0x2000)))
         {
             s->MemMap_Type[i] = MEM_TYPE_BASIC;
             s->MemMap_Offset[i] = MemMap[i] - basic_rom;
         }
-        else 
+        else
         if ((MemMap[i] >= (cartROM-0xe000)) && (MemMap[i] <= (cartROM+(1024*1024))))
         {
             s->MemMap_Type[i] = MEM_TYPE_CART;
@@ -548,7 +548,7 @@ void MOS6510::GetState(MOS6510State *s)
             s->MemMap_Offset[i] = (u32)MemMap[i];
         }
     }
-    
+
     s->spare1 = 0;
     s->spare2 = 0;
     s->spare3 = 0;
@@ -586,8 +586,8 @@ void MOS6510::SetState(MOS6510State *s)
     interrupt.intr[INT_RESET] = s->intr[INT_RESET];
     nmi_state = s->nmi_state;
     dfff_byte = s->dfff_byte;
-    
-    for (u8 i=0; i<16; i++) 
+
+    for (u8 i=0; i<16; i++)
     {
         if (s->MemMap_Type[i] == MEM_TYPE_RAM)
         {
@@ -609,7 +609,7 @@ void MOS6510::SetState(MOS6510State *s)
         {
             MemMap[i] = (uint8_t *)s->MemMap_Offset[i];
         }
-    }    
+    }
 }
 
 
@@ -631,10 +631,10 @@ void MOS6510::Reset(void)
     // Clear all interrupt lines
     interrupt.intr_any = 0;
     nmi_state = false;
-    
+
     // The CPU starts fresh with no borrowed cycles from a previous scanline
     borrowed_cycles = 0;
-    
+
     interrupt.intr[INT_VICIRQ] = false;
     interrupt.intr[INT_CIAIRQ] = false;
     interrupt.intr[INT_NMI] = false;

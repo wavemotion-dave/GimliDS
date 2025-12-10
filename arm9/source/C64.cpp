@@ -202,7 +202,7 @@ C64::~C64()
 void C64::Reset(void)
 {
     memset(debug, 0x00, sizeof(debug));
-    
+
     InitMemory();
     TheCPU->AsyncReset();
     TheCPU1541->AsyncReset();
@@ -251,7 +251,7 @@ void C64::LoadPRG(char *filename)
         for(int i=0; i<(prg_size-2); i++)
         {
             myRAM[start+i]=prg[i];
-        }        
+        }
     }
 }
 
@@ -296,7 +296,7 @@ void C64::NewPrefs(DrivePrefs *prefs)
 void C64::PatchKernal(bool true_drive)
 {
     bool fast_reset = true;
-    
+
     if (fast_reset) {
         Kernal[0x1d84] = 0xa0;
         Kernal[0x1d85] = 0x00;
@@ -992,11 +992,11 @@ ITCM_CODE void C64::VBlank(bool draw_frame)
 
     TheCIA1->CountTOD();
     TheCIA2->CountTOD();
-    
+
     TheCart->CartFrame();
 
     frames++;
-    
+
     // ----------------------------------------------------------------------------------
     // Sync to the 50Hz DS framerate to provide for a smooth mostly tear-free display...
     // ----------------------------------------------------------------------------------
@@ -1136,7 +1136,7 @@ uint8 C64::poll_joystick(int port)
           if (slide_n_glide_key_down)  slide_n_glide_key_down--;
           if (slide_n_glide_key_left)  slide_n_glide_key_left--;
           if (slide_n_glide_key_right) slide_n_glide_key_right--;
-          
+
           if (zoom_dampen)  zoom_dampen--;
       }
 
@@ -1191,7 +1191,7 @@ uint8 C64::poll_joystick(int port)
                     temp_offset_y = -32;
                     slide_dampen_y = 15;
                     break;
-                
+
                 case KEY_MAP_PAN_DN16:
                     temp_offset_y = 16;
                     slide_dampen_y = 15;
@@ -1221,13 +1221,13 @@ uint8 C64::poll_joystick(int port)
                     temp_offset_x = 64;
                     slide_dampen_x = 15;
                     break;
-                    
+
                 case KEY_MAP_ZOOM_SCR:
                     if (!zoom_dampen)
                     {
                         toggle_zoom();
                     }
-                    zoom_dampen = 50;                    
+                    zoom_dampen = 50;
                     break;
 
                 // Handle all other keypresses... mark the key as pressed for the PollKeyboard() routine
@@ -1298,7 +1298,7 @@ uint8 C64::poll_joystick(int port)
             if (myConfig.scaleX < 320) myConfig.scaleX++;
         }
     }
-    
+
     if (myConfig.joyMode == JOYMODE_DIAGONALS)
     {
              if (joy_up)    {joy_right = 1;}
@@ -1400,7 +1400,7 @@ int C64::CIA_Delta(void)
 {
     extern uint16 raster_y;
     int retVal = 0;
-    
+
     if (myConfig.ciaCycles <= 2)
     {
         retVal = myConfig.ciaCycles;
@@ -1433,7 +1433,7 @@ void C64::main_loop(void)
             scanKeys();
             continue;
         }
-        
+
         // The order of calls is important here
         int cpu_cycles_to_execute = TheVIC->EmulateLine();
         TheSID->EmulateLine(SID_CYCLES_PER_LINE_PAL);
