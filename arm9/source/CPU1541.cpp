@@ -770,7 +770,8 @@ int MOS6502_1541::EmulateLine(int cycles_left, int cpu_cycles)
     int last_cycles = 0;
 
     // Any pending interrupts?
-    if (interrupt.intr_any) {
+    if (interrupt.intr_any) 
+    {
 handle_int:
         if (interrupt.intr[INT_RESET])
         {

@@ -78,7 +78,7 @@ ROMCartridge::ROMCartridge(unsigned num_banks, unsigned bank_size) : numBanks(nu
     cart_led = 0;
     cart_led_color = 0;
     dirtyFlash = false;
-    memset(ram, 0xff, sizeof(ram));
+    memset(ram, 0x00, sizeof(ram));
 
     strcpy(CartType, "NONE");
 }

@@ -130,11 +130,25 @@ C64::C64()
 void C64::InitMemory(void)
 {
     // Clear all of memory...
-    memset(RAM, 0x00, sizeof(myRAM));
+    for (int i=0; i<0x10000; i++)
+    {
+        if (i & 1) // Odd: Second Bytes
+        {
+            RAM[i] = 0xff;
+            if ((i % 16384) == 16383) RAM[i] = 0x00; // Invert every 16384 bytes
+        }
+        else // Even: First Bytes
+        {
+            RAM[i] = 0x00;
+            if ((i % 4) == 3) RAM[i] = 0xFF; // Invert every 4 bytes
+        }
+    }
 
+    
     // Then Initialize RAM with powerup pattern
     // Sampled from a PAL C64 (Assy 250425) with Fujitsu MB8264A-15 DRAM chips
     uint8_t *p = RAM;
+
     for (unsigned i = 0; i < 512; ++i) {
         for (unsigned j = 0; j < 64; ++j) {
             if (j == 4 || j == 5) {
@@ -1311,7 +1325,7 @@ uint8 C64::poll_joystick(int port)
     {
         if(keys & KEY_SELECT)
         {
-            myConfig.cpuCycles = 7;
+            myConfig.cpuCycles = 8; // Needs -2 to get past title screen... then revert back to normal
             joy_fire = 1;
         }
         else myConfig.cpuCycles = 0;
