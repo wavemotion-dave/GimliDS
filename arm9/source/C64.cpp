@@ -1,5 +1,5 @@
 // =====================================================================================
-// GimliDS Copyright (c) 2025 Dave Bernazzani (wavemotion-dave)
+// GimliDS Copyright (c) 2025-2026 Dave Bernazzani (wavemotion-dave)
 //
 // As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 // any copying or distribution of this emulator, its source code and associated
@@ -129,64 +129,115 @@ C64::C64()
 
 void C64::InitMemory(void)
 {
-    // Clear all of memory...
-    for (int i=0; i<0x10000; i++)
+    // --------------------------------------------------------
+    // Clear all of memory... this pattern is taken from VICE
+    // which is well regarded as a reasonable startup pattern.
+    // --------------------------------------------------------
+    for (int i=0x0000; i<0x4000; i+=16)
     {
-        if (i & 1) // Odd: Second Bytes
-        {
-            RAM[i] = 0xff;
-            if ((i % 16384) == 16383) RAM[i] = 0x00; // Invert every 16384 bytes
-        }
-        else // Even: First Bytes
-        {
-            RAM[i] = 0x00;
-            if ((i % 4) == 3) RAM[i] = 0xFF; // Invert every 4 bytes
-        }
+        RAM[i+0] = 0x00;
+        RAM[i+1] = 0x00;
+
+        RAM[i+2] = 0xFF;
+        RAM[i+3] = 0xFF;
+        RAM[i+4] = 0xFF;
+        RAM[i+5] = 0xFF;
+
+        RAM[i+6] = 0x00;
+        RAM[i+7] = 0x00;
+        RAM[i+8] = 0x00;
+        RAM[i+9] = 0x00;
+
+        RAM[i+10] = 0xFF;
+        RAM[i+11] = 0xFF;
+        RAM[i+12] = 0xFF;
+        RAM[i+13] = 0xFF;
+
+        RAM[i+14] = 0x00;
+        RAM[i+15] = 0x00;
     }
 
-    
-    // Then Initialize RAM with powerup pattern
-    // Sampled from a PAL C64 (Assy 250425) with Fujitsu MB8264A-15 DRAM chips
-    uint8_t *p = RAM;
+    for (int i=0x4000; i<0x8000; i+=16)
+    {
+        RAM[i+0] = 0xFF;
+        RAM[i+1] = 0xFF;
 
-    for (unsigned i = 0; i < 512; ++i) {
-        for (unsigned j = 0; j < 64; ++j) {
-            if (j == 4 || j == 5) {
-                *p++ = (i & 1) ? 0x03 : 0x01;   // Unstable
-            } else if (j == 7) {
-                *p++ = 0x07;                    // Unstable
-            } else if (j == 32 || j == 57 || j == 58) {
-                *p++ = 0xff;
-            } else if (j == 55) {
-                *p++ = (i & 1) ? 0x07 : 0x05;   // Unstable
-            } else if (j == 56) {
-                *p++ = (i & 1) ? 0x2f : 0x27;
-            } else if (j == 59) {
-                *p++ = 0x10;
-            } else if (j == 60) {
-                *p++ = 0x05;
-            } else {
-                *p++ = 0x00;
-            }
-        }
-        for (unsigned j = 0; j < 64; ++j) {
-            if (j == 36) {
-                *p++ = 0xfb;
-            } else if (j == 63) {
-                *p++ = (i & 1) ? 0xff : 0x7c;   // Unstable
-            } else {
-                *p++ = 0xff;
-            }
-        }
+        RAM[i+2] = 0x00;
+        RAM[i+3] = 0x00;
+        RAM[i+4] = 0x00;
+        RAM[i+5] = 0x00;
+
+        RAM[i+6] = 0xFF;
+        RAM[i+7] = 0xFF;
+        RAM[i+8] = 0xFF;
+        RAM[i+9] = 0xFF;
+
+        RAM[i+10] = 0x00;
+        RAM[i+11] = 0x00;
+        RAM[i+12] = 0x00;
+        RAM[i+13] = 0x00;
+
+        RAM[i+14] = 0xFF;
+        RAM[i+15] = 0xFF;
+    }
+    
+    for (int i=0x8000; i<0xC000; i+=16)
+    {
+        RAM[i+0] = 0x00;
+        RAM[i+1] = 0x00;
+
+        RAM[i+2] = 0xFF;
+        RAM[i+3] = 0xFF;
+        RAM[i+4] = 0xFF;
+        RAM[i+5] = 0xFF;
+
+        RAM[i+6] = 0x00;
+        RAM[i+7] = 0x00;
+        RAM[i+8] = 0x00;
+        RAM[i+9] = 0x00;
+
+        RAM[i+10] = 0xFF;
+        RAM[i+11] = 0xFF;
+        RAM[i+12] = 0xFF;
+        RAM[i+13] = 0xFF;
+
+        RAM[i+14] = 0x00;
+        RAM[i+15] = 0x00;
+    }    
+
+    for (int i=0xC000; i<0x10000; i+=16)
+    {
+        RAM[i+0] = 0xFF;
+        RAM[i+1] = 0xFF;
+
+        RAM[i+2] = 0x00;
+        RAM[i+3] = 0x00;
+        RAM[i+4] = 0x00;
+        RAM[i+5] = 0x00;
+
+        RAM[i+6] = 0xFF;
+        RAM[i+7] = 0xFF;
+        RAM[i+8] = 0xFF;
+        RAM[i+9] = 0xFF;
+
+        RAM[i+10] = 0x00;
+        RAM[i+11] = 0x00;
+        RAM[i+12] = 0x00;
+        RAM[i+13] = 0x00;
+
+        RAM[i+14] = 0xFF;
+        RAM[i+15] = 0xFF;
     }
 
     // Initialize color RAM with random values
-    p = Color;
+    uint8_t *p = Color;
     for (unsigned i=0; i<COLOR_RAM_SIZE; i++)
+    {
         *p++ = rand() & 0x0f;
+    }
 
     // Clear 1541 RAM
-    memset(RAM1541, 0, DRIVE_RAM_SIZE);
+    memset(RAM1541, 0x00, DRIVE_RAM_SIZE);
 }
 
 /*
@@ -906,12 +957,6 @@ void Pause(uint32 ms)
    while((uint32)timers2ms(TIMER0_DATA, TIMER1_DATA)<now+ms);
 }
 
-
-int usleep(unsigned long int microSeconds)
-{
-    Pause(microSeconds);
-    return 0;
-}
 
 /*
  *  Constructor, system-dependent things

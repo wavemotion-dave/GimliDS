@@ -1,5 +1,5 @@
 // =====================================================================================
-// GimliDS Copyright (c) 2025 Dave Bernazzani (wavemotion-dave)
+// GimliDS Copyright (c) 2025-2026 Dave Bernazzani (wavemotion-dave)
 //
 // As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 // any copying or distribution of this emulator, its source code and associated
@@ -881,8 +881,10 @@ static const unsigned char eapiam29f040[768] = {
 // =======================================================================================================
 CartridgeEasyFlash::CartridgeEasyFlash(bool not_game, bool not_exrom) : ROMCartridge(128, 0x2000)
 {
-    notEXROM = not_exrom;
-    notGAME = not_game;
+    // Ignore the not_game, not_exrom passed in from the actual CRT file as they are occasionally incorrect.
+    // Instead we use the defaults for EasyFlash below. Allows games like Hunter's Moon EF to work.
+    notEXROM = 1;
+    notGAME = 0;
     MapThyself();
     strcpy(CartType, "EASYFLASH");
 }

@@ -1,5 +1,5 @@
 // =====================================================================================
-// GimliDS Copyright (c) 2025 Dave Bernazzani (wavemotion-dave)
+// GimliDS Copyright (c) 2025-2026 Dave Bernazzani (wavemotion-dave)
 //
 // As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 // any copying or distribution of this emulator, its source code and associated

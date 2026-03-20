@@ -1,12 +1,12 @@
 # GimliDS
 ![image](./arm9/gfx_data/intro.png)
 
-GimliDS is a C64 Emulator for the DS/DSi and is copyright (c) 2025 Dave Bernazzani (wavemotion-dave)
+GimliDS is a C64 Emulator for the DS/DSi and is copyright (c) 2025-2026 Dave Bernazzani (wavemotion-dave)
 
 As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 any copying or distribution of this emulator, its source code and associated
 readme files, with or without modification, are permitted per the original 
-Frodo emulator license shown below.  Hugest thanks to Christian Bauer for his
+Frodo emulator license shown below. Hugest thanks to Christian Bauer for his
 efforts to provide a clean open-source emulation base for the C64.
 
 Numerous hacks and 'unsafe' optimizations have been performed on the original 
@@ -124,17 +124,17 @@ This should cover a wide number of carts - recommend you seek out the OneLoad64 
 
 Obviously the emulator is not perfect. It's doing what is known as 'line emulation' - meaning that it executes 1 line of CPU, 1 line of VIC graphics, 1 line of SID music, etc. 
 In the PAL world, there are 312 scanlines - of which 200+ are 'visible' on screen. This is fairly typical for my emulators - and many emulators in general. But it's not 
-perfectly accurate - as things can change mid-scanline.  And for the C64, some cool effects can be done by careful timing of when certain peripherals (video, sound, etc) are accessed.
+perfectly accurate - as things can change mid-scanline. And for the C64, some cool effects can be done by careful timing of when certain peripherals (video, sound, etc) are accessed.
 
 To that end - many games don't try to pull off these fancy tricks - and will play reasonably perfectly on the emulator.
 
 But some games use these tricks to a lesser or greater extent. This can result in small graphical glitches (things like a flickering / unstable line near the top or bottom of the playfield) to more extensive 'garbage' on screen or poor audio/music output.
 
-Until I can gain a better understanding and try to improve the emulation (without going FULL cycle-accurate which will cripple the emulation speed), there are some tricks we can pull to help.  One of them is the 'CPU Adjustment' settings in the Configuration (set on a per game basis).
+Until I can gain a better understanding and try to improve the emulation (without going FULL cycle-accurate which will cripple the emulation speed), there are some tricks we can pull to help. One of them is the 'CPU Adjustment' settings in the Configuration (set on a per game basis).
 
-CPU Cycles adjust ranges from +6 cycles to -2 cycles with the default being +0 (no adjustment).  This gives the C64 CPU extra cycles to play with on a per-scanline basis. As the beam races down the screen, the CPU and the VIC/SID can get slightly out of alignment... and making an adjustment can help. But be careful - too much adjustment and you're running "out of spec" and could crash the game. 
+CPU Cycles adjust ranges from +10 cycles to -2 cycles with the default being +0 (no adjustment). This gives the C64 CPU extra cycles to play with on a per-scanline basis. As the beam races down the screen, the CPU and the VIC/SID can get slightly out of alignment... and making an adjustment can help. But be careful - too much adjustment and you're running "out of spec" and could crash the game. 
 
-How would this work... well, if you're not experiencing any weird graphical glitches, you should NOT touch the setting. But let's take Gauntlet which has a slight flicker/flash of the P2 'G' in the lower left of the screen. This kind of flicker is indicative of a timing issue. By pushing the CPU CYCLES adjustment to +2 or +3, the flickering lessens. If you push to +5 it goes away and the screen is nice and stable. You should adjust only as much as is needed to achieve the effect and NO more.  
+How would this work... well, if you're not experiencing any weird graphical glitches, you should NOT touch the setting. But let's take Gauntlet which has a slight flicker/flash of the P2 'G' in the lower left of the screen. This kind of flicker is indicative of a timing issue. By pushing the CPU CYCLES adjustment to +2 or +3, the flickering lessens. If you push to +5 it goes away and the screen is nice and stable. You should adjust only as much as is needed to achieve the effect and NO more. 
 
 In general, if you have a scanline instability/flicker near the top of the screen, use slightly negative CPU adjustment values. If the glitch is towards the bottom of the screen... use a slightly positive adjustment value.
 
@@ -154,7 +154,7 @@ To get some of the more popular games running as good as possible on the venerab
 ## Acknowledgements
 
   * The opening jingle was done by DeNL and comes courtesy of the royalty free jingles at pixabay.
-  * The dwarf icon on the title screen was submitted online by 'anonymous' to an artwork site.  If this is yours and you would like to be credited, please contact me.
+  * The dwarf icon on the title screen was submitted online by 'anonymous' to an artwork site. If this is yours and you would like to be credited, please contact me.
   * Christian Bauer - Original Frodo author - without whom none of this exists!
   * Troy Davis(GPF) http://gpf.dcemu.co.uk - FrodoDS initial porter and others who have contributed over the years.
   * Wintermute and the contributors for devkitpro and libnds.
@@ -179,7 +179,7 @@ the Free Software Foundation; either version 2 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -187,6 +187,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
+
+Version 1.6b release 16-Mar-2026 by wavemotion-dave
+  * Improved cold memory initialization for better accuracy.
+  * Fix for Turrican to allow SELECT to work to get past title screen.
+  * Fix for EasyFlash cart loading to default to 16K despite what ROM header says.
 
 Version 1.6 release 10-Dec-2025 by wavemotion-dave
   * New 50Hz True Sync mode which changes the DS native 60Hz refresh to a 50Hz refresh and syncronizes the emulation to provide a nearly tear-free experience.

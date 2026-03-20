@@ -1,5 +1,5 @@
 // =====================================================================================
-// GimliDS Copyright (c) 2025 Dave Bernazzani (wavemotion-dave)
+// GimliDS Copyright (c) 2025-2026 Dave Bernazzani (wavemotion-dave)
 //
 // As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 // any copying or distribution of this emulator, its source code and associated
@@ -941,13 +941,8 @@
         case 0x7c:
         case 0xdc:
         case 0xfc:
-#if PRECISE_CPU_CYCLES_NOP // Save the effort and we need the ITCM_CODE space
             read_byte_abs_x();
-#else
-            pc+=2;
-#endif
             ENDOP(4);
-
 
         // Load A/X group
         case 0xa7:  // LAX zero
