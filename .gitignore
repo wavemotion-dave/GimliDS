@@ -1,0 +1,12 @@
+
+arm7/build/
+
+arm9/build/
+
+*.elf
+
+gimli-ds-versions-sized.png
+
+gimli-ds-versions.png
+
+gimly-subversions.png
