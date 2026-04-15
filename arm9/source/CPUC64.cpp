@@ -198,6 +198,14 @@ __attribute__ ((noinline)) void MOS6510::new_config(void)
 
 /*
  *  Read a byte from I/O / ROM space
+ * 
+ *  This handles the following I/O Mirrors:
+ * 
+ *  VIC:  D000->D3FF (1k)   mirrorred every 64 bytes (16 times)
+ *  SID:  D400->D7FF (1k)   mirrorred every 32 bytes (32 times)
+ *  CIA1: DC00->DCFF (256b) mirrorred every 16 bytes (16 times)
+ *  CIA2: DD00->DDFF (256b) mirrorred every 16 bytes (16 times)
+ * 
  */
 __attribute__ ((noinline)) uint8_t  MOS6510::read_byte_io(uint16 adr)
 {

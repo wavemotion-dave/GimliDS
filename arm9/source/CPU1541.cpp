@@ -245,7 +245,7 @@ inline uint8 MOS6502_1541::read_byte_fast(uint16 adr)
 {
     if (adr & 0xC000)
         return rom[adr];
-    return myRAM1541[adr];
+    return myRAM1541[adr & 0x07ff];  // RAM is 2K mirrored
 }
 
 // The more general read has to handle RAM, ROM and IO space
@@ -254,7 +254,7 @@ uint8 MOS6502_1541::read_byte(uint16 adr)
     if (adr & 0xC000)
         return rom[adr];
     else if ((adr & 0x1800) == 0x0000)
-        return myRAM1541[adr & 0x07ff];
+        return myRAM1541[adr & 0x07ff];  // RAM is 2K mirrored
     else
         return read_byte_io(adr);
 }
@@ -416,8 +416,8 @@ void MOS6502_1541::write_byte_io(uint16 adr, uint8 byte)
 
 inline void MOS6502_1541::write_byte(uint16 adr, uint8 byte)
 {
-    if (adr & 0xF800) write_byte_io(adr, byte);
-    else myRAM1541[adr] = byte;
+    if (adr & 0xF000) write_byte_io(adr, byte);
+    else myRAM1541[adr & 0x07ff] = byte; // RAM is 2K mirrored
 }
 
 
