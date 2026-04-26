@@ -3,6 +3,9 @@
 
 GimliDS is a C64 Emulator for the DS/DSi and is copyright (c) 2025-2026 Dave Bernazzani (wavemotion-dave)
 
+GimliDS is free to download and use... but if you have found anything I've done to
+be useful, buy me a virtual coffee here:  https://ko-fi.com/wavemotiondave
+
 As GimliDS is a port of the Frodo emulator for the DS/DSi/XL/LL handhelds,
 any copying or distribution of this emulator, its source code and associated
 readme files, with or without modification, are permitted per the original 
