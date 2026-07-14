@@ -499,6 +499,10 @@ bool Job1541::write_sector(unsigned track, unsigned sector, const uint8_t *buffe
 
 	fseek(the_file, offset + header_size, SEEK_SET);
 	fwrite(buffer, 1, 256, the_file);
+
+    fflush(the_file);           // Flush the C library's internal user-space buffers
+    fsync(fileno(the_file));    // Flush the kernel/OS buffers and commit to physical storage
+    
 	return true;
 }
 

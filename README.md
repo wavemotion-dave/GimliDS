@@ -194,10 +194,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
 
-Version 1.6b release 16-Mar-2026 by wavemotion-dave
+Version 1.7 release 14-July-2026 by wavemotion-dave
   * Improved cold memory initialization for better accuracy.
   * Fix for Turrican to allow SELECT to work to get past title screen.
   * Fix for EasyFlash cart loading to default to 16K despite what ROM header says.
+  * Improved CPU1541 Drive 2K RAM mirror handling
+  * Improved SD Card flush so that disk files write-back immediately (so if you power off your DS the file will be properly saved)
 
 Version 1.6 release 10-Dec-2025 by wavemotion-dave
   * New 50Hz True Sync mode which changes the DS native 60Hz refresh to a 50Hz refresh and syncronizes the emulation to provide a nearly tear-free experience.

@@ -1343,9 +1343,15 @@ static int write_sector(FILE *f, const image_file_desc &desc, int track, int sec
     if (myConfig.diskFlash & 0x02)
     {
         if (fwrite(buffer, 1, 256, f) != 256)
+        {
             return ERR_WRITE25;
+        }
         else
+        {
+            fflush(f);           // Flush the C library's internal user-space buffers
+            fsync(fileno(f));    // Flush the kernel/OS buffers and commit to physical storage            
             return ERR_OK;
+        }
     } else return ERR_WRITE25;
 }
 
@@ -1377,6 +1383,9 @@ static void write_back_error_info(FILE *f, const image_file_desc &desc)
         if (myConfig.diskFlash & 0x02)
         {
             fwrite(desc.error_info, num_sectors, 1, f);
+            fflush(f);           // Flush the C library's internal user-space buffers
+            fsync(fileno(f));    // Flush the kernel/OS buffers and commit to physical storage            
+            
         }
     }
 }
