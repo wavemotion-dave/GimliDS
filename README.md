@@ -193,6 +193,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 ```
 ## Change Log
+Version 1.7a release 22-Oct-2026 by wavemotion-dave
+  * Hotfix for DS-Lite/Phat save of configuration and save states. Compression algorithm could run out of memory!
 
 Version 1.7 release 14-July-2026 by wavemotion-dave
   * Improved cold memory initialization for better accuracy.

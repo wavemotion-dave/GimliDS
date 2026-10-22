@@ -462,8 +462,8 @@ int C64::SaveCPUState(FILE *f)
     // ---------------------------------------------------------
     // Compress the RAM data using 'high' compression ratio...
     // ---------------------------------------------------------
-    int max_len = lzav_compress_bound_hi(0x10000);
-    int comp_len = lzav_compress_hi(RAM, CompressBuffer, 0x10000, max_len);
+    int max_len = lzav_compress_bound(0x10000);
+    int comp_len = lzav_compress_default(RAM, CompressBuffer, 0x10000, max_len);
 
     int i = 0;
     i += fwrite(&comp_len,        sizeof(comp_len), 1, f);
@@ -688,8 +688,8 @@ bool C64::SaveREUState(FILE *f)
         // ---------------------------------------------------------
         // Compress the REU RAM data using 'high' compression ratio...
         // ---------------------------------------------------------
-        int max_len = lzav_compress_bound_hi(256*1024);
-        int comp_len = lzav_compress_hi(REU_RAM, CompressBuffer, 256*1024, max_len);
+        int max_len = lzav_compress_bound(256*1024);
+        int comp_len = lzav_compress_default(REU_RAM, CompressBuffer, 256*1024, max_len);
 
         int i = 0;
         i += fwrite(&comp_len,        sizeof(comp_len), 1, f);
